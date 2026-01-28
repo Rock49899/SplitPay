@@ -12,7 +12,6 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('user_annexes', function (Blueprint $table) {
-            $table->uuid('id')->primary();
             $table->foreignUuid('user_id')->constrained('users')->onDelete('cascade');
             $table->foreignUuid('annexe_id')->constrained('annexes')->onDelete('cascade');
             $table->foreignUuid('role_id')->constrained('roles')->onDelete('cascade');
@@ -21,12 +20,8 @@ return new class extends Migration
             $table->timestamp('assigned_at')->useCurrent();
             $table->datetime('end_at')->nullable();
 
-            $table->index('user_id');
-            $table->index('annexe_id');
-            $table->index('role_id');
-            
-            // Un user ne peut avoir qu'un seul rôle par annexe
-            $table->unique(['user_id', 'annexe_id', 'role_id']);
+            // Clé primaire composite
+            $table->primary(['user_id', 'annexe_id', 'role_id']);
         });
     }
 

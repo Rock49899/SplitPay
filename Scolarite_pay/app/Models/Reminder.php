@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Builder;
 
 class Reminder extends Model
 {
@@ -141,4 +142,23 @@ class Reminder extends Model
     {
         return $query->orderBy('days_before', 'desc');
     }
+
+  
+    /**
+    * Chaque utilisateur ne voit que les rappels de ses annexes
+     */
+    protected static function booted()
+    {
+        static::addGlobalScope('annexe', function (Builder $query) {
+            if (auth()->check() && !auth()->user()->isSuperAdminInstitution()) {
+                $annexeIds = auth()->user()->getAccessibleAnnexeIds();
+                if (!empty($annexeIds)) {
+                    $query->whereIn('annexe_id', $annexeIds);
+                } else {
+                    $query->whereRaw('1 = 0');
+                }
+            }
+        });
+    }
 }
+

@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Builder;
 
 class Notification extends Model
 {
@@ -200,4 +201,23 @@ class Notification extends Model
     {
         return $query->orderBy('created_at', 'desc');
     }
+
+
+    /**
+     * haque utilisateur ne voit que les notifications de ses annexes
+     */
+    protected static function booted()
+    {
+        static::addGlobalScope('annexe', function (Builder $query) {
+            if (auth()->check() && !auth()->user()->isSuperAdminInstitution()) {
+                $annexeIds = auth()->user()->getAccessibleAnnexeIds();
+                if (!empty($annexeIds)) {
+                    $query->whereIn('annexe_id', $annexeIds);
+                } else {
+                    $query->whereRaw('1 = 0');
+                }
+            }
+        });
+    }
 }
+

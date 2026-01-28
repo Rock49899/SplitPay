@@ -172,4 +172,35 @@ class Annexe extends Model
         
         return ($this->totalCollectedAmount() / $expected) * 100;
     }
+
+  
+    /**
+     * Désactiver l'annexe et bloquer l'accès de ses utilisateurs (
+     */
+    public function deactivateWithUsers(): void
+    {
+        $this->update(['is_active' => false]);
+        
+    }
+
+    /**
+     * Statistiques complètes pour dashboard multi-annexes
+     */
+    public function getStatistics(): array
+    {
+        return [
+            'annexe_id' => $this->id,
+            'annexe_name' => $this->name,
+            'total_students' => $this->students()->count(),
+            'active_students' => $this->activeStudents()->count(),
+            'expected_amount' => $this->totalExpectedAmount(),
+            'collected_amount' => $this->totalCollectedAmount(),
+            'collection_rate' => $this->collectionRate(),
+            'total_payments' => Payment::whereHas('installment.paymentLink.student', function ($q) {
+                $q->where('annexe_id', $this->id);
+            })->where('status', 'success')->count(),
+            'unread_notifications' => $this->unreadNotifications()->count(),
+        ];
+    }
 }
+

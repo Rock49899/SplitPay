@@ -81,8 +81,7 @@ class User extends Authenticatable
     public function annexes(): BelongsToMany
     {
         return $this->belongsToMany(Annexe::class, 'user_annexes')
-            ->withPivot(['role_id', 'is_principal', 'assigned_by', 'assigned_at', 'end_at'])
-            ->withTimestamps();
+            ->withPivot(['role_id', 'is_principal', 'assigned_by', 'assigned_at', 'end_at']);
     }
 
     /**
@@ -129,5 +128,119 @@ class User extends Authenticatable
     public function isSuperAdminAnnexe(): bool
     {
         return $this->scope === 'annexe' && $this->hasRole('super_admin_annexe');
+    }
+
+   
+    /**
+     * Assigner l'utilisateur à une annexe 
+     */
+    public function assignToAnnexe(string $annexeId, string $roleId, bool $isPrincipal = false): void
+    {
+        $this->annexes()->attach($annexeId, [
+            'role_id' => $roleId,
+            'is_principal' => $isPrincipal,
+            'assigned_by' => auth()->id(),
+            'assigned_at' => now(),
+        ]);
+
+        // Si c'est l'annexe principale, mettre à jour users.annexe_id
+        if ($isPrincipal) {
+            $this->update(['annexe_id' => $annexeId]);
+        }
+    }
+
+    /**
+     * Retirer l'accès d'un utilisateur à une annexe 
+     */
+    public function removeFromAnnexe(string $annexeId): void
+    {
+        $this->annexes()->detach($annexeId);
+
+        // Si c'était l'annexe principale, la retirer
+        if ($this->annexe_id === $annexeId) {
+            $this->update(['annexe_id' => null]);
+        }
+    }
+
+    // Changer l'annexe principale de l'utilisateur 
+     
+    public function switchPrincipalAnnexe(string $annexeId): void
+    {
+        // Vérifier que l'utilisateur a accès à cette annexe
+        if (!$this->canAccessAnnexe($annexeId)) {
+            throw new \Exception('L\'utilisateur n\'a pas accès à cette annexe');
+        }
+
+        $this->annexes()->updateExistingPivot(
+            $this->annexes->pluck('id')->toArray(),
+            ['is_principal' => false]
+        );
+
+        // Définir la nouvelle annexe principale
+        $this->annexes()->updateExistingPivot($annexeId, ['is_principal' => true]);
+        $this->update(['annexe_id' => $annexeId]);
+    }
+
+    /**
+     * Vérifier si l'utilisateur a accès à une annexe spécifique
+     */
+    public function canAccessAnnexe(string $annexeId): bool
+    {
+        // Super Admin Institution a accès à toutes les annexes
+        if ($this->isSuperAdminInstitution()) {
+            return true;
+        }
+
+        // Vérifier si l'utilisateur est assigné à cette annexe
+        return $this->annexes()->where('annexes.id', $annexeId)->exists();
+    }
+
+    /**
+     * Récupérer les IDs de toutes les annexes accessibles
+     * Utilisé pour filtrer les requêtes
+     */
+    public function getAccessibleAnnexeIds(): array
+    {
+        // Super Admin Institution voit toutes les annexes de son institution
+        if ($this->isSuperAdminInstitution()) {
+            return $this->annexe?->institution->annexes->pluck('id')->toArray() ?? [];
+        }
+
+        // Autres utilisateurs : uniquement leurs annexes assignées
+        return $this->annexes->pluck('id')->toArray();
+    }
+
+    /**
+     * Préserve l'historique des transactions mais supprime l'identité
+     */
+    public function anonymize(): void
+    {
+        $this->update([
+            'name' => 'Utilisateur supprimé',
+            'email' => 'deleted_' . $this->id . '@anonymized.com',
+            'phone' => null,
+            'is_active' => false,
+        ]);
+
+        // Détacher toutes les relations annexes
+        $this->annexes()->detach();
+    }
+
+    /**
+     * Vérifier si le compte est actif ésactivée
+     */
+    public function isAccountActive(): bool
+    {
+        // Vérifier si le user est actif
+        if (!$this->is_active) {
+            return false;
+        }
+
+        // Vérifier si son annexe principale est active
+        if ($this->annexe && !$this->annexe->is_active) {
+            return false;
+        }
+
+        return true;
     }
 }

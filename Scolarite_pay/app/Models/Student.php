@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Builder;
 
 class Student extends Model
 {
@@ -211,5 +212,34 @@ class Student extends Model
               ->orWhere('last_name', 'like', "%{$term}%")
               ->orWhere('email', 'like', "%{$term}%");
         });
+    }
+
+
+    /**
+     * chaque utilisateur ne voit que les étudiants de ses annexes
+     * Sauf Super Admin Institution qui voit tout
+     */
+    protected static function booted()
+    {
+        static::addGlobalScope('annexe', function (Builder $query) {
+            if (auth()->check() && !auth()->user()->isSuperAdminInstitution()) {
+                $annexeIds = auth()->user()->getAccessibleAnnexeIds();
+                if (!empty($annexeIds)) {
+                    $query->whereIn('annexe_id', $annexeIds);
+                } else {
+                    // Si l'utilisateur n'a accès à aucune annexe, ne rien retourner
+                    $query->whereRaw('1 = 0');
+                }
+            }
+        });
+    }
+
+    /**
+     * Transférer l'étudiant vers une autre annexe (Super Admin Institution)
+     */
+    public function transferToAnnexe(string $newAnnexeId): void
+    {
+        $this->update(['annexe_id' => $newAnnexeId]);
+        // L'historique des paiements reste lié à l'étudiant
     }
 }

@@ -12,17 +12,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('role_permissions', function (Blueprint $table) {
-            $table->uuid('id')->primary();
             $table->foreignUuid('role_id')->constrained('roles')->onDelete('cascade');
             $table->foreignUuid('permission_id')->constrained('permissions')->onDelete('cascade');
-            $table->timestamp('created_at')->useCurrent();
+            $table->timestamps();
 
-
-            $table->index('role_id');
-            $table->index('permission_id');
-            
-            // pour dire un rôle ne peut avoir la même permission qu'une seule fois
-            $table->unique(['role_id', 'permission_id']);
+            // Clé primaire composite
+            $table->primary(['role_id', 'permission_id']);
 
         });
     }

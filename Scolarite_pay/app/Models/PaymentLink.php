@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Builder;
 
 class PaymentLink extends Model
 {
@@ -223,4 +224,24 @@ class PaymentLink extends Model
     {
         return $query->whereNull('sent_at');
     }
+
+    /**
+     * liens de paiement filtrés selon l'annexe de l'étudiant associé
+     */
+    protected static function booted()
+    {
+        static::addGlobalScope('annexe', function (Builder $query) {
+            if (auth()->check() && !auth()->user()->isSuperAdminInstitution()) {
+                $annexeIds = auth()->user()->getAccessibleAnnexeIds();
+                if (!empty($annexeIds)) {
+                    $query->whereHas('student', function ($q) use ($annexeIds) {
+                        $q->whereIn('annexe_id', $annexeIds);
+                    });
+                } else {
+                    $query->whereRaw('1 = 0');
+                }
+            }
+        });
+    }
 }
+
