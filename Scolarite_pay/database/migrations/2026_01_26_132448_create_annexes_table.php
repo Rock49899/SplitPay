@@ -1,0 +1,35 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('annexes', function (Blueprint $table) { 
+            $table->uuid('id')->primary();
+            $table->foreignUuid('institution_id')->constrained('institutions')->onDelete('cascade');
+            $table->string('name', 150);
+            $table->text('address')->nullable();
+            $table->string('city', 100)->nullable();
+            $table->json('annexe_details')->nullable();
+            $table->boolean('is_active')->default(true);
+            $table->timestamps();
+            
+            $table->index('institution_id');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('annexes');
+    }
+};
