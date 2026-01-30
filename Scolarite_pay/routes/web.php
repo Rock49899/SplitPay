@@ -2,8 +2,12 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\RegistrationController;
 
 Route::prefix('api')->group(function () {
+    // register pour institution...utilisé une fois
+    Route::post('/register', [RegistrationController::class, 'register']);
+
     Route::post('/login', [AuthController::class, 'login']);
     
     Route::middleware('auth:sanctum')->group(function () {
