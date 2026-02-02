@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('annexe_id')->nullable();
+            $table->foreignUuid('annexe_id')->nullable()->constrained('annexes')->onDelete('set null');
             $table->string('name', 100);
             $table->string('email', 150)->unique();
             $table->string('password');
@@ -23,14 +23,12 @@ return new class extends Migration
             $table->timestamp('email_verified_at')->nullable();
             $table->rememberToken();
             $table->timestamps();
-            
-            $table->index('annexe_id');
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
             $table->string('email')->primary();
             $table->string('token');
-            $table->timestamp('created_at')->nullable();
+            $table->timestamp('created_at')->useCurrent();
         });
 
         Schema::create('sessions', function (Blueprint $table) {

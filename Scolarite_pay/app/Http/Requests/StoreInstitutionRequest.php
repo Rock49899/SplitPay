@@ -23,7 +23,7 @@ class StoreInstitutionRequest extends FormRequest
             'owner_email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'owner_password' => ['required', 'string', 'min:6'],
         ];
-    }
+    } 
 
     public function messages(): array
     {

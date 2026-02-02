@@ -1,6 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
 
 use App\Http\Requests\StoreInstitutionRequest;
 use Illuminate\Http\Request;
@@ -49,7 +51,7 @@ class RegistrationController extends Controller
             // Assign super admin institution role if exists
             $role = Role::where('code', 'super_admin_institution')->first();
             if ($role) {
-                $user->assignToAnnexe($annexe->id, $role->id, true);
+                $user->assignToAnnexe($annexe->id, $role->id, true); 
             }
 
             return compact('institution', 'annexe', 'user');
