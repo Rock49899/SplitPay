@@ -3,47 +3,46 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 
-/*
-| Debug: accepte toute méthode et renvoie méthode, headers et payload
-*/
-Route::any('register-debug', function (Request $request) {
-    return response()->json([
-        'method'     => $request->method(),
-        'received'   => $request->all(),
-        'raw_body'   => $request->getContent(),
-        'client_ip'  => $request->ip(),
-        'headers'    => $request->headers->all(),
-    ], 200);
+
+// Route::any('register-debug', function (Request $request) {
+//     return response()->json([
+//         'method'     => $request->method(),
+//         'received'   => $request->all(),
+//         'raw_body'   => $request->getContent(),
+//         'client_ip'  => $request->ip(),
+//         'headers'    => $request->headers->all(),
+//     ]);
+// });
+
+//test
+Route::post('test', function () {
+    return response()->json(['ok' => true]);
 });
 
-// endpoint simple pour vérifier le reachability via navigateur/curl
-Route::get('ping', function () {
-    return response('pong', 200)
-        ->header('Content-Type', 'text/plain');
-});
 
-Route::post('register', 'App\Http\Controllers\Api\RegistrationController@register');
+Route::get('ping', fn () => response('pong'));
 
-// Auth users (non-students)
-Route::post('admin/login', 'App\Http\Controllers\Api\AuthController@login');
-Route::middleware('auth:sanctum')->group(function () {
-    Route::post('admin/logout', 'App\Http\Controllers\Api\AuthController@logout');
-    Route::get('admin/me', 'App\Http\Controllers\Api\AuthController@me');
-});
+Route::post('register', [\App\Http\Controllers\Api\RegistrationController::class, 'register']);
 
-// OTP login flow for students
-Route::post('students/login', 'App\Http\Controllers\Api\StudentAuthController@requestOtp');       // envoie OTP par email
-Route::post('students/verify-otp', 'App\Http\Controllers\Api\StudentAuthController@verifyOtp');  // vérifie OTP et retourne token
-Route::post('students/me-by-token', 'App\Http\Controllers\Api\StudentAuthController@meByToken');  // optionnel
+Route::post('students/login', [\App\Http\Controllers\Api\StudentAuthController::class, 'requestOtp']);
+Route::post('students/verify-otp', [\App\Http\Controllers\Api\StudentAuthController::class, 'verifyOtp']);
+Route::post('students/me-by-token', [\App\Http\Controllers\Api\StudentAuthController::class, 'meByToken']);
 
-Route::middleware(['auth:sanctum'])->prefix('admin')->group(function () {
-    // Users CRUD
-    Route::apiResource('users', 'App\Http\Controllers\Api\UserController');
+Route::match(['post','get'], 'admin/login', [\App\Http\Controllers\Api\AuthController::class, 'login']);
 
-    // Assign / remove role for a user (per annexe)
-    Route::post('users/{id}/assign-role', 'App\Http\Controllers\Api\UserController@assignRole');
-    Route::post('users/{id}/remove-role', 'App\Http\Controllers\Api\UserController@removeRole');
+//sanctum
+Route::middleware('auth:sanctum')->prefix('admin')->group(function () {
+    Route::match(['get','post'], 'logout', [\App\Http\Controllers\Api\AuthController::class, 'logout']);
+    Route::get('me', [\App\Http\Controllers\Api\AuthController::class, 'me']);
 
-    // List roles (UI pour assignation)
-    Route::get('roles', 'App\Http\Controllers\Api\RoleController@index');
+    Route::apiResource('users', \App\Http\Controllers\Api\UserController::class);
+    Route::post('users/{id}/assign-role', [\App\Http\Controllers\Api\UserController::class, 'assignRole']);
+    Route::post('users/{id}/remove-role', [\App\Http\Controllers\Api\UserController::class, 'removeRole']);
+
+    Route::get('roles', [\App\Http\Controllers\Api\RoleController::class, 'index']);
+
+    Route::apiResource('students', \App\Http\Controllers\Api\StudentController::class);
+    Route::apiResource('institutions', \App\Http\Controllers\Api\InstitutionController::class);
+    Route::get('institutions/{id}/annexes', [\App\Http\Controllers\Api\InstitutionController::class, 'annexes']);
+    Route::apiResource('annexes', \App\Http\Controllers\Api\AnnexeController::class);
 });

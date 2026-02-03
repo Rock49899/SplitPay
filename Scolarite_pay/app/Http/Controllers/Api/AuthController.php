@@ -1,6 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
 
 use App\Http\Requests\LoginRequest;
 use Illuminate\Http\Request;
@@ -30,7 +32,6 @@ class AuthController extends Controller
             ], 401);
         }
 
-        // Verifier si le compte est actif
         if (!$user->is_active) {
             dump('Compte desactive');
             return response()->json([
@@ -38,7 +39,6 @@ class AuthController extends Controller
             ], 403);
         }
 
-        // Verifier si l'utilisateur a au moins une annexe active
         $activeAnnexes = $user->annexes->filter(fn($annexe) => $annexe->is_active);
         
         if ($activeAnnexes->isEmpty()) {
@@ -48,7 +48,6 @@ class AuthController extends Controller
             ], 403);
         }
 
-        // Connexion reussie, creer un token (Sanctum)
         $token = $user->createToken('auth-token')->plainTextToken;
 
         dump('Connexion reussie pour: ' . $user->email);
@@ -91,12 +90,10 @@ class AuthController extends Controller
 
         dump('Recuperation des infos pour: ' . $user->email);
 
-        // Charger les relations necessaires
         $user->load(['annexes' => function($query) {
             $query->where('is_active', true);
         }]);
 
-        // Recuperer tous les roles de l'utilisateur
         $roles = collect();
         foreach ($user->annexes as $annexe) {
             $role = \App\Models\Role::find($annexe->pivot->role_id);
