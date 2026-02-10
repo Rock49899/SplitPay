@@ -117,7 +117,7 @@
                         id="email"
                         name="email"
                         placeholder="info@gmail.com"
-                        class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                        class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-white placeholder:text-gray-400 dark:placeholder:text-white/60 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10"
                       />
                     </div>
                     <!-- Password -->
@@ -134,7 +134,7 @@
                           :type="showPassword ? 'text' : 'password'"
                           id="password"
                           placeholder="Enter your password"
-                          class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent py-2.5 pl-4 pr-11 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                          class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent py-2.5 pl-4 pr-11 text-sm text-white placeholder:text-gray-400 dark:placeholder:text-white/60 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10"
                         />
                         <span
                           @click="togglePasswordVisibility"
@@ -229,9 +229,11 @@
                     <div>
                       <button
                         type="submit"
-                        class="flex items-center justify-center w-full px-4 py-3 text-sm font-medium text-white transition rounded-lg bg-brand-500 shadow-theme-xs hover:bg-brand-600"
+                        :disabled="loading"
+                        class="flex items-center justify-center w-full px-4 py-3 text-sm font-medium text-white transition rounded-lg bg-brand-500 shadow-theme-xs hover:bg-brand-600 disabled:opacity-50"
                       >
-                        Sign In
+                        <span v-if="!loading">Sign In</span>
+                        <span v-else>Signing in...</span>
                       </button>
                     </div>
                   </div>
@@ -276,21 +278,37 @@
 import { ref } from 'vue'
 import CommonGridShape from '@/components/common/CommonGridShape.vue'
 import FullScreenLayout from '@/components/layout/FullScreenLayout.vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/useAuthStore'
+
 const email = ref('')
 const password = ref('')
 const showPassword = ref(false)
 const keepLoggedIn = ref(false)
 
+const loading = ref(false)
+const error = ref(null)
+
+const auth = useAuthStore()
+const router = useRouter()
+
 const togglePasswordVisibility = () => {
   showPassword.value = !showPassword.value
 }
 
-const handleSubmit = () => {
-  // Handle form submission
-  console.log('Form submitted', {
-    email: email.value,
-    password: password.value,
-    keepLoggedIn: keepLoggedIn.value,
-  })
+const handleSubmit = async () => {
+  error.value = null
+  loading.value = true
+  try {
+    const res = await auth.login({ email: email.value, password: password.value })
+    // optional: fetch user profile
+    try { await auth.fetchMe() } catch (_) {}
+    // redirect to dashboard
+    router.push('/')
+  } catch (e) {
+    error.value = e.response?.data?.message || e.message || 'Login failed'
+  } finally {
+    loading.value = false
+  }
 }
 </script>

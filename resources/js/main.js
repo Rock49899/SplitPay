@@ -9,11 +9,17 @@ import 'flatpickr/dist/flatpickr.css'
 import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router'
-import VueApexCharts from 'vue3-apexcharts'
+import { createPinia } from 'pinia'
+import { applyToken } from './services/api'
+
+const pinia = createPinia()
 
 const app = createApp(App)
-
 app.use(router)
-app.use(VueApexCharts)
+app.use(pinia)
+
+// re-apply token to axios if present (optionnel: store already does this)
+const token = localStorage.getItem('api_token')
+if (token) applyToken(token)
 
 app.mount('#app')

@@ -9,10 +9,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable, HasUuids;
+    use HasFactory, HasApiTokens, Notifiable, HasUuids;
 
     /**
      * Indicates if the model's ID is auto-incrementing.
@@ -134,20 +135,27 @@ class User extends Authenticatable
     /**
      * Assigner l'utilisateur à une annexe 
      */
-    public function assignToAnnexe(string $annexeId, string $roleId, bool $isPrincipal = false): void
-    {
-        $this->annexes()->attach($annexeId, [
-            'role_id' => $roleId,
-            'is_principal' => $isPrincipal,
-            'assigned_by' => auth()->id(),
-            'assigned_at' => now(),
-        ]);
 
-        // Si c'est l'annexe principale, mettre à jour users.annexe_id
-        if ($isPrincipal) {
-            $this->update(['annexe_id' => $annexeId]);
-        }
+    public function assignToAnnexe(
+    string $annexeId,
+    string $roleId,
+    bool $isPrincipal = false,
+    ?string $assignedBy = null
+): void {
+    $this->annexes()->syncWithoutDetaching([
+        $annexeId => [
+            'role_id'      => $roleId,
+            'is_principal' => $isPrincipal,
+            'assigned_by'  => $assignedBy,
+            'assigned_at'  => now(),
+        ]
+    ]);
+
+    if ($isPrincipal) {
+        $this->update(['annexe_id' => $annexeId]);
     }
+}
+
 
     /**
      * Retirer l'accès d'un utilisateur à une annexe 

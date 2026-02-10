@@ -14,26 +14,26 @@ class AuthController extends Controller
 {
     public function login(LoginRequest $request)
     {
-        dump('Tentative de connexion pour: ' . $request->email);
+        // dump('Tentative de connexion pour: ' . $request->email);
 
         $user = User::where('email', $request->email)->first();
 
         if (!$user) {
-            dump('Utilisateur non trouve');
+            // dump('Utilisateur non trouve');
             return response()->json([
                 'message' => 'Email ou mot de passe incorrect'
             ], 401);
         }
 
         if (!Hash::check($request->password, $user->password)) {
-            dump('Mot de passe incorrect');
+            // dump('Mot de passe incorrect');
             return response()->json([
                 'message' => 'Email ou mot de passe incorrect'
             ], 401);
         }
 
         if (!$user->is_active) {
-            dump('Compte desactive');
+            // dump('Compte desactive');
             return response()->json([
                 'message' => 'Votre compte est desactive. Contactez l\'administrateur.'
             ], 403);
@@ -42,7 +42,7 @@ class AuthController extends Controller
         $activeAnnexes = $user->annexes->filter(fn($annexe) => $annexe->is_active);
         
         if ($activeAnnexes->isEmpty()) {
-            dump('Aucune annexe active pour cet utilisateur');
+            // dump('Aucune annexe active pour cet utilisateur');
             return response()->json([
                 'message' => 'Aucune annexe active. Contactez l\'administrateur.'
             ], 403);
@@ -50,7 +50,7 @@ class AuthController extends Controller
 
         $token = $user->createToken('auth-token')->plainTextToken;
 
-        dump('Connexion reussie pour: ' . $user->email);
+        // dump('Connexion reussie pour: ' . $user->email);
 
         return response()->json([
             'message' => 'Connexion reussie',
@@ -75,7 +75,7 @@ class AuthController extends Controller
     {
         $user = $request->user();
         
-        dump('Deconnexion de: ' . $user->email);
+        // dump('Deconnexion de: ' . $user->email);
 
         $user->tokens()->delete();
 
@@ -88,7 +88,7 @@ class AuthController extends Controller
     {
         $user = $request->user();
 
-        dump('Recuperation des infos pour: ' . $user->email);
+        // dump('Recuperation des infos pour: ' . $user->email);
 
         $user->load(['annexes' => function($query) {
             $query->where('is_active', true);

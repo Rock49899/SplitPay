@@ -48,6 +48,7 @@ class RegistrationController extends Controller
                 'annexe_id' => $annexe->id,
             ]);
 
+            
             // Assign super admin institution role if exists
             $role = Role::where('code', 'super_admin_institution')->first();
             if ($role) {
@@ -67,7 +68,7 @@ class RegistrationController extends Controller
                 'id' => $result['annexe']->id,
                 'name' => $result['annexe']->name,
             ],
-            'owner' => [
+            'user' => [
                 'id' => $result['user']->id,
                 'name' => $result['user']->name,
                 'email' => $result['user']->email,

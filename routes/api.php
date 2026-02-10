@@ -22,6 +22,7 @@ Route::post('test', function () {
 
 Route::get('ping', fn () => response('pong'));
 
+
 Route::post('register', [\App\Http\Controllers\Api\RegistrationController::class, 'register']);
 
 Route::post('students/login', [\App\Http\Controllers\Api\StudentAuthController::class, 'requestOtp']);
