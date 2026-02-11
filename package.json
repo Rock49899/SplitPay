@@ -15,6 +15,7 @@
         "vite": "^7.0.7"
     },
     "dependencies": {
+        "@fullcalendar/vue3": "^6.1.20",
         "@vitejs/plugin-vue": "^6.0.3",
         "apexcharts": "^5.3.6",
         "dropzone": "^6.0.0-beta.2",

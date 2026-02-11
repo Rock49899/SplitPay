@@ -8,10 +8,10 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      name: 'Ecommerce',
-      component: () => import('../views/Ecommerce.vue'),
+      name: 'Dashboard',
+      component: () => import('../views/Dashboard.vue'),
       meta: {
-        title: 'eCommerce Dashboard',
+        title: 'Dashboard',
       },
     },
     {
@@ -31,20 +31,50 @@ const router = createRouter({
       },
     },
     {
-      path: '/form-elements',
-      name: 'Form Elements',
-      component: () => import('../views/Forms/FormElements.vue'),
+      path: '/admin/users',
+      name: 'Users',
+      component: () => import('../views/Users/Userlist.vue'),
       meta: {
-        title: 'Form Elements',
+        title: 'Users',
       },
     },
     {
-      path: '/basic-tables',
-      name: 'Basic Tables',
-      component: () => import('../views/Tables/BasicTables.vue'),
+      path: '/admin/users/:id',
+      name: 'User Details',
+      component: () => import('../views/Users/Userdetails.vue'),
       meta: {
-        title: 'Basic Tables',
+        title: 'User details',
       },
+    },
+    {
+      path: '/admin/students',
+      name: 'Students',
+      component: () => import('../views/Students/StudentList.vue').catch(() => import('../views/Placeholders/PlaceholderPage.vue')),
+      meta: { title: 'Students' },
+    },
+    {
+      path: '/admin/annexes',
+      name: 'Annexes',
+      component: () => import('../views/Annexes/AnnexeList.vue').catch(() => import('../views/Placeholders/PlaceholderPage.vue')),
+      meta: { title: 'Annexes' },
+    },
+    {
+      path: '/finances',
+      name: 'Finances',
+      component: () => import('../views/Finance/FinanceDashboard.vue').catch(() => import('../views/Placeholders/PlaceholderPage.vue')),
+      meta: { title: 'Finances' },
+    },
+    {
+      path: '/settings',
+      name: 'Settings',
+      component: () => import('../views/Settings/Settings.vue').catch(() => import('../views/Placeholders/PlaceholderPage.vue')),
+      meta: { title: 'Settings' },
+    },
+    {
+      path: '/charts',
+      name: 'Charts',
+      component: () => import('../views/Chart/LineChart/LineChart.vue'),
+      meta: { title: 'Charts' },
     },
     {
       path: '/line-chart',

@@ -81,18 +81,38 @@ class User extends Authenticatable
      */
     public function annexes(): BelongsToMany
     {
-        return $this->belongsToMany(Annexe::class, 'user_annexes')
-            ->withPivot(['role_id', 'is_principal', 'assigned_by', 'assigned_at', 'end_at']);
-    }
+    return $this->belongsToMany(
+        Annexe::class,
+        'user_annexes',
+        'user_id',
+        'annexe_id'
+    )->withPivot([
+        'role_id',
+        'is_principal',
+        'assigned_by',
+        'assigned_at',
+        'end_at'
+    ]);
+   }
+
 
     /**
      * Tous les rôles de l'utilisateur (via user_annexes)
      */
     public function roles(): BelongsToMany
-    {
-        return $this->belongsToMany(Role::class, 'user_annexes')
-            ->withPivot(['annexe_id', 'is_principal', 'assigned_by', 'assigned_at', 'end_at'])
-            ->withTimestamps();
+   {
+    return $this->belongsToMany(
+        Role::class,
+        'user_annexes',
+        'user_id',   
+        'role_id'    
+    )->withPivot([
+        'annexe_id',
+        'is_principal',
+        'assigned_by',
+        'assigned_at',
+        'end_at'
+    ]);
     }
 
     /**

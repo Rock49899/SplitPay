@@ -23,7 +23,9 @@ class UserController extends Controller
     public function index(Request $request)
     {
         $perPage = (int) $request->get('per_page', 15);
-        $query = User::query();
+
+        // eager load roles and annex relations so frontend can display them
+        $query = User::with(['roles', 'annexes', 'annexe']);
 
         if ($q = $request->get('q')) {
             $query->where(function($qr) use ($q) {
@@ -35,12 +37,25 @@ class UserController extends Controller
 
         return response()->json($query->orderBy('name')->paginate($perPage));
     }
+    
+   public function show($id)
+  {
+    $user = User::with([
+        'roles',
+        'annexes',
+        'annexe'
+    ])->findOrFail($id);
 
-    public function show($id)
-    {
-        $user = User::with(['roles','annexes'])->findOrFail($id);
-        return response()->json($user, 200);
-    }
+    return response()->json($user);
+  }
+
+
+
+    // public function show($id)
+    // {
+    //     $user = User::with(['roles','annexes'])->findOrFail($id);
+    //     return response()->json($user, 200);
+    // }
 
     public function store(StoreUserRequest $request)
     {
