@@ -53,6 +53,18 @@ const router = createRouter({
       meta: { title: 'Students' },
     },
     {
+      path: '/admin/students/:id',
+      name: 'StudentDetails',
+      component: () => import('../views/Students/StudentDetails.vue').catch(() => import('../views/Placeholders/PlaceholderPage.vue')),
+      meta: { title: 'Student details' },
+    },
+    {
+      path: '/admin/students/:id/finance',
+      name: 'StudentFinance',
+      component: () => import('../views/Students/StudentFinance.vue').catch(() => import('../views/Placeholders/PlaceholderPage.vue')),
+      meta: { title: 'Student finance' },
+    },
+    {
       path: '/admin/annexes',
       name: 'Annexes',
       component: () => import('../views/Annexes/AnnexeList.vue').catch(() => import('../views/Placeholders/PlaceholderPage.vue')),

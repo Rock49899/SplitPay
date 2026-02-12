@@ -1,0 +1,243 @@
+<template>
+  <AdminLayout>
+    <PageBreadcrumb :pageTitle="`Student: ${form.first_name || '...'} ${form.last_name || ''}`" />
+    <div class="space-y-5 sm:space-y-6">
+      <ComponentCard title="Student details">
+        <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">First name</label>
+            <template v-if="!editMode"><p class="mt-1 text-gray-900">{{ form.first_name || '—' }}</p></template>
+            <template v-else><input v-model="form.first_name" class="mt-1 block w-full rounded-md border px-3 py-2 text-white bg-gray-800" /></template>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Last name</label>
+            <template v-if="!editMode"><p class="mt-1 text-gray-900">{{ form.last_name || '—' }}</p></template>
+            <template v-else><input v-model="form.last_name" class="mt-1 block w-full rounded-md border px-3 py-2 text-white bg-gray-800" /></template>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Email</label>
+            <template v-if="!editMode"><p class="mt-1 text-gray-900">{{ form.email || '—' }}</p></template>
+            <template v-else><input v-model="form.email" class="mt-1 block w-full rounded-md border px-3 py-2 text-white bg-gray-800" /></template>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Phone</label>
+            <template v-if="!editMode"><p class="mt-1 text-gray-900">{{ form.phone || '—' }}</p></template>
+            <template v-else><input v-model="form.phone" class="mt-1 block w-full rounded-md border px-3 py-2 text-white bg-gray-800" /></template>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Birth date</label>
+            <template v-if="!editMode"><p class="mt-1 text-gray-900">{{ form.birth_date || '—' }}</p></template>
+            <template v-else><input v-model="form.birth_date" type="date" class="mt-1 block w-full rounded-md border px-3 py-2 text-white bg-gray-800" /></template>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Matricule</label>
+            <p class="mt-1 text-gray-900">{{ student?.matricule ?? '—' }}</p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Student No.</label>
+            <p class="mt-1 text-gray-900">{{ student?.student_number ?? '—' }}</p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Class / Section</label>
+            <p class="mt-1 text-gray-900">{{ student?.class_name ?? student?.class ?? '—' }}</p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Study Year</label>
+            <p class="mt-1 text-gray-900">{{ student?.study_year ?? '—' }}</p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Annexes</label>
+            <p class="mt-1 text-gray-900">{{ annexeNames(student) || 'No annexes' }}</p>
+          </div>
+        </div>
+
+        <!-- Financial summary card -->
+        <div class="mt-6">
+          <ComponentCard title="Financial summary">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div>
+                <div class="text-sm text-gray-500">Tuition</div>
+                <div class="font-semibold">{{ finance.tuition_amount ?? '-' }}</div>
+              </div>
+              <div>
+                <div class="text-sm text-gray-500">Paid</div>
+                <div class="font-semibold">{{ finance.amount_paid ?? 0 }}</div>
+              </div>
+              <div>
+                <div class="text-sm text-gray-500">Due</div>
+                <div class="font-semibold">{{ finance.amount_due ?? 0 }}</div>
+              </div>
+              <div>
+                <div class="text-sm text-gray-500">Last payment</div>
+                <div class="font-semibold">{{ finance.last_payment_date ?? '-' }}</div>
+              </div>
+            </div>
+
+            <div class="mt-4">
+              <button @click="createPaymentLink" class="px-4 py-2 bg-brand-500 text-white rounded">Create payment link</button>
+              <div v-if="paymentLink" class="mt-2">
+                <a :href="paymentLink" target="_blank" class="text-indigo-600 underline">{{ paymentLink }}</a>
+              </div>
+
+              <div v-if="payments.length" class="mt-4">
+                <h4 class="text-sm font-medium">Recent payments</h4>
+                <ul class="mt-2 space-y-2">
+                  <li v-for="p in payments" :key="p.id" class="text-sm text-gray-700">
+                    {{ p.amount }} — {{ new Date(p.created_at).toLocaleDateString() }}
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </ComponentCard>
+        </div>
+
+        <div class="mt-6 flex gap-3">
+            <button v-if="!editMode" @click="enterEdit" class="px-4 py-2 bg-brand-500 text-white rounded">Edit</button>
+            <button v-else @click="save" :disabled="saving" class="px-4 py-2 bg-brand-500 text-white rounded">Save</button>
+            <button v-if="editMode" @click="cancelEdit" class="px-4 py-2 border rounded">Cancel</button>
+            <button @click="toggleActiveStatus" class="px-3 py-2 border rounded">
+              {{ student?.is_active ? 'Deactivate' : 'Activate' }}
+            </button>
+            <router-link :to="`/admin/students/${id}/finance`" class="px-3 py-2 bg-indigo-600 text-white rounded">Finance</router-link>
+        </div>
+      </ComponentCard>
+      <div v-if="error" class="text-sm text-red-600 mt-2">{{ error }}</div>
+    </div>
+  </AdminLayout>
+</template>
+
+<script setup>
+import { ref, onMounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import AdminLayout from '@/components/layout/AdminLayout.vue';
+import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue';
+import ComponentCard from '@/components/common/ComponentCard.vue';
+import studentService from '@/services/studentService';
+import api from '@/services/api';
+
+const route = useRoute();
+const router = useRouter();
+const id = route.params.id;
+
+const student = ref(null);
+const form = ref({
+  first_name: '',
+  last_name: '',
+  email: '',
+  phone: '',
+  birth_date: '',
+});
+const finance = ref({});
+const payments = ref([]);
+const paymentLink = ref(null);
+const loading = ref(false);
+const saving = ref(false);
+const error = ref(null);
+const editMode = ref(false);
+
+const load = async () => {
+  loading.value = true;
+  error.value = null;
+  try {
+    const res = await studentService.show(id);
+    const payload = res.data;
+    const s = payload.student ?? payload.data ?? payload;
+    student.value = s;
+    form.value = {
+      first_name: s?.first_name ?? '',
+      last_name: s?.last_name ?? '',
+      email: s?.email ?? '',
+      phone: s?.phone ?? '',
+      birth_date: s?.birth_date ?? '',
+    };
+
+    // load financials
+    try {
+      const f = await studentService.financials(id);
+      finance.value = f.data?.data ?? f.data ?? {};
+      payments.value = finance.value.recent_payments ?? [];
+    } catch (err) {
+      finance.value = {};
+      payments.value = [];
+    }
+  } catch (e) {
+    const status = e?.response?.status;
+    if (status === 401) { router.push('/signin'); return; }
+    error.value = e.response?.data?.message || e.message || 'Failed to load student';
+  } finally {
+    loading.value = false;
+  }
+};
+
+const enterEdit = () => { editMode.value = true; };
+const cancelEdit = () => {
+  if (student.value) {
+    form.value = {
+      first_name: student.value.first_name ?? '',
+      last_name: student.value.last_name ?? '',
+      email: student.value.email ?? '',
+      phone: student.value.phone ?? '',
+      birth_date: student.value.birth_date ?? '',
+    };
+  }
+  editMode.value = false;
+};
+
+const save = async () => {
+  saving.value = true;
+  error.value = null;
+  try {
+    await studentService.update(id, form.value);
+    await load();
+    editMode.value = false;
+  } catch (e) {
+    error.value = e.response?.data?.message || e.message || 'Update failed';
+  } finally {
+    saving.value = false;
+  }
+};
+
+const toggleActiveStatus = async () => {
+  if (!student.value) return;
+  try {
+    await studentService.update(id, { is_active: !student.value.is_active });
+    await load();
+  } catch (e) {
+    console.error(e);
+    alert('Failed to toggle status');
+  }
+};
+
+const annexeNames = (s) => {
+  if (!s) return '';
+  if (Array.isArray(s.annexes) && s.annexes.length) return s.annexes.map(a => a.name ?? a.id).join(', ');
+  if (s.annexe) return s.annexe.name ?? s.annexe.id;
+  return '';
+};
+
+const createPaymentLink = async () => {
+  try {
+    const amount = finance.value.amount_due ?? finance.value.tuition_amount ?? 0;
+    const res = await studentService.createPaymentLink(id, { amount });
+    paymentLink.value = res.data?.link ?? res.data?.url ?? res.data;
+  } catch (e) {
+    console.error(e);
+    alert('Failed to create payment link');
+  }
+};
+
+onMounted(load);
+</script>
+
+<style scoped>
+/* minimal styles */
+</style>

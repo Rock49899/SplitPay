@@ -11,7 +11,11 @@ use App\Models\Student;
 
 class StudentController extends Controller
 {
- 
+    public function __construct()
+    {
+        $this->middleware('auth:sanctum');
+    }
+
     public function index(Request $request)
     {
         $perPage = (int) $request->get('per_page', 15);
@@ -63,10 +67,44 @@ class StudentController extends Controller
         return response()->json(['message' => 'Student created', 'student' => $student], 201);
     }
 
+    // Return a student with relations needed by frontend
     public function show($id)
     {
+        // eager load annex relations and payments (adjust relation names to your models)
+        $student = Student::with(['annexe','annexes','student_annexes.annexe','payments'])->findOrFail($id);
+        return response()->json(['student' => $student], 200);
+    }
+
+    public function financials($id)
+    {
+        $student = Student::with('payments')->findOrFail($id);
+
+        // compute summary (adjust fields according to your DB)
+        $payments = $student->payments ?? collect([]);
+        $amountPaid = $payments->sum('amount');
+        $tuition = $student->tuition_amount ?? 0;
+        $amountDue = max(0, $tuition - $amountPaid);
+        $lastPayment = $payments->sortByDesc('created_at')->first();
+
+        return response()->json([
+            'data' => [
+                'tuition_amount' => $tuition,
+                'amount_paid' => $amountPaid,
+                'amount_due' => $amountDue,
+                'last_payment_date' => $lastPayment ? $lastPayment->created_at->toDateString() : null,
+                'recent_payments' => $payments->sortByDesc('created_at')->take(10)->values(),
+            ]
+        ], 200);
+    }
+
+    // Optional: create payment link (backend implementation depends on payment provider)
+    public function createPaymentLink(Request $request, $id)
+    {
         $student = Student::findOrFail($id);
-        return response()->json($student, 200);
+        $data = $request->validate(['amount' => 'required|numeric|min:0']);
+        // implement provider logic; here we return a dummy link for frontend
+        $link = url("/pay/student/{$student->id}?amount={$data['amount']}");
+        return response()->json(['link' => $link], 201);
     }
 
     public function update(UpdateStudentRequest $request, $id)
