@@ -42,7 +42,7 @@
                 </p>
               </div>
               <div>
-                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-5">
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols sm:gap-5">
                   <button
                     class="inline-flex items-center justify-center gap-3 py-3 text-sm font-normal text-gray-700 transition-colors bg-gray-100 rounded-lg px-7 hover:bg-gray-200 hover:text-gray-800 dark:bg-white/5 dark:text-white/90 dark:hover:bg-white/10"
                   >
@@ -72,24 +72,7 @@
                     </svg>
                     Sign in with Google
                   </button>
-                  <button
-                    class="inline-flex items-center justify-center gap-3 py-3 text-sm font-normal text-gray-700 transition-colors bg-gray-100 rounded-lg px-7 hover:bg-gray-200 hover:text-gray-800 dark:bg-white/5 dark:text-white/90 dark:hover:bg-white/10"
-                  >
-                    <svg
-                      width="21"
-                      class="fill-current"
-                      height="20"
-                      viewBox="0 0 21 20"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M15.6705 1.875H18.4272L12.4047 8.75833L19.4897 18.125H13.9422L9.59717 12.4442L4.62554 18.125H1.86721L8.30887 10.7625L1.51221 1.875H7.20054L11.128 7.0675L15.6705 1.875ZM14.703 16.475H16.2305L6.37054 3.43833H4.73137L14.703 16.475Z"
-                      />
-                    </svg>
-
-                    Sign in with X
-                  </button>
+                
                 </div>
                 <div class="relative py-3 sm:py-5">
                   <div class="absolute inset-0 flex items-center">
@@ -261,11 +244,8 @@
             <common-grid-shape />
             <div class="flex flex-col items-center max-w-xs">
               <router-link to="/" class="block mb-4">
-                <img width="{231}" height="{48}" src="/images/logo/auth-logo.svg" alt="Logo" />
+                <span class="text-8xl font-extrabold tracking-tight text-white dark:text-white">SplitPay</span>
               </router-link>
-              <p class="text-center text-gray-400 dark:text-white/60">
-                Free and Open-Source Tailwind CSS Admin Dashboard Template
-              </p>
             </div>
           </div>
         </div>

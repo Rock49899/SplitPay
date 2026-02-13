@@ -1,7 +1,7 @@
 <template>
   <AdminLayout>
     <PageBreadcrumb pageTitle="My profile" />
-    <div class="p-6 space-y-6">
+    <div class=" space-y-6">
       <ProfileCard />
       <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <PersonalInfoCard />

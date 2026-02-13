@@ -3,9 +3,10 @@
     :class="[
       'fixed mt-16 flex flex-col lg:mt-0 top-0 px-5 left-0 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 h-screen transition-all duration-300 ease-in-out z-99999 border-r border-gray-200',
       {
-        'lg:w-[290px]': isExpanded || isMobileOpen || isHovered,
+        // small screens: allow full width when mobile menu open, keep 290px on sm+
+        'sm:lg:w-[290px] lg:w-[290px]': isExpanded || isMobileOpen || isHovered,
         'lg:w-[90px]': !isExpanded && !isHovered,
-        'translate-x-0 w-[290px]': isMobileOpen,
+        'translate-x-0 w-full sm:w-[290px]': isMobileOpen,
         '-translate-x-full': !isMobileOpen,
         'lg:translate-x-0': true,
       },
@@ -19,30 +20,21 @@
         !isExpanded && !isHovered ? 'lg:justify-center' : 'justify-start',
       ]"
     >
-      <router-link to="/">
-        <img
+      <router-link to="/" class="flex items-center">
+        <span
           v-if="isExpanded || isHovered || isMobileOpen"
-          class="dark:hidden"
-          src="/images/logo/logo.svg"
-          alt="Logo"
-          width="150"
-          height="40"
-        />
-        <img
-          v-if="isExpanded || isHovered || isMobileOpen"
-          class="hidden dark:block"
-          src="/images/logo/logo-dark.svg"
-          alt="Logo"
-          width="150"
-          height="40"
-        />
-        <img
+          class="text-xl sm:text-2xl lg:text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white overflow-hidden truncate max-w-full"
+        >
+          SplitPay
+        </span>
+        <!-- badge compact quand sidebar réduite -->
+        <span
           v-else
-          src="/images/logo/logo-icon.svg"
-          alt="Logo"
-          width="32"
-          height="32"
-        />
+          class="inline-flex items-center justify-center h-8 w-8 rounded bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-bold"
+          aria-hidden="true"
+        >
+          SP
+        </span>
       </router-link>
     </div>
     <div
@@ -206,7 +198,7 @@
           </div>
         </div>
       </nav>
-      <SidebarWidget v-if="isExpanded || isHovered || isMobileOpen" />
+      <!-- <SidebarWidget v-if="isExpanded || isHovered || isMobileOpen" /> -->
     </div>
   </aside>
 </template>
@@ -230,7 +222,7 @@ import {
   ListIcon,
   PlugInIcon,
 } from "../../icons";
-import SidebarWidget from "./SidebarWidget.vue";
+// import SidebarWidget from "./SidebarWidget.vue";
 import BoxCubeIcon from "@/icons/BoxCubeIcon.vue";
 import { useSidebar } from "@/composables/useSidebar";
 
@@ -270,7 +262,7 @@ const menuGroups = [
       },
       {
         icon: PieChartIcon,
-        name: "Finances",
+        name: "Payments",
         path: "/finances",
       },
       {

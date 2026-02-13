@@ -82,22 +82,35 @@ const closeDropdown = () => { dropdownOpen.value = false }
 
 // essayer plusieurs endpoints pour récupérer l'utilisateur courant
 const tryUrls = ['admin/me', 'me', 'user']
+
+// vérifie si l'utilisateur semble authentifié côté client (simple check token)
+const hasAuth = () => {
+	// adapter si vous stockez le token ailleurs (cookie, vuex, pinia...)
+	try {
+		return !!localStorage.getItem('token')
+	} catch {
+		return false
+	}
+}
+
 const fetchCurrentUser = async () => {
-  for (const u of tryUrls) {
-    try {
-      const res = await api.get(u)
-      if (res && res.status >= 200 && res.status < 300) {
-        const payload = res.data?.user ?? res.data ?? res.data?.data ?? {}
-        user.value.name = payload.name ?? payload.first_name ?? payload.username ?? ''
-        user.value.email = payload.email ?? ''
-        user.value.avatar_url = payload.avatar_url ?? payload.avatar ?? ''
-        return
-      }
-    } catch (err) {
-      // essayer le prochain endpoint
-    }
-  }
-  // si aucun endpoint ne répond, on reste en fallback silencieux
+	// ne pas appeler les endpoints si pas authentifié
+	if (!hasAuth()) return
+	for (const u of tryUrls) {
+		try {
+			const res = await api.get(u)
+			if (res && res.status >= 200 && res.status < 300) {
+				const payload = res.data?.user ?? res.data ?? res.data?.data ?? {}
+				user.value.name = payload.name ?? payload.first_name ?? payload.username ?? ''
+				user.value.email = payload.email ?? ''
+				user.value.avatar_url = payload.avatar_url ?? payload.avatar ?? ''
+				return
+			}
+		} catch (err) {
+			// essayer le prochain endpoint — on évite d'afficher l'erreur ici
+		}
+	}
+	// si aucun endpoint ne répond, on reste en fallback silencieux
 }
 
 // déconnecter l'utilisateur : essayer plusieurs endpoints, puis nettoyer le client
@@ -131,7 +144,8 @@ const handleClickOutside = (event) => {
 
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
-  fetchCurrentUser() // charger l'utilisateur au montage
+  // n'appeler fetchCurrentUser que si on a un token local (évite 401/404 console)
+  if (hasAuth()) fetchCurrentUser()
 })
 
 onUnmounted(() => {
