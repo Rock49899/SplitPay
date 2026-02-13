@@ -9,6 +9,8 @@ use App\Models\User;
 use App\Models\Role;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\QueryException;
 
 class UserController extends Controller
 {
@@ -16,26 +18,88 @@ class UserController extends Controller
     {
         // protéger ces routes : requiert authentification API (Sanctum)
         $this->middleware('auth:sanctum');
-        // NOTE: appliquer une policy/middleware pour restreindre ces actions aux rôles appropriés
-        // Ex: only users with 'super_admin_institution' or 'gestionnaire' can accéder ici.
-    }
+            }
 
     public function index(Request $request)
     {
         $perPage = (int) $request->get('per_page', 15);
 
-        // eager load roles and annex relations so frontend can display them
-        $query = User::with(['roles', 'annexes', 'annexe']);
+        $query = User::query();
 
-        if ($q = $request->get('q')) {
-            $query->where(function($qr) use ($q) {
-                $qr->where('name','like',"%{$q}%")
-                   ->orWhere('email','like',"%{$q}%")
-                   ->orWhere('phone','like',"%{$q}%");
-            });
+        try {
+            // read raw search and ignore empty strings
+            $raw = $request->get('search') ?? $request->get('q');
+            $search = (is_string($raw) && strlen(trim($raw))) ? trim($raw) : null;
+
+            if ($search) {
+                $searchable = ['name','email','phone'];
+                $available = array_filter($searchable, function ($col) {
+                    return Schema::hasColumn('users', $col);
+                });
+                $available = array_values($available);
+
+                $userModel = new User();
+                $hasAnnexeRel = method_exists($userModel, 'annexe') || method_exists($userModel, 'annexes');
+
+                if (count($available) || $hasAnnexeRel) {
+                    $query->where(function ($q) use ($available, $search, $hasAnnexeRel) {
+                        foreach ($available as $col) {
+                            $q->orWhere($col, 'like', "%{$search}%");
+                        }
+                        // relation search only if relation exists on the model
+                        if ($hasAnnexeRel) {
+                            // try singular 'annexe' relation first, fallback to 'annexes'
+                            if (method_exists(new User(), 'annexe')) {
+                                $q->orWhereHas('annexe', function ($qa) use ($search) {
+                                    $qa->where('name', 'like', "%{$search}%");
+                                });
+                            } elseif (method_exists(new User(), 'annexes')) {
+                                $q->orWhereHas('annexes', function ($qa) use ($search) {
+                                    $qa->where('name', 'like', "%{$search}%");
+                                });
+                            }
+                        }
+                    });
+                }
+            }
+
+            // optional filters (annexe_id etc.)
+            if ($annexeId = $request->get('annexe_id')) {
+                $query->where('annexe_id', $annexeId);
+            }
+
+            // eager-load only relations that exist on the model
+            $with = [];
+            $userModel = new User();
+            if (method_exists($userModel, 'annexes')) $with[] = 'annexes';
+            if (method_exists($userModel, 'user_annexes')) $with[] = 'user_annexes';
+            if (method_exists($userModel, 'roles')) $with[] = 'roles';
+            if (method_exists($userModel, 'annexe')) $with[] = 'annexe';
+            // apply if any
+            if (count($with)) {
+                $query = $query->with($with);
+            }
+
+            // safe order by: prefer name if column exists
+            if (Schema::hasColumn('users', 'name')) {
+                $orderBy = 'name';
+            } elseif (Schema::hasColumn('users', 'created_at')) {
+                $orderBy = 'created_at';
+            } else {
+                $orderBy = 'id';
+            }
+
+            $users = $query->orderBy($orderBy)->paginate($perPage);
+
+            return response()->json($users, 200);
+        } catch (\Throwable $e) {
+            \Log::error('UserController@index failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'request' => $request->all(),
+            ]);
+            return response()->json(['message' => 'Failed to fetch users.'], 500);
         }
-
-        return response()->json($query->orderBy('name')->paginate($perPage));
     }
     
    public function show($id)

@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
-
+use App\Http\Controllers\Api\StudentController;
 
 // Route::any('register-debug', function (Request $request) {
 //     return response()->json([
@@ -43,6 +43,8 @@ Route::middleware('auth:sanctum')->prefix('admin')->group(function () {
     Route::get('roles', [\App\Http\Controllers\Api\RoleController::class, 'index']);
 
     Route::apiResource('students', \App\Http\Controllers\Api\StudentController::class);
+    Route::get('students/{id}/financials', [StudentController::class, 'financials']);
+    Route::post('students/{id}/payment-link', [StudentController::class, 'createPaymentLink']);
     Route::apiResource('institutions', \App\Http\Controllers\Api\InstitutionController::class);
     Route::get('institutions/{id}/annexes', [\App\Http\Controllers\Api\InstitutionController::class, 'annexes']);
     Route::apiResource('annexes', \App\Http\Controllers\Api\AnnexeController::class);

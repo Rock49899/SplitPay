@@ -15,7 +15,8 @@ export const useStudentStore = defineStore('students', {
       this.loading = true;
       this.error = null;
       try {
-        const p = { page: this.page, q: this.query, ...params };
+        // use "search" query param to match backend
+        const p = { page: this.page, search: this.query, ...params };
         const res = await studentService.index(p);
         this.items = res.data.data ?? res.data;
         this.meta = res.data.meta ?? {};

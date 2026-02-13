@@ -8,6 +8,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Builder;
+use App\Models\Annexe;
+use App\Models\PaymentLinks;
+use App\Models\Payment;
 
 class Student extends Model
 {
@@ -86,7 +89,7 @@ class Student extends Model
     /**
      * Tous les paiements de cet étudiant (via installments)
      */
-    public function payments()
+    public function paymentsQuery()
     {
         return Payment::whereHas('installment.paymentLink', function ($query) {
             $query->where('student_id', $this->id);

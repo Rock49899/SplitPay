@@ -248,11 +248,6 @@ const menuGroups = [
         path: "/", 
       },
       {
-        icon: CalenderIcon,
-        name: "Calendar",
-        path: "/calendar",
-      },
-      {
         icon: UserCircleIcon,
         name: "User Profile",
         path: "/profile",
@@ -294,18 +289,7 @@ const menuGroups = [
         name: "Charts",
         path: "/charts", 
       },
-      {
-        icon: BoxCubeIcon,
-        name: "Ui Elements",
-        subItems: [
-          { name: "Alerts", path: "/alerts", pro: false },
-          { name: "Avatars", path: "/avatars", pro: false },
-          { name: "Badge", path: "/badge", pro: false },
-          { name: "Buttons", path: "/buttons", pro: false },
-          { name: "Images", path: "/images", pro: false },
-          { name: "Videos", path: "/videos", pro: false },
-        ],
-      },
+
       {
         icon: PlugInIcon,
         name: "Authentication",
@@ -314,7 +298,6 @@ const menuGroups = [
           { name: "Signup", path: "/signup", pro: false },
         ],
       },
-      // ... Add other menu items here
     ],
   },
 ];

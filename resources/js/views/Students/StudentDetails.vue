@@ -28,21 +28,21 @@
             <template v-else><input v-model="form.phone" class="mt-1 block w-full rounded-md border px-3 py-2 text-white bg-gray-800" /></template>
           </div>
 
-          <div>
+          <!-- <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Birth date</label>
             <template v-if="!editMode"><p class="mt-1 text-gray-900">{{ form.birth_date || '—' }}</p></template>
             <template v-else><input v-model="form.birth_date" type="date" class="mt-1 block w-full rounded-md border px-3 py-2 text-white bg-gray-800" /></template>
-          </div>
+          </div> -->
 
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Matricule</label>
             <p class="mt-1 text-gray-900">{{ student?.matricule ?? '—' }}</p>
           </div>
 
-          <div>
+          <!-- <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Student No.</label>
             <p class="mt-1 text-gray-900">{{ student?.student_number ?? '—' }}</p>
-          </div>
+          </div> -->
 
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Class / Section</label>
@@ -51,7 +51,7 @@
 
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Study Year</label>
-            <p class="mt-1 text-gray-900">{{ student?.study_year ?? '—' }}</p>
+            <p class="mt-1 text-gray-900">{{ form.study_year ?? '—' }}</p>
           </div>
 
           <div>
@@ -122,7 +122,6 @@ import AdminLayout from '@/components/layout/AdminLayout.vue';
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue';
 import ComponentCard from '@/components/common/ComponentCard.vue';
 import studentService from '@/services/studentService';
-import api from '@/services/api';
 
 const route = useRoute();
 const router = useRouter();
@@ -134,7 +133,6 @@ const form = ref({
   last_name: '',
   email: '',
   phone: '',
-  birth_date: '',
 });
 const finance = ref({});
 const payments = ref([]);
@@ -157,7 +155,6 @@ const load = async () => {
       last_name: s?.last_name ?? '',
       email: s?.email ?? '',
       phone: s?.phone ?? '',
-      birth_date: s?.birth_date ?? '',
     };
 
     // load financials
@@ -186,7 +183,6 @@ const cancelEdit = () => {
       last_name: student.value.last_name ?? '',
       email: student.value.email ?? '',
       phone: student.value.phone ?? '',
-      birth_date: student.value.birth_date ?? '',
     };
   }
   editMode.value = false;

@@ -17,7 +17,7 @@
     />
 
     <div class="space-y-5 sm:space-y-6">
-      <ComponentCard v-for="(studentsInAnnexe, annexeName) in groupedByAnnexe" :key="annexeName" :title="`Students — ${annexeName}`">
+      <ComponentCard :title="`${annexeName}`" v-for="(studentsInAnnexe, annexeName) in groupedByAnnexe" :key="annexeName" >
         <div class="overflow-x-auto">
           <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
@@ -76,7 +76,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import AdminLayout from '@/components/layout/AdminLayout.vue';
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue';
 import ComponentCard from '@/components/common/ComponentCard.vue';
@@ -84,7 +84,7 @@ import CreateStudent from '@/components/students/CreateStudent.vue';
 import StudentColumnsSelector from '@/components/students/StudentColumnsSelector.vue';
 import { useStudentStore } from '@/stores/useStudentStore';
 import studentService from '@/services/studentService';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { useAnnexeStore } from '@/stores/useAnnexeStore';
 const annexeStore = useAnnexeStore();
 
@@ -92,6 +92,7 @@ const currentPageTitle = ref('Students');
 const students = useStudentStore();
 students.page = students.page || 1;
 const router = useRouter();
+const route = useRoute();
 
 const showCreateModal = ref(false);
 const showCols = ref(false);
@@ -99,16 +100,36 @@ const annexes = ref([]);
 
 onMounted(async () => {
   try {
-    await students.fetchStudents();
-    await enrichStudents(); // <-- enrich after initial fetch
+    // load annexes first so enrichStudents can map annexe_id -> annexe.name
     await annexeStore.fetchAnnexes();
     annexes.value = annexeStore.items;
+    students.setQuery(route.query.search ?? '');
+    await students.fetchStudents();
+    await enrichStudents(); // enrich now that annexes are available
   } catch (e) {
     const status = e?.response?.status;
     if (status === 401) { router.push('/signin'); return; }
     console.error('Failed fetching students', e);
   }
 });
+
+// react to URL search param changes
+watch(
+  () => route.query.search,
+  async (newSearch) => {
+    try {
+      students.setQuery(newSearch ?? '');
+      students.setPage(1);
+      await students.fetchStudents();
+      await enrichStudents();
+    } catch (e) {
+      console.error('Search fetch failed', e);
+      // optional: show a brief user-friendly message
+      alert('Search failed. Please try again or check the server logs.');
+    }
+  },
+  { immediate: false }
+);
 
 const availableColumns = [
   { key: 'name', label: 'Name' },
@@ -123,13 +144,12 @@ const availableColumns = [
 // default visible
 const visibleColumns = ref(['name','matricule','student_number','annexes','class','year','status']);
 
-// helper: return comma-joined annex names for a student (primary first)
 const annexeNames = (s) => {
-  if (!s) return '';
-  if (Array.isArray(s.student_annexes) && s.student_annexes.length) {
-    return s.student_annexes.map(sa => sa.annexe?.name ?? sa.annexe_name).filter(Boolean).join(', ');
-  }
-  if (Array.isArray(s.annexes)) return s.annexes.map(a=>a.name).filter(Boolean).join(', ');
+  // if (!s) return '';
+  // if (Array.isArray(s.student_annexes) && s.student_annexes.length) {
+  //   return s.student_annexes.map(sa => sa.annexe?.name ?? sa.annexe_name).filter(Boolean).join(', ');
+  // }
+  // if (Array.isArray(s.annexes)) return s.annexes.map(a=>a.name).filter(Boolean).join(', ');
   if (s.annexe) return s.annexe.name ?? s.annexe.id;
   return '';
 };
@@ -151,7 +171,6 @@ const groupedByAnnexe = computed(() => {
   return map;
 });
 
-// new: enrich students items by fetching detail for each student (adds annexes, study_year, matricule, etc.)
 const enrichStudents = async () => {
   const items = students.items ?? [];
   if (!items.length) return;
@@ -160,14 +179,17 @@ const enrichStudents = async () => {
     // merge back important fields
     const merged = items.map((s, i) => {
       const d = details[i] || {};
+      const annId = d.annexe_id ?? d.annexe?.id ?? s.annexe_id ?? s.annexe?.id ?? null;
+      const annFromStore = annId ? (annexeStore.items || []).find(a => String(a.id) === String(annId)) : null;
+      const annObj = d.annexe ?? annFromStore ?? s.annexe ?? null;
       return {
         ...s,
         matricule: s.matricule ?? d.matricule ?? null,
         student_number: s.student_number ?? d.student_number ?? null,
         class_name: s.class_name ?? d.class_name ?? d.class ?? null,
-        study_year: s.study_year ?? d.study_year ?? null,
-        annexes: s.annexes ?? d.annexes ?? (d.student_annexes ? d.student_annexes.map(sa => sa.annexe ?? { id: sa.annexe_id, name: sa.annexe_name }) : []),
-        student_annexes: s.student_annexes ?? d.student_annexes ?? d.user_annexes ?? [],
+        study_year: s.school_year ?? d.school_year ?? d.study_year ?? null,
+        annexe: annObj,
+        annexes: Array.isArray(d.annexes) ? d.annexes : (annObj ? [annObj] : (s.annexes ?? [])),
       };
     });
     // update store items (reactive)

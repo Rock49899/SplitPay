@@ -170,7 +170,12 @@ import { useAnnexeStore } from '@/stores/useAnnexeStore';
 const roleStore = useRoleStore();
 const annexeStore = useAnnexeStore();
 
-const id = route.params.id;
+// defensive initialization: avoid runtime ReferenceError if useRoute/useRouter not available
+const _route = typeof useRoute === 'function' ? useRoute() : { params: {} };
+const _router = typeof useRouter === 'function' ? useRouter() : { push: () => {} };
+const route = _route;
+const router = _router;
+const id = route?.params?.id ?? null;
 
 const user = ref(null);
 const originalUser = ref(null);

@@ -50,8 +50,6 @@ class AuthController extends Controller
 
         $token = $user->createToken('auth-token')->plainTextToken;
 
-        // dump('Connexion reussie pour: ' . $user->email);
-
         return response()->json([
             'message' => 'Connexion reussie',
             'user' => [

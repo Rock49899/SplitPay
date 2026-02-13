@@ -54,14 +54,24 @@ const error = ref(null);
 const load = async () => {
   loading.value = true;
   try {
-    const [sRes, fRes] = await Promise.all([
-      studentService.show(id),
-      api.get(`admin/students/${id}/financials`).catch(() => ({ data: {} })),
-    ]);
-    student.value = (sRes.data?.student ?? sRes.data) || null;
-    finance.value = fRes.data?.data ?? fRes.data ?? {};
+    console.log('Loading student finance for id:', id);
+    const sRes = await studentService.show(id);
+    console.log('studentService.show response:', sRes);
+    const s = sRes.data?.student ?? sRes.data ?? {};
+    console.log('Normalized student object:', s);
+    student.value = s || null;
+    // extraire les champs financiers depuis l'enregistrement student
+    const tuition = s.tuition_amount ?? null;
+    const paid = s.amount_paid ?? 0;
+    finance.value = {
+      tuition_amount: tuition,
+      amount_paid: paid,
+      amount_due: (typeof tuition === 'number' ? Math.max(0, tuition - (paid || 0)) : null),
+      // last_payment_date: s.last_payment_date ?? s.last_payment_at ?? null,
+    };
+    console.log('Computed finance:', finance.value);
   } catch (e) {
-    console.error(e);
+    console.error('Failed to load finance', e);
     error.value = 'Failed to load finance';
   } finally {
     loading.value = false;
@@ -70,10 +80,13 @@ const load = async () => {
 
 const createPaymentLink = async () => {
   try {
-    const res = await api.post(`admin/students/${id}/payment-link`, { amount: finance.value.amount_due ?? finance.value.tuition_amount ?? 0 });
-    paymentLink.value = res.data?.link ?? res.data?.url ?? res.data;
+    const amount = finance.value.amount_due ?? finance.value.tuition_amount ?? 0;
+    console.log('Requesting payment link for amount:', amount);
+    const res = await studentService.createPaymentLink(id, { amount });
+    console.log('Payment link response:', res);
+    paymentLink.value = res.data?.link ?? res.data?.url ?? res.data?.link_url ?? res.data;
   } catch (e) {
-    console.error(e);
+    console.error('Failed to create payment link', e);
     alert('Failed to create payment link');
   }
 };

@@ -1,12 +1,12 @@
 <template>
   <AdminLayout>
     <PageBreadcrumb :pageTitle="currentPageTitle" />
-    <div class="flex justify-end mb-4">
+    <div class="flex justify-start mb-4">
       <button @click="showCreateModal = true" class="px-4 py-2 bg-brand-500 text-white rounded">Create User</button>
     </div>
     <CreateUser v-if="showCreateModal" :roles="roles" :annexes="annexes" @created="onCreated" @close="showCreateModal = false" />
     <div class="space-y-5 sm:space-y-6">
-      <ComponentCard v-for="(usersInAnnexe, annexeName) in groupedByAnnexe" :key="annexeName" :title="`Users — ${annexeName}`">
+      <ComponentCard v-for="(usersInAnnexe, annexeName) in groupedByAnnexe" :key="annexeName" :title="`${annexeName}`">
         <div class="overflow-x-auto">
           <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
@@ -61,12 +61,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, watch, computed } from 'vue';
 import PageBreadcrumb from "@/components/common/PageBreadcrumb.vue";
 import AdminLayout from "@/components/layout/AdminLayout.vue";
 import ComponentCard from "@/components/common/ComponentCard.vue";
 import { useUserStore } from "@/stores/useUserStore";
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import CreateUser from '@/components/user/CreateUser.vue';
 import roleService from '@/services/roleService';
 import annexeService from '@/services/annexeService';
@@ -74,6 +74,7 @@ import annexeService from '@/services/annexeService';
 const currentPageTitle = ref("Users");
 const users = useUserStore();
 const router = useRouter();
+const route = useRoute();
 
 // modal + lookup state
 const showCreateModal = ref(false);
@@ -85,6 +86,7 @@ users.page = users.page || 1;
 
 onMounted(async () => {
   try {
+    users.setQuery(route.query.search ?? '');
     await users.fetchUsers();
     // load roles & annexes used by modal
     try {
@@ -96,7 +98,6 @@ onMounted(async () => {
       annexes.value = ar.data?.data ?? ar.data ?? [];
     } catch (e) { console.error('annexes load', e); }
   } catch (e) {
-    // if unauthorized, redirect to signin; otherwise rethrow/log
     const status = e?.response?.status;
     if (status === 401) {
       router.push('/signin');
@@ -105,6 +106,23 @@ onMounted(async () => {
     console.error('Failed fetching users', e);
   }
 });
+
+// NEW: react to URL search param changes (live search)
+watch(
+  () => route.query.search,
+  async (newSearch) => {
+    try {
+      users.setQuery(newSearch ?? '');
+      users.setPage(1);
+      await users.fetchUsers();
+    } catch (e) {
+      console.error('Users search fetch failed', e);
+      // optional: user message
+      // alert('Search failed. Please try again or check server logs.');
+    }
+  },
+  { immediate: false }
+);
 
 const onCreated = async (created) => {
   // refresh list after new user created
@@ -165,10 +183,25 @@ const annexeNames = (u) => {
     const primaryFirst = [...u.annexes].sort((a,b) => (b.is_primary ? 1:0) - (a.is_primary ? 1:0));
     return primaryFirst.map(a => a.name ?? a.id).filter(Boolean).join(', ');
   }
+
   // single annexe relation
   if (u.annexe && (u.annexe.name || u.annexe.id)) {
     return u.annexe.name ?? u.annexe.id;
   }
+
+  if (u.annexe_id) {
+    const found = (annexes || []).find?.(a => String(a.id) === String(u.annexe_id));
+    if (found) return found.name ?? found.id;
+  }
+
+  if (Array.isArray(u.annexe_ids) && u.annexe_ids.length) {
+    const names = u.annexe_ids.map(id => {
+      const f = (annexes || []).find?.(a => String(a.id) === String(id));
+      return f ? (f.name ?? f.id) : null;
+    }).filter(Boolean);
+    if (names.length) return [...new Set(names)].join(', ');
+  }
+
   return '';
 };
 

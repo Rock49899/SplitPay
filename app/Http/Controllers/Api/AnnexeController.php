@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use App\Models\Annexe;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\QueryException;
 
 class AnnexeController extends Controller
 {
@@ -20,15 +22,59 @@ class AnnexeController extends Controller
         $perPage = (int) $request->get('per_page', 15);
         $query = Annexe::query();
 
-        if ($institutionId = $request->get('institution_id')) {
-            $query->where('institution_id', $institutionId);
-        }
+        try {
+            // normalize search (ignore empty strings)
+            $raw = $request->get('search') ?? $request->get('q');
+            $search = (is_string($raw) && strlen(trim($raw))) ? trim($raw) : null;
 
-        if ($name = $request->get('name')) {
-            $query->where('name', 'like', "%{$name}%");
-        }
+            // determine searchable columns that actually exist
+            if ($search) {
+                $searchable = ['name', 'code', 'email', 'phone', 'city'];
+                $available = array_values(array_filter($searchable, function ($col) {
+                    return Schema::hasColumn('annexes', $col);
+                }));
 
-        return response()->json($query->orderBy('name')->paginate($perPage), 200);
+                // relation existence checks
+                $annexeModel = new Annexe();
+                $hasManagerRel = method_exists($annexeModel, 'manager');
+                $hasUserAnnexesRel = method_exists($annexeModel, 'user_annexes');
+
+                if (count($available) || $hasManagerRel) {
+                    $query->where(function ($q) use ($available, $search, $hasManagerRel) {
+                        foreach ($available as $col) {
+                            $q->orWhere($col, 'like', "%{$search}%");
+                        }
+                        if ($hasManagerRel) {
+                            $q->orWhereHas('manager', function ($qa) use ($search) {
+                                $qa->where('name', 'like', "%{$search}%")
+                                   ->orWhere('email', 'like', "%{$search}%");
+                            });
+                        }
+                    });
+                }
+            }
+
+            $with = [];
+            $annexeModel = new Annexe();
+            if (method_exists($annexeModel, 'manager')) $with[] = 'manager';
+            if (method_exists($annexeModel, 'user_annexes')) {
+                // nested relations are added only if pivot relation exists
+                $with[] = 'user_annexes.role';
+                $with[] = 'user_annexes.user';
+            }
+            if (count($with)) $query = $query->with($with);
+
+            $annexes = $query->orderBy('name')->paginate($perPage);
+
+            return response()->json($annexes, 200);
+        } catch (QueryException $e) {
+            \Log::error('AnnexeController@index query failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'request' => $request->all(),
+            ]);
+            return response()->json(['message' => 'Failed to fetch annexes.'], 500);
+        }
     }
 
     // POST /api/admin/annexes
@@ -49,7 +95,8 @@ class AnnexeController extends Controller
     // GET /api/admin/annexes/{id}
     public function show($id)
     {
-        $annexe = Annexe::findOrFail($id);
+        // include manager & pivot info
+        $annexe = Annexe::with(['user_annexes.role', 'user_annexes.user'])->findOrFail($id);
         return response()->json($annexe, 200);
     }
 

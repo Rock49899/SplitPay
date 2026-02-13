@@ -15,7 +15,8 @@ export const useUserStore = defineStore('users', {
       this.loading = true;
       this.error = null;
       try {
-        const p = { page: this.page, q: this.query, ...params };
+        // send "search" param to backend (not "q")
+        const p = { page: this.page, search: this.query, ...params };
         const res = await userService.index(p);
         // expected response: paginated -> data + meta (adjust if backend differs)
         this.items = res.data.data ?? res.data; 

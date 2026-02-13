@@ -5,10 +5,10 @@
       @click.prevent="toggleDropdown"
     >
       <span class="mr-3 overflow-hidden rounded-full h-11 w-11">
-        <img src="/images/user/owner.jpg" alt="User" />
+        <img :src="user.avatar_url || '/images/user/owner.jpg'" alt="User" />
       </span>
 
-      <span class="block mr-1 font-medium text-theme-sm">Musharof </span>
+      <span class="block mr-1 font-medium text-theme-sm">{{ user.name || 'User' }}</span>
 
       <ChevronDownIcon :class="{ 'rotate-180': dropdownOpen }" />
     </button>
@@ -20,10 +20,10 @@
     >
       <div>
         <span class="block font-medium text-gray-700 text-theme-sm dark:text-gray-400">
-          Musharof Chowdhury
+          {{ user.name || '—' }}
         </span>
         <span class="mt-0.5 block text-theme-xs text-gray-500 dark:text-gray-400">
-          randomuser@pimjo.com
+          {{ user.email || '—' }}
         </span>
       </div>
 
@@ -32,8 +32,8 @@
           <router-link
             :to="item.href"
             class="flex items-center gap-3 px-3 py-2 font-medium text-gray-700 rounded-lg group text-theme-sm hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300"
+            @click="closeDropdown"
           >
-            <!-- SVG icon would go here -->
             <component
               :is="item.icon"
               class="text-gray-500 group-hover:text-gray-700 dark:group-hover:text-gray-300"
@@ -42,8 +42,7 @@
           </router-link>
         </li>
       </ul>
-      <router-link
-        to="/signin"
+      <button
         @click="signOut"
         class="flex items-center gap-3 px-3 py-2 mt-3 font-medium text-gray-700 rounded-lg group text-theme-sm hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300"
       >
@@ -51,40 +50,79 @@
           class="text-gray-500 group-hover:text-gray-700 dark:group-hover:text-gray-300"
         />
         Sign out
-      </router-link>
+      </button>
     </div>
     <!-- Dropdown End -->
   </div>
 </template>
 
 <script setup>
+// filepath: /home/rock/PIEUVRE/Saas-schooling-project/resources/js/components/layout/header/UserMenu.vue
 import { UserCircleIcon, ChevronDownIcon, LogoutIcon, SettingsIcon, InfoCircleIcon } from '@/icons'
-import { RouterLink } from 'vue-router'
 import { ref, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
+import api from '@/services/api'
 
+const router = useRouter()
 const dropdownOpen = ref(false)
 const dropdownRef = ref(null)
 
+// données de l'utilisateur connecté
+const user = ref({ name: '', email: '', avatar_url: '' })
+
+// éléments du menu
 const menuItems = [
   { href: '/profile', icon: UserCircleIcon, text: 'Edit profile' },
   { href: '/chat', icon: SettingsIcon, text: 'Account settings' },
   { href: '/profile', icon: InfoCircleIcon, text: 'Support' },
 ]
 
-const toggleDropdown = () => {
-  dropdownOpen.value = !dropdownOpen.value
+const toggleDropdown = () => { dropdownOpen.value = !dropdownOpen.value }
+const closeDropdown = () => { dropdownOpen.value = false }
+
+// essayer plusieurs endpoints pour récupérer l'utilisateur courant
+const tryUrls = ['admin/me', 'me', 'user']
+const fetchCurrentUser = async () => {
+  for (const u of tryUrls) {
+    try {
+      const res = await api.get(u)
+      if (res && res.status >= 200 && res.status < 300) {
+        const payload = res.data?.user ?? res.data ?? res.data?.data ?? {}
+        user.value.name = payload.name ?? payload.first_name ?? payload.username ?? ''
+        user.value.email = payload.email ?? ''
+        user.value.avatar_url = payload.avatar_url ?? payload.avatar ?? ''
+        return
+      }
+    } catch (err) {
+      // essayer le prochain endpoint
+    }
+  }
+  // si aucun endpoint ne répond, on reste en fallback silencieux
 }
 
-const closeDropdown = () => {
-  dropdownOpen.value = false
+// déconnecter l'utilisateur : essayer plusieurs endpoints, puis nettoyer le client
+const signOut = async () => {
+  try {
+    const endpoints = ['logout', 'admin/logout', 'auth/logout']
+    for (const ep of endpoints) {
+      try {
+        await api.post(ep)
+        break
+      } catch (err) {
+        // essayer le suivant
+      }
+    }
+  } catch (e) {
+    console.error('Logout failed', e)
+  } finally {
+    // supprimer token local et rediriger vers signin
+    try { localStorage.removeItem('token') } catch {}
+    closeDropdown()
+    router.push('/signin')
+  }
 }
 
-const signOut = () => {
-  // Implement sign out logic here
-  console.log('Signing out...')
-  closeDropdown()
-}
-
+// fermer le dropdown si clic à l'extérieur
 const handleClickOutside = (event) => {
   if (dropdownRef.value && !dropdownRef.value.contains(event.target)) {
     closeDropdown()
@@ -93,9 +131,14 @@ const handleClickOutside = (event) => {
 
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
+  fetchCurrentUser() // charger l'utilisateur au montage
 })
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
 })
 </script>
+
+<style scoped>
+/* ...existing styles... */
+</style>
