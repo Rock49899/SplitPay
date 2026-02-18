@@ -43,7 +43,8 @@ class StudentController extends Controller
                 $query->where('annexe_id', $annexeId);
             }
 
-            if ($mat = $request->get('matricule') && Schema::hasColumn('students', 'matricule')) {
+            // filtrer par matricule si fourni et si la colonne existe
+            if (($mat = $request->get('matricule')) && Schema::hasColumn('students', 'matricule')) {
                 $query->where('matricule', 'like', "%{$mat}%");
             }
 
@@ -58,16 +59,19 @@ class StudentController extends Controller
                 });
             }
 
-            if ($email = $request->get('email') && Schema::hasColumn('students', 'email')) {
+            // filtrer par email correctement
+            if (($email = $request->get('email')) && Schema::hasColumn('students', 'email')) {
                 $query->where('email', 'like', "%{$email}%");
             }
 
-            if ($class = $request->get('class') && Schema::hasColumn('students', 'class')) {
-                $query->where('class', $class);
+            // filtrer par classe 
+            if (($class = $request->get('class')) && Schema::hasColumn('students', 'class')) {
+                $query->where('class', 'like', "%{$class}%");
             }
 
-            if ($year = $request->get('school_year') && Schema::hasColumn('students', 'school_year')) {
-                $query->where('school_year', $year);
+            // filtrer par année scolaire 
+            if (($year = $request->get('school_year')) && Schema::hasColumn('students', 'school_year')) {
+                $query->where('school_year', 'like', "%{$year}%");
             }
 
             $students = $query->orderBy('last_name')->paginate($perPage);
@@ -92,7 +96,8 @@ class StudentController extends Controller
         return response()->json(['message' => 'Student created', 'student' => $student], 201);
     }
 
-    // Return a student with relations needed by frontend
+    // Retourne un étudiant avec les relations nécessaires au frontend
+    // et les informations financières calculées à partir des champs stockés en base
     public function show($id)
     {
         try {
@@ -103,7 +108,33 @@ class StudentController extends Controller
             if (method_exists($studentModel, 'paymentLinks')) $with[] = 'paymentLinks.installments.payments';
 
             $student = count($with) ? Student::with($with)->findOrFail($id) : Student::findOrFail($id);
-            return response()->json(['student' => $student], 200);
+
+            // Utilise tuition_amount et amount_paid tels qu'ils sont stockés dans la table students
+            $tuition = (float) ($student->tuition_amount ?? 0);
+            $amountPaid = (float) ($student->amount_paid ?? 0);
+
+            // Si amount_paid est absent ou zéro, on cherche les paiements chargés en relation
+            // et on fait la somme comme solution de secours
+            if ($amountPaid <= 0 && method_exists($student, 'payments') && $student->relationLoaded('payments')) {
+                $amountPaid = (float) collect($student->payments)->sum(function ($p) {
+                    return (float) ($p->amount ?? $p['amount'] ?? 0);
+                });
+            }
+
+            $amountDue = max(0, $tuition - $amountPaid);
+            $lastPayment = null;
+            if (method_exists($student, 'payments') && $student->relationLoaded('payments')) {
+                $lastPayment = collect($student->payments)->sortByDesc('created_at')->first();
+            }
+
+            $finance = [
+                'tuition_amount'   => $tuition,
+                'amount_paid'      => $amountPaid,
+                'amount_due'       => $amountDue,
+                'last_payment_date'=> $lastPayment ? ($lastPayment->created_at->toDateString() ?? $lastPayment->created_at ?? null) : null,
+            ];
+
+            return response()->json(['student' => $student, 'finance' => $finance], 200);
         } catch (\Throwable $e) {
             \Log::error('StudentController@show failed', [
                 'error' => $e->getMessage(),
@@ -119,28 +150,47 @@ class StudentController extends Controller
         try {
             $student = Student::findOrFail($id);
 
-            // récupérer les paiements depuis la relation payments si elle existe
-            $payments = collect([]);
-            if (method_exists($student, 'payments')) {
-                $student->loadMissing('payments');
-                $payments = $student->payments ?? collect([]);
-            } elseif (method_exists($student, 'paymentLinks')) {
-                // fallback : parcourir paymentLinks -> installments -> payments
+            // Privilégier amount_paid stocké dans la table students
+            $amountPaid = (float) ($student->amount_paid ?? 0);
+
+            // Si amount_paid stocké est nul, on calcule la somme des paiements existants en repli
+            if ($amountPaid <= 0) {
+                if (method_exists($student, 'payments')) {
+                    $student->loadMissing('payments');
+                    $payments = $student->payments ?? collect([]);
+                    $amountPaid = (float) $payments->sum(function ($p) {
+                        return (float) ($p->amount ?? $p['amount'] ?? 0);
+                    });
+                    $lastPayment = $payments->sortByDesc('created_at')->first();
+                } elseif (method_exists($student, 'paymentLinks')) {
+
                 $student->loadMissing('paymentLinks.installments.payments');
-                $payments = collect([]);
-                foreach ($student->paymentLinks ?? [] as $pl) {
-                    foreach ($pl->installments ?? [] as $inst) {
-                        if (is_iterable($inst->payments)) {
-                            $payments = $payments->concat($inst->payments);
+                    $payments = collect([]);
+                    foreach ($student->paymentLinks ?? [] as $pl) {
+                        foreach ($pl->installments ?? [] as $inst) {
+                            if (is_iterable($inst->payments)) {
+                                $payments = $payments->concat($inst->payments);
+                            }
                         }
                     }
+                    $amountPaid = (float) $payments->sum(function ($p) {
+                        return (float) ($p->amount ?? $p['amount'] ?? 0);
+                    });
+                    $lastPayment = $payments->sortByDesc('created_at')->first();
+                } else {
+                    $lastPayment = null;
+                }
+            } else {
+                // si amount_paid est présent en base, tenter de récupérer la date du dernier paiement si relation disponible
+                $lastPayment = null;
+                if (method_exists($student, 'payments')) {
+                    $student->loadMissing('payments');
+                    $lastPayment = $student->payments ? collect($student->payments)->sortByDesc('created_at')->first() : null;
                 }
             }
 
-            $amountPaid = $payments->sum('amount');
-            $tuition = $student->tuition_amount ?? 0;
+            $tuition = (float) ($student->tuition_amount ?? 0);
             $amountDue = max(0, $tuition - $amountPaid);
-            $lastPayment = $payments->sortByDesc('created_at')->first();
 
             return response()->json([
                 'data' => [
@@ -148,7 +198,7 @@ class StudentController extends Controller
                     'amount_paid' => $amountPaid,
                     'amount_due' => $amountDue,
                     'last_payment_date' => $lastPayment ? ($lastPayment->created_at->toDateString() ?? $lastPayment->created_at ?? null) : null,
-                    'recent_payments' => $payments->sortByDesc('created_at')->take(10)->values(),
+                    'recent_payments' => isset($payments) ? collect($payments)->sortByDesc('created_at')->take(10)->values() : [],
                 ]
             ], 200);
         } catch (\Throwable $e) {
@@ -161,6 +211,7 @@ class StudentController extends Controller
         }
     }
 
+    // Crée un lien de paiement basique (placeholder). En production, remplacer par logique prestataire & persistance.
     public function createPaymentLink(Request $request, $id)
     {
         $student = Student::findOrFail($id);

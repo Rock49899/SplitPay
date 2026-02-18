@@ -25,7 +25,10 @@
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
-            <tr v-for="a in annexes" :key="a.id">
+            <tr 
+            v-for="a in annexeStore.items"
+            :key="a?.id"
+            >
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                 <template v-if="editingId !== a.id">{{ a.name }}</template>
                 <template v-else><input v-model="editForm.name" class="w-full rounded border px-2 py-1" /></template>
@@ -50,9 +53,9 @@
                 <template v-if="editingId !== a.id">
                   <span
                     class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium"
-                    :class="a.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'"
+                    :class="a.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'"
                   >
-                    {{ (a.status ?? 'unknown').toString().replace('_',' ') | capitalize }}
+                    {{ a.is_active ? 'Active' : 'Inactive' }}
                   </span>
                 </template>
                 <template v-else>
@@ -101,7 +104,6 @@
 </template>
 
 <script setup>
-/* filepath: /home/rock/PIEUVRE/Saas-schooling-project/resources/js/views/Annexes/AnnexeList.vue */
 import { ref, onMounted, computed, watch } from 'vue';
 import AdminLayout from '@/components/layout/AdminLayout.vue';
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue';
@@ -131,7 +133,9 @@ const editForm = ref({
 });
 
 const loadAnnexes = async (search = '') => {
-  await annexeStore.fetchAnnexes({ per_page: 100, search });
+  const ann = await annexeStore.fetchAnnexes({ per_page: 100, search });
+  console.log(ann)
+
 };
 
 onMounted(async () => {
@@ -143,7 +147,6 @@ onMounted(async () => {
   }
 });
 
-// NEW: react to URL search param changes (live search)
 watch(
   () => route.query.search,
   async (newSearch) => {

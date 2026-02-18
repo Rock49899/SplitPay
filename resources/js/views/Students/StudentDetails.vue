@@ -61,7 +61,7 @@
         </div>
 
         <!-- Financial summary card -->
-        <div class="mt-6">
+        <!-- <div class="mt-6">
           <ComponentCard title="Financial summary">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
@@ -98,14 +98,15 @@
               </div>
             </div>
           </ComponentCard>
-        </div>
+        </div> -->
 
         <div class="mt-6 flex gap-3">
             <button v-if="!editMode" @click="enterEdit" class="px-4 py-2 bg-brand-500 text-white rounded">Edit</button>
             <button v-else @click="save" :disabled="saving" class="px-4 py-2 bg-brand-500 text-white rounded">Save</button>
             <button v-if="editMode" @click="cancelEdit" class="px-4 py-2 border rounded">Cancel</button>
             <button @click="toggleActiveStatus" class="px-3 py-2 border rounded">
-              {{ student?.is_active ? 'Deactivate' : 'Activate' }}
+              <!-- afficher action selon le status courant -->
+              {{ student?.status === 'active' ? 'Suspend' : 'Activate' }}
             </button>
             <router-link :to="`/admin/students/${id}/finance`" class="px-3 py-2 bg-indigo-600 text-white rounded">Finance</router-link>
         </div>
@@ -202,14 +203,26 @@ const save = async () => {
   }
 };
 
+// bascule du statut de l'étudiant : envoie "status" attendu par le backend
 const toggleActiveStatus = async () => {
   if (!student.value) return;
   try {
-    await studentService.update(id, { is_active: !student.value.is_active });
+    const newStatus = student.value.status === 'active' ? 'suspended' : 'active';
+    await studentService.update(id, { status: newStatus });
     await load();
   } catch (e) {
     console.error(e);
-    alert('Failed to toggle status');
+    if (e?.response?.status === 422) {
+      const data = e.response.data ?? {};
+      let msg = data.message ?? 'Validation failed';
+      if (data.errors) {
+        const details = Object.values(data.errors).flat().join(' ');
+        if (details) msg += ' — ' + details;
+      }
+      error.value = msg;
+    } else {
+      error.value = e?.response?.data?.message ?? e.message ?? 'Failed to toggle status';
+    }
   }
 };
 

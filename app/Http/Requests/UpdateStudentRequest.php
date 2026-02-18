@@ -11,22 +11,19 @@ class UpdateStudentRequest extends FormRequest
         return true;
     }
 
+    // règles simples et permissives pour mise à jour partielle
     public function rules()
     {
-        $studentId = $this->route('id') ?? $this->route('student');
-
         return [
-            'annexe_id'      => 'nullable|uuid|exists:annexes,id',
-            'matricule'      => 'required|string|max:50|unique:students,matricule,'.$studentId.',id',
-            'first_name'     => 'required|string|max:100',
-            'last_name'      => 'required|string|max:100',
-            'email'          => 'nullable|email|max:150',
-            'phone'          => 'nullable|string|max:20',
-            'class'          => 'nullable|string|max:100',
-            'school_year'    => 'required|string|max:20',
-            'tuition_amount' => 'required|numeric|min:0',
-            'amount_paid'    => 'nullable|numeric|min:0',
-            'status'         => 'nullable|in:active,suspended,graduated',
+            'first_name'   => 'sometimes|required|string|max:100',
+            'last_name'    => 'sometimes|required|string|max:100',
+            'email'        => 'sometimes|nullable|email|max:150',
+            'phone'        => 'sometimes|nullable|string|max:20',
+            'matricule'      => 'sometimes|nullable|string|max:50',
+            'class'        => 'sometimes|nullable|string|max:100',
+            'school_year'  => 'sometimes|nullable|string|max:20',
+            // statut : conforme à l'énumération en base (active, suspended, graduated)
+            'status'       => 'sometimes|string|in:active,suspended,graduated',
         ];
     }
 }

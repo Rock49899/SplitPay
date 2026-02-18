@@ -6,6 +6,29 @@
       <button @click="showCols = true" class="px-3 py-2 border rounded">Columns</button>
     </div>
 
+    <!-- Filters moved here: Annexe / Class / Year / Apply / Clear -->
+    <div class="flex flex-wrap gap-3 items-end mb-4">
+      <div class="w-56">
+        <label class="block text-xs text-gray-500 mb-1">Annexe</label>
+        <select v-model="filters.annexe_id" class="w-full rounded border px-3 py-2">
+          <option :value="null">All annexes</option>
+          <option v-for="a in annexes" :key="a.id" :value="a.id">{{ a.name }}</option>
+        </select>
+      </div>
+      <div class="w-40">
+        <label class="block text-xs text-gray-500 mb-1">Class</label>
+        <input v-model="filters.class" type="text" class="w-full rounded border px-3 py-2" placeholder="Master 1..." />
+      </div>
+      <div class="w-40">
+        <label class="block text-xs text-gray-500 mb-1">Year</label>
+        <input v-model="filters.school_year" type="text" class="w-full rounded border px-3 py-2" placeholder="2025" />
+      </div>
+      <div class="flex items-center gap-2">
+        <button @click="applyFilters" class="px-3 py-2 bg-brand-500 text-white rounded">Apply</button>
+        <button @click="clearFilters" class="px-3 py-2 border rounded">Clear</button>
+      </div>
+    </div>
+
     <CreateStudent v-if="showCreateModal" :annexes="annexes" @created="onCreated" @close="showCreateModal = false" />
 
     <StudentColumnsSelector
@@ -72,11 +95,13 @@
         </div>
       </div>
     </div>
+
+    
   </AdminLayout>
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue';
+import { ref, reactive, onMounted, computed, watch } from 'vue';
 import AdminLayout from '@/components/layout/AdminLayout.vue';
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue';
 import ComponentCard from '@/components/common/ComponentCard.vue';
@@ -96,7 +121,19 @@ const route = useRoute();
 
 const showCreateModal = ref(false);
 const showCols = ref(false);
+
+const perPage = ref(15);
+const loading = ref(false);
+
 const annexes = ref([]);
+
+// filtres de recherche (utilisables par superadmin)
+const filters = reactive({
+  annexe_id: null,
+  class: '',
+  school_year: '',
+  q: '',
+});
 
 onMounted(async () => {
   try {
@@ -154,7 +191,6 @@ const annexeNames = (s) => {
   return '';
 };
 
-// helper: grouping key (primary annexe name or first annex name)
 const annexeGroupKey = (s) => {
   const names = annexeNames(s);
   if (!names) return null;
@@ -229,9 +265,10 @@ const remove = async (id) => {
 
 const toggleActive = async (s) => {
   try {
-    await studentService.update(s.id, { is_active: !s.is_active });
-    await students.fetchStudents();
-  } catch (e) { console.error(e); alert('Failed toggling status'); }
+    const newStatus = s.is_active ? 'suspended' : 'active';
+    await studentService.update(s.id, { status: newStatus });
+     await students.fetchStudents();
+   } catch (e) { console.error(e); alert('Failed toggling status'); }
 };
 
 const onCreated = async (created) => {
@@ -239,4 +276,44 @@ const onCreated = async (created) => {
   await enrichStudents();
   showCreateModal.value = false;
 };
+
+const applyFilters = () => loadStudents(1);
+const clearFilters = () => {
+  filters.annexe_id = null;
+  filters.class = '';
+  filters.school_year = '';
+  filters.q = '';
+  loadStudents(1);
+};
+
+const loadStudents = async (page = 1) => {
+  loading.value = true;
+  try {
+    const params = {
+      per_page: perPage.value,
+      page,
+      annexe_id: filters.annexe_id || undefined,
+      class: filters.class || undefined,
+      school_year: filters.school_year || undefined,
+      search: filters.q || undefined,
+    };
+    const res = await studentService.index(params);
+    // mettre à jour le store réactif utilisé ailleurs (items, meta, page)
+    students.items = res.data?.data ?? res.data ?? [];
+    if (res.data?.meta) {
+      students.meta = res.data.meta;
+      students.page = res.data.meta.current_page ?? students.page;
+    } else if (res.data?.current_page) {
+      students.page = res.data.current_page;
+      students.meta = res.data;
+    }
+    
+    await enrichStudents();
+  } catch (e) {
+    console.error('Failed to fetch students', e);
+  } finally {
+    loading.value = false;
+  }
+};
+
 </script>

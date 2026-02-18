@@ -16,9 +16,10 @@ class UserController extends Controller
 {
     public function __construct()
     {
-        // protéger ces routes : requiert authentification API (Sanctum)
+        // protéger ces routes : requiert authentification via Sanctum
         $this->middleware('auth:sanctum');
-            }
+        // NOTE: appliquer une policy/middleware pour restreindre l'accès selon les rôles (ex: super_admin, gestionnaire)
+    }
 
     public function index(Request $request)
     {
@@ -113,14 +114,6 @@ class UserController extends Controller
     return response()->json($user);
   }
 
-
-
-    // public function show($id)
-    // {
-    //     $user = User::with(['roles','annexes'])->findOrFail($id);
-    //     return response()->json($user, 200);
-    // }
-
     public function store(StoreUserRequest $request)
     {
         $v = $request->validated();
@@ -174,7 +167,7 @@ class UserController extends Controller
 
         $user = User::findOrFail($id);
 
-        // Authorize using UserPolicy::assignRole
+        // Autoriser via la policy UserPolicy::assignRole (vérifie que l'appelant a le droit)
         $this->authorize('assignRole', [$user, $data['annexe_id']]);
 
         $user->assignToAnnexe($data['annexe_id'], $data['role_id'], $data['is_primary'] ?? false);
@@ -191,11 +184,52 @@ class UserController extends Controller
 
         $user = User::findOrFail($id);
 
-        // Authorize using UserPolicy::removeRole
+        // Autoriser via la policy UserPolicy::removeRole
         $this->authorize('removeRole', [$user, $data['annexe_id']]);
 
         $user->removeFromAnnexe($data['annexe_id'], $data['role_id']);
 
         return response()->json(['message'=>'Role removed'], 200);
+    }
+
+    // Retourne l'utilisateur actuellement authentifié
+    public function me(Request $request)
+    {
+        $user = $request->user();
+        // charger relations courantes si besoin
+        $user->loadMissing(['roles','annexes','annexe']);
+        return response()->json(['user' => $user], 200);
+    }
+
+    // Met à jour l'utilisateur connecté (supporte PUT/PATCH/POST pour compatibilité frontend)
+    public function updateMe(Request $request)
+    {
+        $user = $request->user();
+        // validation minimale (adapter selon vos règles)
+        $v = $request->validate([
+            'name' => 'sometimes|string|max:255',
+            'email' => 'sometimes|email|max:255|unique:users,email,'.$user->id,
+            'phone' => 'sometimes|nullable|string|max:50',
+            'bio' => 'sometimes|nullable|string|max:2000',
+            'password' => 'sometimes|nullable|string|min:6|confirmed',
+            'city' => 'sometimes|nullable|string|max:255',
+            'state' => 'sometimes|nullable|string|max:255',
+        ]);
+
+        // gérer le mot de passe si fourni
+        if (!empty($v['password'])) {
+            $user->password = \Hash::make($v['password']);
+            unset($v['password']);
+            unset($v['password_confirmation']);
+        }
+
+        // mettre à jour les champs autorisés
+        $updatable = array_intersect_key($v, array_flip(['name','email','phone','bio','city','state']));
+        $user->fill($updatable);
+        $user->save();
+
+        // recharger relations si nécessaire et renvoyer
+        $user->loadMissing(['roles','annexes','annexe']);
+        return response()->json(['message' => 'Profile updated', 'user' => $user], 200);
     }
 }

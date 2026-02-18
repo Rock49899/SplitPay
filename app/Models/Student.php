@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Builder;
 use App\Models\Annexe;
-use App\Models\PaymentLinks;
+use App\Models\PaymentLink;
 use App\Models\Payment;
 
 class Student extends Model
@@ -50,16 +50,24 @@ class Student extends Model
     ];
 
     /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
+     * Casts pour les attributs numériques
      */
-    protected function casts(): array
+    protected $casts = [
+        'tuition_amount' => 'decimal:2',
+        'amount_paid' => 'decimal:2',
+    ];
+
+    /**
+     * Attributs ajoutés au JSON retourné (compatibilité frontend)
+     */
+    protected $appends = ['is_active'];
+
+    /**
+     * Accessor : is_active (true si status === 'active')
+     */
+    public function getIsActiveAttribute(): bool
     {
-        return [
-            'tuition_amount' => 'decimal:2',
-            'amount_paid' => 'decimal:2',
-        ];
+        return ($this->attributes['status'] ?? null) === 'active';
     }
 
     /**

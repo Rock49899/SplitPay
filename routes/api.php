@@ -3,6 +3,10 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Api\StudentController;
+use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\AnnexeController;
+use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\PaymentLinkController;
 
 // Route::any('register-debug', function (Request $request) {
 //     return response()->json([
@@ -34,11 +38,13 @@ Route::match(['post','get'], 'admin/login', [\App\Http\Controllers\Api\AuthContr
 //sanctum
 Route::middleware('auth:sanctum')->prefix('admin')->group(function () {
     Route::match(['get','post'], 'logout', [\App\Http\Controllers\Api\AuthController::class, 'logout']);
-    Route::get('me', [\App\Http\Controllers\Api\AuthController::class, 'me']);
+    Route::match(['get', 'put', 'patch'], 'me',[\App\Http\Controllers\Api\AuthController::class, 'me']);
+    Route::get('me', [UserController::class, 'me']);
+    Route::match(['put','patch','post'], 'me', [UserController::class, 'updateMe']);
 
-    Route::apiResource('users', \App\Http\Controllers\Api\UserController::class);
-    Route::post('users/{id}/assign-role', [\App\Http\Controllers\Api\UserController::class, 'assignRole']);
-    Route::post('users/{id}/remove-role', [\App\Http\Controllers\Api\UserController::class, 'removeRole']);
+    Route::apiResource('users', UserController::class);
+    Route::apiResource('students', StudentController::class)->except(['create','edit']);
+    Route::apiResource('annexes', AnnexeController::class)->except(['create','edit']);
 
     Route::get('roles', [\App\Http\Controllers\Api\RoleController::class, 'index']);
 
@@ -48,4 +54,13 @@ Route::middleware('auth:sanctum')->prefix('admin')->group(function () {
     Route::apiResource('institutions', \App\Http\Controllers\Api\InstitutionController::class);
     Route::get('institutions/{id}/annexes', [\App\Http\Controllers\Api\InstitutionController::class, 'annexes']);
     Route::apiResource('annexes', \App\Http\Controllers\Api\AnnexeController::class);
+    Route::apiResource('payments', PaymentController::class)->only(['index','show','store']);
+
+    // envoyer payment link par email
+	Route::post('payment-links/{id}/send', [PaymentLinkController::class, 'sendByEmail']);
+    // CRUD admin pour payment links
+    Route::apiResource('payment-links', PaymentLinkController::class);
 });
+// public: accessible sans authentification
+Route::get('payment-links/token/{token}', [PaymentLinkController::class, 'publicShow']);
+Route::post('payments/public', [PaymentController::class, 'publicCreate']);

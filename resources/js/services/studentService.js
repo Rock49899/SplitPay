@@ -3,7 +3,18 @@ import api from './api';
 const index = (params = {}) => api.get('admin/students', { params });
 const show = (id) => api.get(`admin/students/${id}`);
 const store = (payload) => api.post('admin/students', payload);
-const update = (id, payload) => api.put(`admin/students/${id}`, payload);
+//  PATCH pour update partiel, fallback sur PUT si nécessaire
+const update = async (id, payload) => {
+  try {
+    return await api.patch(`admin/students/${id}`, payload);
+  } catch (err) {
+    const status = err?.response?.status;
+    if (status === 405 || status === 404) {
+      return await api.put(`admin/students/${id}`, payload);
+    }
+    throw err;
+  }
+};
 const destroy = (id) => api.delete(`admin/students/${id}`);
 
 // endpoint pour créer un lien de paiement

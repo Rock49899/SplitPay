@@ -26,7 +26,7 @@ class PaymentController extends Controller
         return response()->json($query->orderByDesc('created_at')->paginate($perPage), 200);
     }
 
-    // public entrypoint to create payment for public links (no auth)
+    // point d'entrée public pour créer un paiement via un lien (sans authentification)
     public function publicCreate(StorePaymentRequest $request)
     {
         $v = $request->validated();
@@ -34,35 +34,91 @@ class PaymentController extends Controller
         return $this->store($request, $link);
     }
 
-    // internal create (optionally called by publicCreate)
-    protected function store(Request $request, $link = null)
-    {
-        $v = $request->validated();
-        return DB::transaction(function() use ($v, $link, $request) {
-            $link = $link ?: PaymentLink::findOrFail($v['payment_link_id']);
-            if (!empty($v['installment_id'])) {
-                $inst = Installment::findOrFail($v['installment_id']);
-            }
+    // protected function store(Request $request, $link = null)
+    // {
+    //     $v = $request->validated();
+    //     return DB::transaction(function() use ($v, $link, $request) {
+    //         $link = $link ?: PaymentLink::findOrFail($v['payment_link_id']);
+    //         if (!empty($v['installment_id'])) {
+    //             $inst = Installment::findOrFail($v['installment_id']);
+    //         }
 
-            $payment = Payment::create([
-                'id' => (string) Str::uuid(),
-                'payment_link_id' => $link->id,
-                'installment_id' => $v['installment_id'] ?? null,
-                'amount' => $v['amount'],
-                'method' => $v['method'],
-                'metadata' => $v['metadata'] ?? null,
-                'reference' => Str::upper(Str::random(12)),
-                'status' => 'completed', // stub: in real integrate provider
-            ]);
+    //         $payment = Payment::create([
+    //             'id' => (string) Str::uuid(),
+    //             'payment_link_id' => $link->id,
+    //             'installment_id' => $v['installment_id'] ?? null,
+    //             'amount' => $v['amount'],
+    //             'method' => $v['method'],
+    //             'metadata' => $v['metadata'] ?? null,
+    //             'reference' => Str::upper(Str::random(12)),
+    //             'status' => 'completed', // placeholder : en production, intégrer le prestataire et définir le statut selon sa réponse
+    //         ]);
 
-            // mark installment paid if relevant
-            if (!empty($v['installment_id']) && isset($inst)) {
-                $inst->update(['is_paid' => true]);
-            }
+    //         // marquer l'échéance payée si applicable
+    //         if (!empty($v['installment_id']) && isset($inst)) {
+    //             $inst->update(['is_paid' => true]);
+    //         }
 
-            return response()->json(['message'=>'Payment recorded','payment'=>$payment], 201);
-        });
+    //         return response()->json(['message'=>'Payment recorded','payment'=>$payment], 201);
+    //     });
+    // }
+
+    protected function store(StorePaymentRequest $request)
+{
+    $v = $request->validated();
+
+    return DB::transaction(function () use ($v) {
+
+        $link = PaymentLink::where('token', $v['token'])->firstOrFail();
+
+        if (!$link->isValid()) {
+            abort(422, 'Payment link is not valid.');
+        }
+
+        $installment = Installment::findOrFail($v['installment_id']);
+
+        // sécurité : cohérence
+        if ($installment->payment_link_id !== $link->id) {
+            abort(422, 'Installment does not belong to this payment link.');
+        }
+
+        if ($installment->remaining_amount <= 0) {
+            abort(422, 'Installment already fully paid.');
+        }
+
+        if ($v['amount'] > $installment->remaining_amount) {
+            abort(422, 'Amount exceeds remaining balance.');
+        }
+
+        $payment = Payment::create([
+            'id' => (string) Str::uuid(),
+            'installment_id' => $installment->id,
+            'reference' => Str::upper(Str::random(12)),
+            'amount' => $v['amount'],
+            'method' => $v['method'],
+            'status' => 'success',
+            'payment_date' => now(),
+        ]);
+
+        $installment->recordPayment($v['amount']);
+
+        // Si scolarité, incrément student
+        if ($link->type === 'tuition' && $link->student) {
+            $link->student->recordPayment($v['amount']);
+        }
+
+        // Si tout est soldé, fermer le lien
+        if ($link->remainingAmount() <= 0) {
+            $link->markAsUsed();
+        }
+
+        return response()->json([
+            'message' => 'Payment successful',
+            'payment' => $payment
+        ], 201);
+    });
     }
+
 
     public function show($id)
     {

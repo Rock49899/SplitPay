@@ -159,14 +159,17 @@ class Installment extends Model
      * Enregistrer un paiement pour cette échéance
      */
     public function recordPayment(float $amount): void
-    {
-        $this->increment('amount_paid', $amount);
-        
-        // Si entièrement payé, marquer comme utilisé
-        if ($this->fresh()->isFullyPaid()) {
-            $this->markAsUsed();
-        }
+   {
+    $this->increment('amount_paid', $amount);
+
+    if ($this->fresh()->isFullyPaid()) {
+        $this->markAsUsed();
     }
+
+    // vérifier si le lien complet est soldé
+    $this->paymentLink->refreshStatus();
+    }
+
 
     /**
      * Scope pour échéances actives

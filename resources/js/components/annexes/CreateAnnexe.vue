@@ -118,7 +118,7 @@ const submit = async () => {
       name: form.value.name,
       address: form.value.address ?? null,
       city: form.value.city ?? null,
-      details: form.value.details ?? null,
+      annexe_details: form.value.details ?? null,
       manager_id: form.value.manager_id ?? null,
       status: form.value.status ?? 'active',
     });

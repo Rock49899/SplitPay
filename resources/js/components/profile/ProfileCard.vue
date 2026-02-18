@@ -169,21 +169,53 @@ const load = async () => {
 }
 
 const saveProfile = async () => {
+  const endpoints = [
+    'admin/me',
+     ]
+  const methods = ['put', 'patch', 'post']
+
+  const payload = {
+    name: form.name,
+    email: form.email,
+    phone: form.phone,
+    bio: form.bio,
+    city: form.city,
+    state: form.state,
+  }
+
+  let success = false
+  let lastError = null
+
   try {
-    // update only allowed fields (name,email,phone,bio)
-    await api.put('admin/me', {
-      name: form.name,
-      email: form.email,
-      phone: form.phone,
-      bio: form.bio,
-      city: form.city,
-      state: form.state,
-    })
+    for (const ep of endpoints) {
+      for (const m of methods) {
+        try {
+          const res = await api[m](ep, payload)
+          if (res && res.status >= 200 && res.status < 300) {
+            success = true
+            break
+          }
+        } catch (err) {
+          lastError = err
+          const status = err?.response?.status
+          // si route/méthode non disponible, continuer les essais
+          if (status === 404 || status === 405) continue
+          // pour autres erreurs, sortir et afficher
+          throw err
+        }
+      }
+      if (success) break
+    }
+
+    if (!success) {
+      throw lastError ?? new Error('No endpoint accepted the update request')
+    }
+
     isProfileInfoModal.value = false
     await load()
   } catch (e) {
     console.error('Failed saving profile', e)
-    alert(e.response?.data?.message || 'Save failed')
+    alert(e.response?.data?.message || e.message || 'Save failed')
   }
 }
 

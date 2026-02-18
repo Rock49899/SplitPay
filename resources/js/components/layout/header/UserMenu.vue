@@ -57,7 +57,6 @@
 </template>
 
 <script setup>
-// filepath: /home/rock/PIEUVRE/Saas-schooling-project/resources/js/components/layout/header/UserMenu.vue
 import { UserCircleIcon, ChevronDownIcon, LogoutIcon, SettingsIcon, InfoCircleIcon } from '@/icons'
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
@@ -80,8 +79,8 @@ const menuItems = [
 const toggleDropdown = () => { dropdownOpen.value = !dropdownOpen.value }
 const closeDropdown = () => { dropdownOpen.value = false }
 
-// essayer plusieurs endpoints pour récupérer l'utilisateur courant
-const tryUrls = ['admin/me', 'me', 'user']
+// endpoints candidats pour récupérer l'utilisateur courant
+const tryUrls = ['admin/me', 'me', 'user', 'api/user', 'api/admin/me']
 
 // vérifie si l'utilisateur semble authentifié côté client (simple check token)
 const hasAuth = () => {
@@ -94,26 +93,25 @@ const hasAuth = () => {
 }
 
 const fetchCurrentUser = async () => {
-	// ne pas appeler les endpoints si pas authentifié
-	if (!hasAuth()) return
-	for (const u of tryUrls) {
-		try {
-			const res = await api.get(u)
-			if (res && res.status >= 200 && res.status < 300) {
-				const payload = res.data?.user ?? res.data ?? res.data?.data ?? {}
-				user.value.name = payload.name ?? payload.first_name ?? payload.username ?? ''
-				user.value.email = payload.email ?? ''
-				user.value.avatar_url = payload.avatar_url ?? payload.avatar ?? ''
-				return
-			}
-		} catch (err) {
-			// essayer le prochain endpoint — on évite d'afficher l'erreur ici
-		}
-	}
-	// si aucun endpoint ne répond, on reste en fallback silencieux
+  for (const u of tryUrls) {
+    try {
+      const res = await api.get(u)
+      console.log('[UserMenu] tried', u, 'status', res.status)
+      if (res && res.status >= 200 && res.status < 300) {
+        const payload = res.data?.user ?? res.data ?? res.data?.data ?? {}
+        console.log('[UserMenu] user payload', payload)
+        user.value.name = payload.name ?? payload.first_name ?? payload.username ?? ''
+        user.value.email = payload.email ?? ''
+        user.value.avatar_url = payload.avatar_url ?? payload.avatar ?? ''
+        return
+      }
+    } catch (err) {
+      // log léger pour debug (évite spam)
+      console.warn('[UserMenu] endpoint failed:', u, err?.response?.status)
+    }
+  }
 }
 
-// déconnecter l'utilisateur : essayer plusieurs endpoints, puis nettoyer le client
 const signOut = async () => {
   try {
     const endpoints = ['logout', 'admin/logout', 'auth/logout']
@@ -122,7 +120,6 @@ const signOut = async () => {
         await api.post(ep)
         break
       } catch (err) {
-        // essayer le suivant
       }
     }
   } catch (e) {
@@ -144,8 +141,7 @@ const handleClickOutside = (event) => {
 
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
-  // n'appeler fetchCurrentUser que si on a un token local (évite 401/404 console)
-  if (hasAuth()) fetchCurrentUser()
+  fetchCurrentUser()
 })
 
 onUnmounted(() => {

@@ -5,8 +5,11 @@ import api from '@/services/api';
 export const useAnnexeStore = defineStore('annexes', {
   state: () => ({
     items: [],
+    meta: {},
     loading: false,
     error: null,
+    query: '',
+    page: 1,
   }),
   actions: {
     async fetchAnnexes(params = {}) {
@@ -37,9 +40,15 @@ export const useAnnexeStore = defineStore('annexes', {
     async updateAnnexe(id, payload) {
       this.loading = true;
       try {
+        this.error = null;
         const res = await annexeService.update(id, payload);
+        // refresh list after update
         await this.fetchAnnexes();
         return res;
+      } catch (e) {
+        // store error for UI and rethrow for caller to handle
+        this.error = e.response?.data ?? e.message;
+        throw e;
       } finally {
         this.loading = false;
       }

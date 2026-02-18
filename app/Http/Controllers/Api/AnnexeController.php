@@ -8,6 +8,9 @@ use Illuminate\Support\Str;
 use App\Models\Annexe;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\QueryException;
+use Illuminate\Validation\ValidationException;
+use App\Http\Requests\StoreAnnexeRequest;
+use App\Http\Requests\UpdateAnnexeRequest;
 
 class AnnexeController extends Controller
 {
@@ -81,14 +84,19 @@ class AnnexeController extends Controller
     public function store(StoreAnnexeRequest $request)
     {
         $v = $request->validated();
+        $institutionId = auth()->user()->annexe?->institution_id;
 
         $annexe = Annexe::create([
             'id' => (string) Str::uuid(),
-            'institution_id' => $v['institution_id'],
+            'institution_id' => $institutionId,
             'name' => $v['name'],
+            'address' => $v['address'] ?? null,
+            'city' => $v['city'] ?? null,
+            'annexe_details' => $v['annexe_details'] ?? null,
             'is_active' => $v['is_active'] ?? true,
         ]);
 
+        // renvoyer l'objet complet (created_at/updated_at inclus automatiquement)
         return response()->json(['message' => 'Annexe created', 'annexe' => $annexe], 201);
     }
 
@@ -100,14 +108,33 @@ class AnnexeController extends Controller
         return response()->json($annexe, 200);
     }
 
-    // PUT/PATCH /api/admin/annexes/{id}
     public function update(UpdateAnnexeRequest $request, $id)
     {
-        $annexe = Annexe::findOrFail($id);
-        $v = $request->validated();
-        $annexe->update($v);
+        try {
+            $annexe = Annexe::findOrFail($id);
 
-        return response()->json(['message' => 'Annexe updated', 'annexe' => $annexe], 200);
+            $data = $request->validated();
+            // si client envoie 'annexe_details', mapper vers 'details'
+            if (array_key_exists('annexe_details', $data)) {
+                $data['annexe_details'] = $data['annexe_details'];
+            }
+            // mettre à jour uniquement les champs validés
+            $annexe->update($data);
+
+            // renvoyer l'objet complet après maj
+            return response()->json(['message' => 'Annexe updated', 'annexe' => $annexe], 200);
+        } catch (ValidationException $ve) {
+            return response()->json(['message' => 'Validation failed', 'errors' => $ve->errors()], 422);
+        } catch (\Throwable $e) {
+            \Log::error('AnnexeController@update failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'id' => $id,
+                'payload' => $request->all(),
+            ]);
+            // message générique pour le frontend
+            return response()->json(['message' => 'Failed to update annexe (server error)'], 500);
+        }
     }
 
     // DELETE /api/admin/annexes/{id}

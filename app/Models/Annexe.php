@@ -42,6 +42,8 @@ class Annexe extends Model
         'is_active',
     ];
 
+    protected $appends = ['status'];
+
     /**
      * Get the attributes that should be cast.
      *
@@ -127,6 +129,11 @@ class Annexe extends Model
     public function isActive(): bool
     {
         return $this->is_active;
+    }
+
+    public function getStatusAttribute()
+    {
+    return $this->is_active ? 'active' : 'inactive';
     }
 
     /**
