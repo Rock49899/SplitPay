@@ -32,4 +32,8 @@ export default {
   async sendEmail(id, payload) {
     return api.post(`admin/payment-links/${id}/send`, payload);
   },
+
+  showBySlug(slug) {
+    return api.get(`payment-links/token/${slug}`);
+  }
 };
