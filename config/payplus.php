@@ -20,4 +20,8 @@ return [
 
     "application_return_url" => env("PAYPLUS_APPLICATION_RETURN_URL"),
 
+    // false = sans redirection (mobile money MTN/Moov via USSD push)
+    // true  = avec redirection vers page PayPlus hébergée
+    "with_redirect" => env("PAYPLUS_WITH_REDIRECT", false),
+
 ];
