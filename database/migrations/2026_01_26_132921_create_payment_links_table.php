@@ -15,7 +15,6 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->foreignUuid('student_id')->nullable()->constrained('students')->onDelete('cascade');
             $table->string('token', 100)->unique();
-            $table->index('type');
             $table->decimal('amount', 10, 2);
             $table->string('description', 255)->nullable();
             $table->date('due_date')->nullable();
