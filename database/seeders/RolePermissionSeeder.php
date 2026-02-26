@@ -53,6 +53,8 @@ class RolePermissionSeeder extends Seeder
             'reminder.edit',
             'reminder.delete',
             
+            'annexe.view',  // Besoin de voir les annexes pour filtrer les données
+            
             'dashboard.view',
             'dashboard.statistics',
         ])->pluck('id')->toArray();
@@ -69,6 +71,8 @@ class RolePermissionSeeder extends Seeder
             'payment.statistics',
             
             'link.view',
+            
+            'annexe.view',  // Besoin de voir les annexes pour filtrer les données
             
             'dashboard.view',
             'dashboard.statistics',

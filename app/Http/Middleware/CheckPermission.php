@@ -13,15 +13,12 @@ class CheckPermission
     {
         // Verifier si un utilisateur est connecte
         if (!auth()->check()) {
-            dump('Pas d\'utilisateur connecte');
             return response()->json([
                 'message' => 'Non authentifie'
             ], 401);
         }
 
         $user = auth()->user();
-        
-        dump("Verification permission: {$permission} pour user: {$user->email}");
 
         // Recuperer toutes les permissions de l'utilisateur via ses roles
         $userPermissions = collect();
@@ -43,13 +40,10 @@ class CheckPermission
         $hasPermission = $userPermissions->contains('code', $permission);
         
         if (!$hasPermission) {
-            dump("Permission refusee pour: {$user->email}");
             return response()->json([
                 'message' => 'Acces refuse. Permission manquante: ' . $permission
             ], 403);
         }
-
-        dump("Permission accordee: {$permission}");
         
         // Continuer vers le controller
         return $next($request);

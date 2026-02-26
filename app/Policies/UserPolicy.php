@@ -14,6 +14,14 @@ class UserPolicy
      */
     public function assignRole(User $auth, User $target, $annexeId): bool
     {
+        // Charger les rôles si pas encore fait
+        if (!$auth->relationLoaded('roles')) {
+            $auth->load('roles');
+        }
+        if (!$auth->relationLoaded('annexes')) {
+            $auth->load('annexes');
+        }
+
         // Super admin institution => full control
         if ($auth->roles->contains('code', 'super_admin_institution')) {
             return true;
@@ -32,6 +40,14 @@ class UserPolicy
      */
     public function removeRole(User $auth, User $target, $annexeId): bool
     {
+        // Charger les rôles si pas encore fait
+        if (!$auth->relationLoaded('roles')) {
+            $auth->load('roles');
+        }
+        if (!$auth->relationLoaded('annexes')) {
+            $auth->load('annexes');
+        }
+
         // same rules as assign
         if ($auth->roles->contains('code', 'super_admin_institution')) {
             return true;
