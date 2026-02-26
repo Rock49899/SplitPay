@@ -6,7 +6,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -38,6 +40,7 @@ class User extends Authenticatable
         'annexe_id',
         'name',
         'email',
+        'avatar',
         'password',
         'phone',
         'is_active',
@@ -66,6 +69,21 @@ class User extends Authenticatable
             'password' => 'hashed',
             'is_active' => 'boolean',
         ];
+    }
+
+    /**
+     * Attributs ajoutés au JSON sérialisé
+     */
+    protected $appends = ['avatar_url'];
+
+    /**
+     * Accessor : avatar_url — URL publique de l'avatar ou null
+     */
+    public function getAvatarUrlAttribute(): ?string
+    {
+        $path = $this->attributes['avatar'] ?? null;
+        if (!$path) return null;
+        return Storage::disk('public')->url($path);
     }
 
     /**
@@ -113,6 +131,14 @@ class User extends Authenticatable
         'assigned_at',
         'end_at'
     ]);
+    }
+
+    /**
+     * Toutes les lignes user_annexes de cet utilisateur avec leurs relations
+     */
+    public function user_annexes(): HasMany
+    {
+        return $this->hasMany(UserAnnexe::class, 'user_id');
     }
 
     /**
