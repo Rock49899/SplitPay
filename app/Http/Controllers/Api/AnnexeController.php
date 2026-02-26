@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Traits\FiltersByAnnexe;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use App\Models\Annexe;
@@ -14,6 +15,8 @@ use App\Http\Requests\UpdateAnnexeRequest;
 
 class AnnexeController extends Controller
 {
+    use FiltersByAnnexe;
+    
     public function __construct()
     {
         $this->middleware('auth:sanctum');
@@ -24,6 +27,9 @@ class AnnexeController extends Controller
     {
         $perPage = (int) $request->get('per_page', 15);
         $query = Annexe::query();
+
+        // IMPORTANT: Filtrer par annexe de l'utilisateur
+        $query = $this->scopeByUserAnnexes($query, 'id');
 
         try {
             // normalize search (ignore empty strings)

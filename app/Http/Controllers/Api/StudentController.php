@@ -3,16 +3,20 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Traits\FiltersByAnnexe;
 use Illuminate\Support\Str;
 use App\Http\Requests\StoreStudentRequest;
 use App\Http\Requests\UpdateStudentRequest;
 use Illuminate\Http\Request;
 use App\Models\Student;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Database\QueryException;
 
 class StudentController extends Controller
 {
+    use FiltersByAnnexe;
+    
     public function __construct()
     {
         $this->middleware('auth:sanctum');
@@ -23,6 +27,9 @@ class StudentController extends Controller
         $perPage = (int) $request->get('per_page', 15);
 
         $query = Student::query();
+        
+        // IMPORTANT: Filtrer par annexe de l'utilisateur
+        $query = $this->scopeByUserAnnexes($query);
 
         try {
             if ($search = $request->get('search') ?? $request->get('q')) {
@@ -86,6 +93,10 @@ class StudentController extends Controller
     public function store(StoreStudentRequest $request)
     {
         $validated = $request->validated();
+
+        if ($request->hasFile('avatar')) {
+            $validated['avatar'] = $request->file('avatar')->store('avatars', 'public');
+        }
 
         $student = Student::create(array_merge($validated, [
             'id' => (string) Str::uuid(),
@@ -224,6 +235,14 @@ class StudentController extends Controller
     {
         $student = Student::findOrFail($id);
         $validated = $request->validated();
+
+        if ($request->hasFile('avatar')) {
+            if ($student->avatar) {
+                Storage::disk('public')->delete($student->avatar);
+            }
+            $validated['avatar'] = $request->file('avatar')->store('avatars', 'public');
+        }
+
         $student->update($validated);
 
         return response()->json(['message' => 'Student updated', 'student' => $student], 200);

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Traits\FiltersByAnnexe;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use App\Models\User;
@@ -10,10 +11,13 @@ use App\Models\Role;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Database\QueryException;
 
 class UserController extends Controller
 {
+    use FiltersByAnnexe;
+    
     public function __construct()
     {
         // protéger ces routes : requiert authentification via Sanctum
@@ -26,6 +30,15 @@ class UserController extends Controller
         $perPage = (int) $request->get('per_page', 15);
 
         $query = User::query();
+
+        // IMPORTANT: Filtrer par annexe de l'utilisateur via la relation annexes
+        if (!$this->isSuperAdminInstitution()) {
+            $annexeIds = $this->getUserAnnexeIds();
+            if (empty($annexeIds)) {
+                return response()->json(['data' => [], 'total' => 0], 200);
+            }
+            $query->whereHas('annexes', fn ($q) => $q->whereIn('annexes.id', $annexeIds));
+        }
 
         try {
             // read raw search and ignore empty strings
@@ -69,19 +82,13 @@ class UserController extends Controller
                 $query->where('annexe_id', $annexeId);
             }
 
-            // eager-load only relations that exist on the model
-            $with = [];
-            $userModel = new User();
-            if (method_exists($userModel, 'annexes')) $with[] = 'annexes';
-            if (method_exists($userModel, 'user_annexes')) $with[] = 'user_annexes';
-            if (method_exists($userModel, 'roles')) $with[] = 'roles';
-            if (method_exists($userModel, 'annexe')) $with[] = 'annexe';
-            // apply if any
-            if (count($with)) {
-                $query = $query->with($with);
-            }
+            // eager-load relations with nested relations for proper display
+            $query = $query->with([
+                'annexe',  // Primary annexe
+                'user_annexes.role',  // All user_annexes with their role
+                'user_annexes.annexe',  // All user_annexes with their annexe
+            ]);
 
-            // safe order by: prefer name if column exists
             if (Schema::hasColumn('users', 'name')) {
                 $orderBy = 'name';
             } elseif (Schema::hasColumn('users', 'created_at')) {
@@ -106,9 +113,9 @@ class UserController extends Controller
    public function show($id)
   {
     $user = User::with([
-        'roles',
-        'annexes',
-        'annexe'
+        'annexe',
+        'user_annexes.role',
+        'user_annexes.annexe',
     ])->findOrFail($id);
 
     return response()->json($user);
@@ -117,6 +124,10 @@ class UserController extends Controller
     public function store(StoreUserRequest $request)
     {
         $v = $request->validated();
+
+        if ($request->hasFile('avatar')) {
+            $v['avatar'] = $request->file('avatar')->store('avatars', 'public');
+        }
 
         $user = User::create(array_merge($v, [
             'id' => (string) Str::uuid(),
@@ -131,6 +142,13 @@ class UserController extends Controller
             }
         }
 
+        // Recharger les relations pour le frontend
+        $user->load([
+            'annexe',
+            'user_annexes.role',
+            'user_annexes.annexe',
+        ]);
+
         return response()->json(['message'=>'User created','user'=>$user], 201);
     }
 
@@ -138,6 +156,13 @@ class UserController extends Controller
     {
         $user = User::findOrFail($id);
         $v = $request->validated();
+
+        if ($request->hasFile('avatar')) {
+            if ($user->avatar) {
+                Storage::disk('public')->delete($user->avatar);
+            }
+            $v['avatar'] = $request->file('avatar')->store('avatars', 'public');
+        }
 
         if (!empty($v['password'])) {
             $v['password'] = \Hash::make($v['password']);
@@ -172,14 +197,20 @@ class UserController extends Controller
 
         $user->assignToAnnexe($data['annexe_id'], $data['role_id'], $data['is_primary'] ?? false);
 
-        return response()->json(['message'=>'Role assigned'], 200);
+        // Recharger les relations pour retourner l'utilisateur à jour
+        $user->load([
+            'annexe',
+            'user_annexes.role',
+            'user_annexes.annexe',
+        ]);
+
+        return response()->json(['message'=>'Role assigned', 'user'=>$user], 200);
     }
 
     public function removeRole(Request $request, $id)
     {
         $data = $request->validate([
             'annexe_id' => 'required|uuid|exists:annexes,id',
-            'role_id'   => 'required|uuid|exists:roles,id',
         ]);
 
         $user = User::findOrFail($id);
@@ -187,9 +218,16 @@ class UserController extends Controller
         // Autoriser via la policy UserPolicy::removeRole
         $this->authorize('removeRole', [$user, $data['annexe_id']]);
 
-        $user->removeFromAnnexe($data['annexe_id'], $data['role_id']);
+        $user->removeFromAnnexe($data['annexe_id']);
 
-        return response()->json(['message'=>'Role removed'], 200);
+        // Recharger les relations pour retourner l'utilisateur à jour
+        $user->load([
+            'annexe',
+            'user_annexes.role',
+            'user_annexes.annexe',
+        ]);
+
+        return response()->json(['message'=>'Role removed', 'user'=>$user], 200);
     }
 
     // Retourne l'utilisateur actuellement authentifié
@@ -214,7 +252,16 @@ class UserController extends Controller
             'password' => 'sometimes|nullable|string|min:6|confirmed',
             'city' => 'sometimes|nullable|string|max:255',
             'state' => 'sometimes|nullable|string|max:255',
+            'avatar' => 'nullable|image|mimes:jpeg,jpg,png,webp|max:2048',
         ]);
+
+        // gérer l'avatar si fourni
+        if ($request->hasFile('avatar')) {
+            if ($user->avatar) {
+                Storage::disk('public')->delete($user->avatar);
+            }
+            $user->avatar = $request->file('avatar')->store('avatars', 'public');
+        }
 
         // gérer le mot de passe si fourni
         if (!empty($v['password'])) {
