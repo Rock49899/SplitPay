@@ -58,22 +58,22 @@
               <div class="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
                 <div class="col-span-2">
                   <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Name</label>
-                  <input type="text" v-model="form.name" class="h-11 w-full rounded-lg border px-4 py-2.5 text-sm dark:bg-gray-900" />
+                  <input type="text" v-model="form.name" class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 dark:text-white dark:bg-gray-800 dark:border-gray-700" />
                 </div>
 
                 <div>
                   <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Email Address</label>
-                  <input type="email" v-model="form.email" class="h-11 w-full rounded-lg border px-4 py-2.5 text-sm dark:bg-gray-900" />
+                  <input type="email" v-model="form.email" class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 dark:text-white dark:bg-gray-800 dark:border-gray-700" />
                 </div>
 
                 <div>
                   <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Phone</label>
-                  <input type="text" v-model="form.phone" class="h-11 w-full rounded-lg border px-4 py-2.5 text-sm dark:bg-gray-900" />
+                  <input type="text" v-model="form.phone" class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 dark:text-white dark:bg-gray-800 dark:border-gray-700" />
                 </div>
 
                 <div class="lg:col-span-2">
                   <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Bio</label>
-                  <input type="text" v-model="form.bio" class="h-11 w-full rounded-lg border px-4 py-2.5 text-sm dark:bg-gray-900" />
+                  <input type="text" v-model="form.bio" class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 dark:text-white dark:bg-gray-800 dark:border-gray-700" />
                 </div>
               </div>
             </div>

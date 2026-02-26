@@ -3,8 +3,17 @@
     <div class="p-5 mb-6 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-6">
       <div class="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
         <div class="flex flex-col items-center w-full gap-6 xl:flex-row">
-          <div class="w-20 h-20 overflow-hidden border border-gray-200 rounded-full dark:border-gray-800">
-            <img :src="form.avatar_url || '/images/user/owner.jpg'" alt="user" />
+          <div class="relative w-20 h-20 group">
+            <div class="w-20 h-20 overflow-hidden border border-gray-200 rounded-full dark:border-gray-800">
+              <img :src="avatarPreview || form.avatar_url || '/images/user/owner.jpg'" alt="user" class="w-full h-full object-cover" />
+            </div>
+            <label class="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 group-hover:opacity-100 cursor-pointer transition">
+              <svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              <input type="file" class="sr-only" accept="image/jpeg,image/jpg,image/png,image/webp" @change="onAvatarChange" />
+            </label>
           </div>
 
           <div class="order-3 xl:order-2">
@@ -58,27 +67,27 @@
               <div class="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
                 <div class="col-span-2">
                   <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Name</label>
-                  <input type="text" v-model="form.name" class="h-11 w-full rounded-lg border px-4 py-2.5 text-sm dark:bg-gray-900" />
+                  <input type="text" v-model="form.name" class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 dark:text-white dark:bg-gray-800 dark:border-gray-700" />
                 </div>
 
                 <div>
                   <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Email</label>
-                  <input type="email" v-model="form.email" class="h-11 w-full rounded-lg border px-4 py-2.5 text-sm dark:bg-gray-900" />
+                  <input type="email" v-model="form.email" class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 dark:text-white dark:bg-gray-800 dark:border-gray-700" />
                 </div>
 
                 <div>
                   <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Phone</label>
-                  <input type="text" v-model="form.phone" class="h-11 w-full rounded-lg border px-4 py-2.5 text-sm dark:bg-gray-900" />
+                  <input type="text" v-model="form.phone" class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 dark:text-white dark:bg-gray-800 dark:border-gray-700" />
                 </div>
 
                 <div class="lg:col-span-2">
                   <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Bio</label>
-                  <input type="text" v-model="form.bio" class="h-11 w-full rounded-lg border px-4 py-2.5 text-sm dark:bg-gray-900" />
+                  <input type="text" v-model="form.bio" class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 dark:text-white dark:bg-gray-800 dark:border-gray-700" />
                 </div>
 
                 <div class="col-span-2">
                   <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Role</label>
-                  <p class="h-11 flex items-center px-4 rounded-lg border bg-gray-50 text-sm text-gray-700 dark:bg-gray-800">{{ roleLabel }}</p>
+                  <p class="h-11 flex items-center px-4 rounded-lg border border-gray-300 bg-gray-50 text-sm text-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700">{{ roleLabel }}</p>
                 </div>
               </div>
             </div>
@@ -102,6 +111,19 @@ import { useAnnexeStore } from '@/stores/useAnnexeStore'
 
 const annexeStore = useAnnexeStore()
 const isProfileInfoModal = ref(false)
+
+// Avatar
+const avatarFile = ref(null)
+const avatarPreview = ref(null)
+
+const onAvatarChange = (e) => {
+  const file = e.target.files?.[0]
+  if (!file) return
+  avatarFile.value = file
+  avatarPreview.value = URL.createObjectURL(file)
+  // auto-save avatar immediately
+  saveAvatar(file)
+}
 
 // form uses single name field (backend has "name")
 const form = reactive({
@@ -169,53 +191,39 @@ const load = async () => {
 }
 
 const saveProfile = async () => {
-  const endpoints = [
-    'admin/me',
-     ]
-  const methods = ['put', 'patch', 'post']
-
-  const payload = {
-    name: form.name,
-    email: form.email,
-    phone: form.phone,
-    bio: form.bio,
-    city: form.city,
-    state: form.state,
-  }
-
-  let success = false
-  let lastError = null
-
   try {
-    for (const ep of endpoints) {
-      for (const m of methods) {
-        try {
-          const res = await api[m](ep, payload)
-          if (res && res.status >= 200 && res.status < 300) {
-            success = true
-            break
-          }
-        } catch (err) {
-          lastError = err
-          const status = err?.response?.status
-          // si route/méthode non disponible, continuer les essais
-          if (status === 404 || status === 405) continue
-          // pour autres erreurs, sortir et afficher
-          throw err
-        }
-      }
-      if (success) break
-    }
+    const fd = new FormData()
+    fd.append('name', form.name)
+    fd.append('email', form.email)
+    if (form.phone) fd.append('phone', form.phone)
+    if (form.bio) fd.append('bio', form.bio)
+    if (form.city) fd.append('city', form.city)
+    if (form.state) fd.append('state', form.state)
+    if (avatarFile.value) fd.append('avatar', avatarFile.value)
 
-    if (!success) {
-      throw lastError ?? new Error('No endpoint accepted the update request')
-    }
+    // POST with _method=PATCH for multipart
+    fd.append('_method', 'PATCH')
+    await api.post('admin/me', fd)
 
+    avatarFile.value = null
+    avatarPreview.value = null
     isProfileInfoModal.value = false
     await load()
   } catch (e) {
     console.error('Failed saving profile', e)
     alert(e.response?.data?.message || e.message || 'Save failed')
+  }
+}
+
+const saveAvatar = async (file) => {
+  try {
+    const fd = new FormData()
+    fd.append('avatar', file)
+    fd.append('_method', 'PATCH')
+    await api.post('admin/me', fd)
+    await load()
+  } catch (e) {
+    console.error('Avatar upload failed', e)
   }
 }
 
