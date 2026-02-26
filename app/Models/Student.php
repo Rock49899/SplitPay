@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Builder;
@@ -42,11 +43,15 @@ class Student extends Model
         'last_name',
         'email',
         'phone',
+        'avatar',
         'class',
         'school_year',
         'tuition_amount',
         'amount_paid',
         'status',
+        'study_level_id',
+        'specialization_id',
+        'class_id',
     ];
 
     /**
@@ -60,7 +65,7 @@ class Student extends Model
     /**
      * Attributs ajoutés au JSON retourné (compatibilité frontend)
      */
-    protected $appends = ['is_active'];
+    protected $appends = ['is_active', 'avatar_url'];
 
     /**
      * Accessor : is_active (true si status === 'active')
@@ -71,11 +76,45 @@ class Student extends Model
     }
 
     /**
+     * Accessor : avatar_url — URL publique de l'avatar ou null
+     */
+    public function getAvatarUrlAttribute(): ?string
+    {
+        $path = $this->attributes['avatar'] ?? null;
+        if (!$path) return null;
+        return Storage::disk('public')->url($path);
+    }
+
+    /**
      * L'annexe à laquelle appartient l'étudiant
      */
     public function annexe(): BelongsTo
     {
         return $this->belongsTo(Annexe::class);
+    }
+
+    /**
+     * Le niveau d'études de l'étudiant
+     */
+    public function studyLevel(): BelongsTo
+    {
+        return $this->belongsTo(StudyLevel::class, 'study_level_id');
+    }
+
+    /**
+     * La spécialisation/filière de l'étudiant
+     */
+    public function specialization(): BelongsTo
+    {
+        return $this->belongsTo(Specialization::class, 'specialization_id');
+    }
+
+    /**
+     * La classe de l'étudiant
+     */
+    public function studentClass(): BelongsTo
+    {
+        return $this->belongsTo(StudentClass::class, 'class_id');
     }
 
     /**
