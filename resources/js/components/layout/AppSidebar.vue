@@ -206,6 +206,7 @@
 <script setup>
 import { ref, computed } from "vue";
 import { useRoute } from "vue-router";
+import { usePermissions } from "@/composables/usePermissions";
 
 import {
   GridIcon,
@@ -227,48 +228,67 @@ import BoxCubeIcon from "@/icons/BoxCubeIcon.vue";
 import { useSidebar } from "@/composables/useSidebar";
 
 const route = useRoute();
+const { hasPermission, isGestionnaire, isComptable } = usePermissions();
 
 const { isExpanded, isMobileOpen, isHovered, openSubmenu } = useSidebar();
 
-const menuGroups = [
+const baseMenuGroups = [
   {
     title: "Menu",
     items: [
       {
         icon: GridIcon,
         name: "Dashboard",
-        path: "/", 
+        path: "/",
+        requiredPermission: "dashboard.view"
       },
       {
         icon: UserCircleIcon,
         name: "User Profile",
         path: "/profile",
+        // No permission required
       },
 
       {
         icon: UserCircleIcon,
         name: "Users",
         path: "/admin/users",
+        requiredPermission: "user.view"
       },
       {
         icon: ListIcon,
         name: "Students",
         path: "/admin/students",
+        requiredPermission: "student.view"
       },
       {
         icon: BoxCubeIcon,
         name: "Annexes",
         path: "/admin/annexes",
+        requiredPermission: "annexe.view",
+        hideForRoles: ['gestionnaire', 'comptable'] // Cache pour ces rôles même s'ils ont la permission
+      },
+      {
+        icon: DocsIcon,
+        name: "Academic",
+        requiredPermission: "student.view",
+        subItems: [
+          { name: "Study Levels", path: "/admin/study-levels", requiredPermission: "student.view", pro: false },
+          { name: "Specializations", path: "/admin/specializations", requiredPermission: "student.view", pro: false },
+          { name: "Classes", path: "/admin/classes", requiredPermission: "student.view", pro: false },
+        ],
       },
       {
         icon: PieChartIcon,
         name: "Payments",
         path: "/finances",
+        requiredPermission: "payment.view"
       },
       {
         icon: PlugInIcon,
         name: "Settings",
         path: "/settings",
+        // No permission required
       },
 
     ],
@@ -279,12 +299,14 @@ const menuGroups = [
       {
         icon: PieChartIcon,
         name: "Charts",
-        path: "/charts", 
+        path: "/charts",
+        // No permission required 
       },
 
       {
         icon: PlugInIcon,
         name: "Authentication",
+        // No permission required
         subItems: [
           { name: "Signin", path: "/signin", pro: false },
           { name: "Signup", path: "/signup", pro: false },
@@ -294,6 +316,44 @@ const menuGroups = [
   },
 ];
 
+// Filter menu items based on permissions
+const menuGroups = computed(() => {
+  return baseMenuGroups.map(group => ({
+    ...group,
+    items: group.items.filter(item => {
+      // Check if item should be hidden for specific roles
+      if (item.hideForRoles) {
+        if ((item.hideForRoles.includes('gestionnaire') && isGestionnaire.value) ||
+            (item.hideForRoles.includes('comptable') && isComptable.value)) {
+          return false;
+        }
+      }
+      
+      // No permission required - always show
+      if (!item.requiredPermission) return true;
+      
+      // Check if user has required permission
+      if (!hasPermission(item.requiredPermission)) return false;
+      
+      // If item has subitems, filter them too
+      if (item.subItems) {
+        const filteredSubItems = item.subItems.filter(subItem => 
+          !subItem.requiredPermission || hasPermission(subItem.requiredPermission)
+        );
+        
+        // Hide parent if no subitems remain
+        if (filteredSubItems.length === 0) return false;
+        
+        // Update subitems with filtered list
+        item.subItems = filteredSubItems;
+      }
+      
+      return true;
+    })
+  }))
+  .filter(group => group.items.length > 0); // Remove empty groups
+});
+
 const isActive = (path) => route.path === path;
 
 const toggleSubmenu = (groupIndex, itemIndex) => {
@@ -302,7 +362,7 @@ const toggleSubmenu = (groupIndex, itemIndex) => {
 };
 
 const isAnySubmenuRouteActive = computed(() => {
-  return menuGroups.some((group) =>
+  return menuGroups.value.some((group) =>
     group.items.some(
       (item) =>
         item.subItems && item.subItems.some((subItem) => isActive(subItem.path))
@@ -315,7 +375,7 @@ const isSubmenuOpen = (groupIndex, itemIndex) => {
   return (
     openSubmenu.value === key ||
     (isAnySubmenuRouteActive.value &&
-      menuGroups[groupIndex].items[itemIndex].subItems?.some((subItem) =>
+      menuGroups.value[groupIndex].items[itemIndex].subItems?.some((subItem) =>
         isActive(subItem.path)
       ))
   );

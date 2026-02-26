@@ -61,10 +61,12 @@ import { UserCircleIcon, ChevronDownIcon, LogoutIcon, SettingsIcon, InfoCircleIc
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '@/services/api'
+import { usePermissions } from '@/composables/usePermissions'
 
 const router = useRouter()
 const dropdownOpen = ref(false)
 const dropdownRef = ref(null)
+const { setUser, clearPermissions } = usePermissions()
 
 // données de l'utilisateur connecté
 const user = ref({ name: '', email: '', avatar_url: '' })
@@ -103,6 +105,10 @@ const fetchCurrentUser = async () => {
         user.value.name = payload.name ?? payload.first_name ?? payload.username ?? ''
         user.value.email = payload.email ?? ''
         user.value.avatar_url = payload.avatar_url ?? payload.avatar ?? ''
+        
+        // Sauvegarder l'utilisateur complet avec permissions
+        setUser(payload)
+        
         return
       }
     } catch (err) {
@@ -125,8 +131,9 @@ const signOut = async () => {
   } catch (e) {
     console.error('Logout failed', e)
   } finally {
-    // supprimer token local et rediriger vers signin
+    // supprimer token local et permissions
     try { localStorage.removeItem('token') } catch {}
+    clearPermissions()
     closeDropdown()
     router.push('/signin')
   }

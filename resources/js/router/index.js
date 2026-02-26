@@ -10,69 +10,79 @@ const router = createRouter({
       path: '/',
       name: 'Dashboard',
       component: () => import('../views/Dashboard.vue'),
-      meta: {
-        title: 'Dashboard',
-      },
+      meta: { title: 'Dashboard', requiresAuth: true },
     },
     {
       path: '/profile',
       name: 'Profile',
       component: () => import('../views/Others/UserProfile.vue').catch(() => import('../views/Placeholders/PlaceholderPage.vue')),
-      meta: {
-        title: 'Profile',
-      },
+      meta: { title: 'Profile', requiresAuth: true },
     },
     {
       path: '/admin/users',
       name: 'Users',
       component: () => import('../views/Users/Userlist.vue'),
-      meta: {
-        title: 'Users',
-      },
+      meta: { title: 'Users', requiresAuth: true },
     },
     {
       path: '/admin/users/:id',
       name: 'User Details',
       component: () => import('../views/Users/Userdetails.vue'),
-      meta: {
-        title: 'User details',
-      },
+      meta: { title: 'User details', requiresAuth: true },
     },
     {
       path: '/admin/students',
       name: 'Students',
       component: () => import('../views/Students/StudentList.vue').catch(() => import('../views/Placeholders/PlaceholderPage.vue')),
-      meta: { title: 'Students' },
+      meta: { title: 'Students', requiresAuth: true },
     },
     {
       path: '/admin/students/:id',
       name: 'StudentDetails',
       component: () => import('../views/Students/StudentDetails.vue').catch(() => import('../views/Placeholders/PlaceholderPage.vue')),
-      meta: { title: 'Student details' },
+      meta: { title: 'Student details', requiresAuth: true },
     },
     {
       path: '/admin/students/:id/finance',
       name: 'StudentFinance',
       component: () => import('../views/Students/StudentFinance.vue').catch(() => import('../views/Placeholders/PlaceholderPage.vue')),
-      meta: { title: 'Student finance' },
+      meta: { title: 'Student finance', requiresAuth: true },
     },
     {
       path: '/admin/annexes',
       name: 'Annexes',
       component: () => import('../views/Annexes/AnnexeList.vue').catch(() => import('../views/Placeholders/PlaceholderPage.vue')),
-      meta: { title: 'Annexes' },
+      meta: { title: 'Annexes', requiresAuth: true },
+    },
+    {
+      path: '/admin/study-levels',
+      name: 'StudyLevels',
+      component: () => import('../views/Academic/StudyLevelList.vue').catch(() => import('../views/Placeholders/PlaceholderPage.vue')),
+      meta: { title: 'Study Levels', requiresAuth: true },
+    },
+    {
+      path: '/admin/specializations',
+      name: 'Specializations',
+      component: () => import('../views/Academic/SpecializationList.vue').catch(() => import('../views/Placeholders/PlaceholderPage.vue')),
+      meta: { title: 'Specializations', requiresAuth: true },
+    },
+    {
+      path: '/admin/classes',
+      name: 'Classes',
+      component: () => import('../views/Academic/ClassList.vue').catch(() => import('../views/Placeholders/PlaceholderPage.vue')),
+      meta: { title: 'Classes', requiresAuth: true },
     },
     {
       path: '/finances',
       name: 'Finances',
       component: () => import('../views/Finance/FinanceDashboard.vue').catch(() => import('../views/Placeholders/PlaceholderPage.vue')),
-      meta: { title: 'Finances' },
+      meta: { title: 'Finances', requiresAuth: true },
     },
     {
       path: '/settings',
       name: 'Settings',
       component: () => import('../views/Settings/Settings.vue').catch(() => import('../views/Placeholders/PlaceholderPage.vue')),
-      meta: { title: 'Settings' },
+      meta: { title: 'Settings', requiresAuth: true },
     },
     {
       path: '/charts',
@@ -124,12 +134,49 @@ const router = createRouter({
         title: 'Signup',
       },
     },
+    {
+      path: '/payment/:token',
+      name: 'PaymentLink',
+      component: () => import('../views/public/PaymentLinkPage.vue'),
+      props: true
+    },
+
+    //espace étudiant 
+    {
+      path: '/student/login',
+      name: 'StudentLogin',
+      component: () => import('../views/StudentAccount/LoginPage.vue'),
+      meta: { title: 'Connexion Étudiant', studentPublic: true },
+    },
+    {
+      path: '/student/profile',
+      name: 'StudentProfile',
+      component: () => import('../views/StudentAccount/ProfilePage.vue'),
+      meta: { title: 'Mon Espace Étudiant', requiresStudentAuth: true },
+    },
   ],
 })
 
 export default router
 
 router.beforeEach((to, from, next) => {
-  document.title = `Vue.js ${to.meta.title} | TailAdmin - Vue.js Tailwind CSS Dashboard Template`
-  next()
+  document.title = `Vue.js ${to.meta.title ?? ''} | SplitPay`;
+
+  // Protection espace admin
+  if (to.meta.requiresAuth) {
+    const token = localStorage.getItem('api_token');
+    if (!token) {
+      return next({ name: 'Signin', query: { redirect: to.fullPath } });
+    }
+  }
+
+  // Protection espace étudiant
+  if (to.meta.requiresStudentAuth) {
+    const token = localStorage.getItem('student_token');
+    if (!token) {
+      return next({ name: 'StudentLogin' });
+    }
+  }
+
+  next();
 })
