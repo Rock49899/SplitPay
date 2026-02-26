@@ -21,7 +21,12 @@
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
               <tr v-for="user in (usersInAnnexe || [])" :key="user.id">
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ user.name }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <div class="flex items-center gap-2.5">
+                    <AvatarDisplay :src="user.avatar_url" :label="user.name" :size="32" />
+                    <span>{{ user.name }}</span>
+                  </div>
+                </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ user.email }}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {{ annexeNames(user) || '-' }}
@@ -68,6 +73,7 @@ import ComponentCard from "@/components/common/ComponentCard.vue";
 import { useUserStore } from "@/stores/useUserStore";
 import { useRouter, useRoute } from 'vue-router';
 import CreateUser from '@/components/user/CreateUser.vue';
+import AvatarDisplay from '@/components/shared/AvatarDisplay.vue';
 import roleService from '@/services/roleService';
 import annexeService from '@/services/annexeService';
 
@@ -134,10 +140,37 @@ const onCreated = async (created) => {
 
 const groupedByAnnexe = computed(() => {
   const map = {};
-  (users.items || []).forEach((u) => {
-    const ann = (u.annexe && (u.annexe.name || u.annexe.id)) || "No Annexe";
-    if (!map[ann]) map[ann] = [];
-    map[ann].push(u);
+  const items = Array.isArray(users.items) ? users.items : [];
+  items.forEach((u) => {
+    // Try primary annexe first
+    let annexeKey = null;
+    
+    // Check for primary annexe from user_annexes
+    if (Array.isArray(u.user_annexes) && u.user_annexes.length > 0) {
+      const primary = u.user_annexes.find(ua => ua.is_principal);
+      if (primary && primary.annexe) {
+        annexeKey = primary.annexe.name || primary.annexe.id || "No Annexe";
+      } else {
+        // No primary, use first annexe
+        const first = u.user_annexes[0];
+        if (first && first.annexe) {
+          annexeKey = first.annexe.name || first.annexe.id || "No Annexe";
+        }
+      }
+    }
+    
+    // Fallback to direct annexe relation
+    if (!annexeKey && u.annexe) {
+      annexeKey = u.annexe.name || u.annexe.id || "No Annexe";
+    }
+    
+    // Final fallback
+    if (!annexeKey) {
+      annexeKey = "No Annexe";
+    }
+    
+    if (!map[annexeKey]) map[annexeKey] = [];
+    map[annexeKey].push(u);
   });
   // keep consistent ordering (optional)
   return map;

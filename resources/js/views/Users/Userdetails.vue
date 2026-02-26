@@ -3,15 +3,34 @@
     <PageBreadcrumb :pageTitle="`User: ${user?.name || '...'} `"/>
     <div class="space-y-5 sm:space-y-6">
       <ComponentCard title="User details">
+        <!-- Avatar header -->
+        <div class="flex items-center gap-4 mb-6 pb-5 border-b border-gray-100">
+          <div class="relative shrink-0">
+            <AvatarDisplay :src="avatarPreview || user?.avatar_url" :label="form.name" :size="72" />
+            <label v-if="editMode" class="absolute -bottom-1 -right-1 w-6 h-6 bg-brand-500 rounded-full flex items-center justify-center cursor-pointer shadow">
+              <svg class="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              <input type="file" class="sr-only" accept="image/jpeg,image/jpg,image/png,image/webp" @change="onAvatarChange" />
+            </label>
+          </div>
+          <div>
+            <p class="font-semibold text-gray-900">{{ form.name || '—' }}</p>
+            <p class="text-sm text-gray-500">{{ form.email }}</p>
+            <p v-if="editMode" class="text-xs text-gray-400 mt-0.5">Click the camera icon to change photo</p>
+          </div>
+        </div>
+
         <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
           <!-- Name -->
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Name</label>
             <template v-if="!editMode">
-              <p class="mt-1 text-gray-900">{{ form.name || '—' }}</p>
+              <p class="mt-1 text-gray-900 dark:text-white">{{ form.name || '—' }}</p>
             </template>
             <template v-else>
-              <input v-model="form.name" class="mt-1 block w-full rounded-md border px-3 py-2 text-white bg-gray-800 placeholder:text-gray-400" />
+              <input v-model="form.name" class="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 placeholder:text-gray-400 dark:text-white dark:bg-gray-800 dark:border-gray-700" />
             </template>
           </div>
 
@@ -19,10 +38,10 @@
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Email</label>
             <template v-if="!editMode">
-              <p class="mt-1 text-gray-900">{{ form.email || '—' }}</p>
+              <p class="mt-1 text-gray-900 dark:text-white">{{ form.email || '—' }}</p>
             </template>
             <template v-else>
-              <input v-model="form.email" class="mt-1 block w-full rounded-md border px-3 py-2 text-white bg-gray-800 placeholder:text-gray-400" />
+              <input v-model="form.email" class="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 placeholder:text-gray-400 dark:text-white dark:bg-gray-800 dark:border-gray-700" />
             </template>
           </div>
 
@@ -30,10 +49,10 @@
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Phone</label>
             <template v-if="!editMode">
-              <p class="mt-1 text-gray-900">{{ form.phone || '—' }}</p>
+              <p class="mt-1 text-gray-900 dark:text-white">{{ form.phone || '—' }}</p>
             </template>
             <template v-else>
-              <input v-model="form.phone" class="mt-1 block w-full rounded-md border px-3 py-2 text-white bg-gray-800 placeholder:text-gray-400" />
+              <input v-model="form.phone" class="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 placeholder:text-gray-400 dark:text-white dark:bg-gray-800 dark:border-gray-700" />
             </template>
           </div>
 
@@ -44,7 +63,7 @@
           </div>
 
           <!-- Annexes -->
-          <div>
+          <!-- <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Annexes</label>
             <template v-if="!editMode">
               <p class="mt-1 text-gray-900">{{ annexeNames(user) || 'No annexes' }}</p>
@@ -72,7 +91,7 @@
                 </div>
               </div>
             </template>
-          </div>
+          </div> -->
 
           <!-- Active -->
           <div class="flex items-center gap-3">
@@ -116,10 +135,18 @@
       </ComponentCard>
 
       <ComponentCard title="Roles & Permissions">
-        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div class="grid grid-cols-1 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Select Annexe</label>
+            <select v-model="selectedAnnexe" class="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:bg-gray-800 dark:text-white dark:border-gray-700">
+              <option value="">-- select annexe --</option>
+              <option v-for="a in annexes" :key="a.id" :value="a.id">{{ a.name }}</option>
+            </select>
+          </div>
+
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Assign role</label>
-            <select v-model="selectedRole" class="mt-1 block w-full rounded-md border px-3 py-2 text-sm bg-gray-800 text-white">
+            <select v-model="selectedRole" class="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:bg-gray-800 dark:text-white dark:border-gray-700">
               <option value="">-- select role --</option>
               <option v-for="r in roles" :key="r.id" :value="r.id">{{ roleLabel(r) }}</option>
             </select>
@@ -130,7 +157,7 @@
               <input type="checkbox" v-model="isPrimary" class="form-checkbox" />
               <span class="ml-2 text-sm text-gray-700 dark:text-gray-400">Primary</span>
             </label>
-            <button @click="assignRole" :disabled="assigning || !selectedRole" class="px-4 py-2 bg-brand-500 text-white rounded disabled:opacity-50">
+            <button @click="assignRole" :disabled="assigning || !selectedRole || !selectedAnnexe" class="px-4 py-2 bg-brand-500 text-white rounded disabled:opacity-50">
               <span v-if="!assigning">Assign</span>
               <span v-else>Assigning...</span>
             </button>
@@ -140,12 +167,15 @@
         <div class="mt-4">
           <h4 class="text-sm font-medium text-gray-700 dark:text-gray-400 mb-2">Current roles</h4>
           <ul class="space-y-2">
-            <li v-for="r in rolesList" :key="r.id" class="flex items-center justify-between bg-gray-50 rounded p-2">
+            <li v-for="r in rolesList" :key="r.id + '-' + r.annexe_id" class="flex items-center justify-between bg-gray-50 dark:bg-gray-800 rounded p-2">
               <div>
-                <div class="font-medium text-sm text-gray-900">{{ r.name }}</div>
-                <div class="text-xs text-gray-500">{{ r.code ?? '' }}</div>
+                <div class="font-medium text-sm text-gray-900 dark:text-white">{{ r.name }}</div>
+                <div class="text-xs text-gray-500 dark:text-gray-400">
+                  {{ r.code ?? '' }} - {{ r.annexe_name }}
+                  <span v-if="r.is_primary" class="ml-2 text-brand-500">(Primary)</span>
+                </div>
               </div>
-              <button @click="removeRole(r.id)" class="text-red-500 text-sm">Remove</button>
+              <button @click="removeRole(r.annexe_id)" class="text-red-500 text-sm hover:text-red-700">Remove</button>
             </li>
             <li v-if="!rolesList.length" class="text-sm text-gray-500">No roles</li>
           </ul>
@@ -164,6 +194,8 @@ import AdminLayout from '@/components/layout/AdminLayout.vue';
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue';
 import ComponentCard from '@/components/common/ComponentCard.vue';
 import userService from '@/services/userService';
+import api from '@/services/api';
+import AvatarDisplay from '@/components/shared/AvatarDisplay.vue';
 import { useRoleStore } from '@/stores/useRoleStore';
 import { useAnnexeStore } from '@/stores/useAnnexeStore';
 
@@ -182,7 +214,19 @@ const originalUser = ref(null);
 const roles = ref([]);
 const annexes = ref([]);
 const selectedRole = ref('');
+const selectedAnnexe = ref(''); // Annexe sélectionnée pour assign role
 const isPrimary = ref(false);
+
+// Avatar
+const avatarFile = ref(null);
+const avatarPreview = ref(null);
+const onAvatarChange = (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  avatarFile.value = file;
+  avatarPreview.value = URL.createObjectURL(file);
+};
+
 const form = ref({
   name: '',
   email: '',
@@ -248,6 +292,8 @@ const cancelEdit = () => {
       is_active: originalUser.value.is_active ?? true,
     };
   }
+  avatarFile.value = null;
+  avatarPreview.value = null;
   editMode.value = false;
 };
 
@@ -255,7 +301,14 @@ const save = async () => {
   saving.value = true;
   error.value = null;
   try {
-    await userService.update(id, form.value);
+    const fd = new FormData();
+    Object.entries(form.value).forEach(([k, v]) => {
+      if (v != null && v !== '') fd.append(k, String(v));
+    });
+    if (avatarFile.value) fd.append('avatar', avatarFile.value);
+    await userService.update(id, fd);
+    avatarFile.value = null;
+    avatarPreview.value = null;
     await load();
     editMode.value = false;
   } catch (e) {
@@ -266,17 +319,21 @@ const save = async () => {
 };
 
 const assignRole = async () => {
-  if (!selectedRole.value) return;
+  if (!selectedRole.value || !selectedAnnexe.value) {
+    error.value = 'Please select both annexe and role';
+    return;
+  }
   assigning.value = true;
   error.value = null;
   try {
     await api.post(`admin/users/${id}/assign-role`, {
-      annexe_id: user.value.annexe?.id ?? null,
+      annexe_id: selectedAnnexe.value,
       role_id: selectedRole.value,
       is_primary: isPrimary.value ?? false,
     });
     await load();
     selectedRole.value = '';
+    selectedAnnexe.value = '';
     isPrimary.value = false;
   } catch (e) {
     error.value = e.response?.data?.message || e.message || 'Assign role failed';
@@ -285,12 +342,11 @@ const assignRole = async () => {
   }
 };
 
-const removeRole = async (roleId) => {
-  if (!confirm('Remove role?')) return;
+const removeRole = async (annexeId) => {
+  if (!confirm('Remove role from this annexe?')) return;
   try {
     await api.post(`admin/users/${id}/remove-role`, {
-      annexe_id: user.value.annexe?.id ?? null,
-      role_id: roleId,
+      annexe_id: annexeId,
     });
     await load();
   } catch (e) {
@@ -303,13 +359,23 @@ const goBack = () => router.push('/admin/users');
 const rolesList = computed(() => {
   if (!user.value) return [];
   if (Array.isArray(user.value.user_annexes) && user.value.user_annexes.length) {
-    return user.value.user_annexes.map(ua => ua.role ?? {
-      id: ua.role_id ?? ua.id ?? String(Math.random()),
-      name: ua.role_name ?? ua.role?.name ?? ua.role_code ?? 'role',
+    return user.value.user_annexes.map(ua => ({
+      id: ua.role?.id ?? ua.role_id ?? String(Math.random()),
+      name: ua.role?.name ?? ua.role_name ?? 'role',
       code: ua.role?.code ?? ua.role_code ?? '',
-    });
+      annexe_id: ua.annexe_id,
+      annexe_name: ua.annexe?.name ?? ua.annexe_name ?? 'Unknown annexe',
+      is_primary: ua.is_principal ?? false,
+    }));
   }
-  if (Array.isArray(user.value.roles)) return user.value.roles;
+  if (Array.isArray(user.value.roles)) {
+    return user.value.roles.map(r => ({
+      ...r,
+      annexe_id: r.pivot?.annexe_id ?? user.value.annexe_id,
+      annexe_name: 'N/A',
+      is_primary: false,
+    }));
+  }
   return [];
 });
 
