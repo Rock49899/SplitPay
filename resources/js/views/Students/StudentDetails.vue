@@ -3,6 +3,25 @@
     <PageBreadcrumb :pageTitle="`Student: ${form.first_name || '...'} ${form.last_name || ''}`" />
     <div class="space-y-5 sm:space-y-6">
       <ComponentCard title="Student details">
+        <!-- Avatar header -->
+        <div class="flex items-center gap-4 mb-6 pb-5 border-b border-gray-100">
+          <div class="relative shrink-0">
+            <AvatarDisplay :src="avatarPreview || student?.avatar_url" :label="form.first_name" :size="72" />
+            <label v-if="editMode" class="absolute -bottom-1 -right-1 w-6 h-6 bg-brand-500 rounded-full flex items-center justify-center cursor-pointer shadow">
+              <svg class="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              <input type="file" class="sr-only" accept="image/jpeg,image/jpg,image/png,image/webp" @change="onAvatarChange" />
+            </label>
+          </div>
+          <div>
+            <p class="font-semibold text-gray-900">{{ form.first_name || '—' }} {{ form.last_name }}</p>
+            <p class="text-sm text-gray-500">{{ student?.matricule ?? '' }}</p>
+            <p v-if="editMode" class="text-xs text-gray-400 mt-0.5">Click the camera icon to change photo</p>
+          </div>
+        </div>
+
         <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">First name</label>
@@ -122,6 +141,7 @@ import { useRoute, useRouter } from 'vue-router';
 import AdminLayout from '@/components/layout/AdminLayout.vue';
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue';
 import ComponentCard from '@/components/common/ComponentCard.vue';
+import AvatarDisplay from '@/components/shared/AvatarDisplay.vue';
 import studentService from '@/services/studentService';
 
 const route = useRoute();
@@ -129,6 +149,16 @@ const router = useRouter();
 const id = route.params.id;
 
 const student = ref(null);
+// Avatar
+const avatarFile = ref(null);
+const avatarPreview = ref(null);
+
+const onAvatarChange = (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  avatarFile.value = file;
+  avatarPreview.value = URL.createObjectURL(file);
+};
 const form = ref({
   first_name: '',
   last_name: '',
@@ -186,6 +216,8 @@ const cancelEdit = () => {
       phone: student.value.phone ?? '',
     };
   }
+  avatarFile.value = null;
+  avatarPreview.value = null;
   editMode.value = false;
 };
 
@@ -193,7 +225,14 @@ const save = async () => {
   saving.value = true;
   error.value = null;
   try {
-    await studentService.update(id, form.value);
+    const fd = new FormData();
+    Object.entries(form.value).forEach(([k, v]) => {
+      if (v != null && v !== '') fd.append(k, v);
+    });
+    if (avatarFile.value) fd.append('avatar', avatarFile.value);
+    await studentService.update(id, fd);
+    avatarFile.value = null;
+    avatarPreview.value = null;
     await load();
     editMode.value = false;
   } catch (e) {

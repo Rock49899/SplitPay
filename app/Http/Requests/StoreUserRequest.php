@@ -21,6 +21,7 @@ class StoreUserRequest extends FormRequest
             'is_active' => 'sometimes|boolean',
             'scope' => 'required|in:institution,annexe',
             'role_id' => 'nullable|uuid|exists:roles,id',
+            'avatar' => 'nullable|image|mimes:jpeg,jpg,png,webp|max:2048',
         ];
     }
 }

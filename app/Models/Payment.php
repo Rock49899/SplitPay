@@ -16,15 +16,18 @@ class Payment extends Model
 
     protected $fillable = [
         'installment_id',
-        'reference',
+        'payment_link_id',
+        'student_id',
         'amount',
-        'method',
-        'status',
-        'payplus_transaction_id',
+        'method', // mtn|moov
         'payer_name',
         'payer_email',
         'payer_phone',
-        'payment_date',
+        'reference',
+        'payplus_transaction_id',
+        'status',
+        'metadata',
+        'paid_at',
     ];
 
     protected $casts = [
@@ -39,9 +42,14 @@ class Payment extends Model
         return $this->belongsTo(Installment::class);
     }
 
-    public function paymentLink()
+    public function paymentLink(): BelongsTo
     {
-       return $this->installment->paymentLink();
+        return $this->belongsTo(PaymentLink::class, 'payment_link_id');
+    }
+
+    public function student(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\Student::class);
     }
 
 }

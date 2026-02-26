@@ -20,6 +20,7 @@ class UpdateUserRequest extends FormRequest
             'password' => 'sometimes|nullable|string|min:8',
             'annexe_id' => 'nullable|uuid|exists:annexes,id',
             'is_active' => 'sometimes|boolean',
+            'avatar'   => 'nullable|image|mimes:jpeg,jpg,png,webp|max:2048',
         ];
     }
 }

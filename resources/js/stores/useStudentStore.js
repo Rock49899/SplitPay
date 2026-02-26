@@ -18,11 +18,20 @@ export const useStudentStore = defineStore('students', {
         // use "search" query param to match backend
         const p = { page: this.page, search: this.query, ...params };
         const res = await studentService.index(p);
-        this.items = res.data.data ?? res.data;
-        this.meta = res.data.meta ?? {};
+        const responseData = res.data.data ?? res.data;
+        this.items = Array.isArray(responseData) ? responseData : [];
+        this.meta = res.data.meta ?? {
+          current_page: res.data.current_page,
+          last_page: res.data.last_page,
+          per_page: res.data.per_page,
+          total: res.data.total,
+          from: res.data.from,
+          to: res.data.to,
+        };
         return res;
       } catch (e) {
         this.error = e.response?.data || e.message;
+        this.items = [];
         throw e;
       } finally {
         this.loading = false;

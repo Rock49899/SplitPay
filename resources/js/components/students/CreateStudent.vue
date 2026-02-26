@@ -8,6 +8,20 @@
       </div>
 
       <div class="grid grid-cols-1 gap-3">
+        <!-- Avatar upload -->
+        <div class="flex items-center gap-4">
+          <div class="w-16 h-16 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center overflow-hidden shrink-0">
+            <img v-if="avatarPreview" :src="avatarPreview" class="w-full h-full object-cover" />
+            <svg v-else class="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+            </svg>
+          </div>
+          <div class="flex-1">
+            <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Photo (optional)</label>
+            <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp" @change="onAvatarChange" class="block w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100" />
+            <p class="text-xs text-gray-400 mt-0.5">JPG, PNG or WebP &mdash; max 2 MB, square recommended</p>
+          </div>
+        </div>
         <input v-model="form.first_name" placeholder="First name" class="px-3 py-2 rounded border bg-transparent text-gray-900 dark:text-white" />
         <input v-model="form.last_name" placeholder="Last name" class="px-3 py-2 rounded border bg-transparent text-gray-900 dark:text-white" />
         <input v-model="form.email" placeholder="Email" class="px-3 py-2 rounded border bg-transparent text-gray-900 dark:text-white" />
@@ -63,6 +77,18 @@ const props = defineProps({
 const emit = defineEmits(['created', 'close']);
 
 const annexesLocal = ref(props.annexes ?? []);
+
+// Avatar
+const avatarFile = ref(null);
+const avatarPreview = ref(null);
+
+const onAvatarChange = (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  avatarFile.value = file;
+  avatarPreview.value = URL.createObjectURL(file);
+};
+
 const form = ref({
   first_name: '',
   last_name: '',
@@ -109,22 +135,23 @@ const submit = async () => {
 
   loading.value = true;
   try {
-    const payload = {
-      first_name: form.value.first_name,
-      last_name: form.value.last_name,
-      email: form.value.email || null,
-      phone: form.value.phone || null,
-      birth_date: form.value.birth_date || null,
-      matricule: form.value.matricule,
-      student_number: form.value.student_number,
-      class_name: form.value.class_name || null,
-      study_year: form.value.study_year || null,
-      tuition_amount: form.value.tuition_amount ?? null,
-      is_active: !!form.value.is_active,
-      annexe_id: form.value.primary_annexe || (form.value.annexes[0] ?? null),
-      annexes: form.value.annexes,
-    };
-    const res = await studentService.store(payload);
+    const fd = new FormData();
+    fd.append('first_name', form.value.first_name);
+    fd.append('last_name', form.value.last_name);
+    if (form.value.email) fd.append('email', form.value.email);
+    if (form.value.phone) fd.append('phone', form.value.phone);
+    if (form.value.birth_date) fd.append('birth_date', form.value.birth_date);
+    fd.append('matricule', form.value.matricule);
+    fd.append('student_number', form.value.student_number ?? '');
+    if (form.value.class_name) fd.append('class_name', form.value.class_name);
+    if (form.value.study_year) fd.append('study_year', form.value.study_year);
+    if (form.value.tuition_amount != null) fd.append('tuition_amount', form.value.tuition_amount);
+    fd.append('is_active', form.value.is_active ? '1' : '0');
+    fd.append('annexe_id', form.value.primary_annexe || (form.value.annexes[0] ?? ''));
+    form.value.annexes.forEach(id => fd.append('annexes[]', id));
+    if (avatarFile.value) fd.append('avatar', avatarFile.value);
+
+    const res = await studentService.store(fd);
     const created = res.data?.student ?? res.data;
     // optionally assign other annexes via API if backend requires; omitted for brevity
     emit('created', created);

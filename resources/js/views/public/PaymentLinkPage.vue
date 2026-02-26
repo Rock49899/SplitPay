@@ -19,23 +19,50 @@
         <p class="text-sm mt-1">{{ error }}</p>
       </div>
 
-      <!-- État succès (paiement initié) -->
-      <div v-else-if="paymentInitiated" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center">
+      <!-- État : paiement confirmé -->
+      <div v-else-if="paymentInitiated && paymentConfirmed" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center">
         <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <svg class="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
           </svg>
         </div>
-        <h2 class="text-xl font-semibold text-gray-800 mb-2">Paiement initié !</h2>
-        <p class="text-gray-600 text-sm mb-4">
-          Votre demande de paiement a été envoyée. Veuillez <strong>confirmer depuis votre téléphone</strong> en acceptant la notification de votre opérateur ({{ form.method === 'mtn' ? 'MTN Mobile Money' : 'Moov Money' }}).
-        </p>
+        <h2 class="text-xl font-semibold text-green-700 mb-2">Paiement confirmé ✓</h2>
+        <p class="text-gray-600 text-sm mb-4">Votre paiement a bien été reçu et enregistré.</p>
         <div class="bg-gray-50 rounded-lg p-4 text-left text-sm text-gray-700 space-y-1">
           <div><span class="text-gray-500">Référence :</span> <span class="font-mono font-medium">{{ paymentReference }}</span></div>
           <div><span class="text-gray-500">Montant :</span> <strong>{{ fmt(form.amount, link.currency) }}</strong></div>
-          <div><span class="text-gray-500">Numéro :</span> +{{ fullPhone }}</div>
         </div>
-        <p class="text-xs text-gray-400 mt-4">En cas de problème, contactez votre établissement avec cette référence.</p>
+      </div>
+
+      <!-- État : paiement échoué -->
+      <div v-else-if="paymentInitiated && paymentFailed" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center">
+        <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg class="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </div>
+        <h2 class="text-xl font-semibold text-red-700 mb-2">Paiement échoué</h2>
+        <p class="text-gray-600 text-sm mb-4">La transaction a été refusée ou annulée.</p>
+        <div class="bg-gray-50 rounded-lg p-3 text-sm text-gray-600">
+          <span class="text-gray-500">Référence :</span> <span class="font-mono">{{ paymentReference }}</span>
+        </div>
+        <p class="text-xs text-gray-400 mt-3">Contactez votre établissement avec cette référence.</p>
+      </div>
+
+      <!-- État : en attente de confirmation (polling en cours) -->
+      <div v-else-if="paymentInitiated" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center">
+        <!-- Spinner animé -->
+        <div class="w-16 h-16 rounded-full border-4 border-gray-200 border-t-blue-500 animate-spin mx-auto mb-5"></div>
+        <h2 class="text-xl font-semibold text-gray-800 mb-2">En attente de confirmation…</h2>
+        <p class="text-gray-600 text-sm mb-4">
+          Une demande a été envoyée à <strong>{{ form.method === 'mtn' ? 'MTN Mobile Money' : 'Moov Money' }}</strong>.<br>
+          Acceptez la notification sur votre téléphone (<strong>+{{ fullPhone }}</strong>) et entrez votre code PIN.
+        </p>
+        <div class="bg-blue-50 rounded-lg p-4 text-left text-sm text-gray-700 space-y-1">
+          <div><span class="text-gray-500">Référence :</span> <span class="font-mono font-medium">{{ paymentReference }}</span></div>
+          <div><span class="text-gray-500">Montant :</span> <strong>{{ fmt(form.amount, link.currency) }}</strong></div>
+        </div>
+        <p class="text-xs text-gray-400 mt-4">Cette page se met à jour automatiquement. Ne la fermez pas.</p>
       </div>
 
       <!-- Formulaire de paiement -->
@@ -246,7 +273,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRoute } from 'vue-router';
 import paymentLinkService from '@/services/paymentLinkService';
 import paymentService from '@/services/paymentService';
@@ -261,6 +288,37 @@ const link              = ref(null);
 const submitting        = ref(false);
 const paymentInitiated  = ref(false);
 const paymentReference  = ref('');
+const paymentConfirmed  = ref(false);  // polling → statut success
+const paymentFailed     = ref(false);  // polling → statut failed
+const pollTimer         = ref(null);
+
+const POLL_INTERVAL_MS = 5000;   // vérifier toutes les 5 secondes
+const POLL_MAX_TRIES   = 24;     // abandon après 2 minutes (24 × 5s)
+
+const startPolling = (reference) => {
+  let tries = 0;
+  pollTimer.value = setInterval(async () => {
+    tries++;
+    try {
+      const res = await paymentService.checkStatus(reference);
+      const status = res.data?.status;
+      if (status === 'success') {
+        clearInterval(pollTimer.value);
+        paymentConfirmed.value = true;
+      } else if (status === 'failed') {
+        clearInterval(pollTimer.value);
+        paymentFailed.value = true;
+      }
+    } catch (_) { /* silent — on continue */ }
+    if (tries >= POLL_MAX_TRIES) {
+      clearInterval(pollTimer.value); // délai dépassé, on arrête
+    }
+  }, POLL_INTERVAL_MS);
+};
+
+onUnmounted(() => {
+  if (pollTimer.value) clearInterval(pollTimer.value);
+});
 const showPersonalInfo  = ref(false);
 
 // Liste des pays supportés (extensible)
@@ -389,6 +447,8 @@ const submit = async () => {
     const res = await paymentService.createPublicCheckout(payload);
     paymentReference.value = res.data?.reference ?? '';
     paymentInitiated.value = true;
+    // Démarrer le polling pour mettre à jour le statut automatiquement
+    startPolling(paymentReference.value);
 
   } catch (e) {
     submitError.value = e.response?.data?.message || e.message || 'Une erreur est survenue. Réessayez.';

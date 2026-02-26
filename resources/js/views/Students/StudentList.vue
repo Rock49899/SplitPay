@@ -58,7 +58,12 @@
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
               <tr v-for="s in (studentsInAnnexe || [])" :key="s.id">
-                <td v-if="visibleColumns.includes('name')" class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ s.first_name }} {{ s.last_name }}</td>
+                <td v-if="visibleColumns.includes('name')" class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <div class="flex items-center gap-2.5">
+                    <AvatarDisplay :src="s.avatar_url" :label="s.first_name" :size="32" />
+                    <span>{{ s.first_name }} {{ s.last_name }}</span>
+                  </div>
+                </td>
                 <td v-if="visibleColumns.includes('matricule')" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ s.matricule ?? '-' }}</td>
                 <td v-if="visibleColumns.includes('email')" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ s.email ?? '-' }}</td>
                 <td v-if="visibleColumns.includes('phone')" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ s.phone ?? '-' }}</td>
@@ -107,6 +112,7 @@ import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue';
 import ComponentCard from '@/components/common/ComponentCard.vue';
 import CreateStudent from '@/components/students/CreateStudent.vue';
 import StudentColumnsSelector from '@/components/students/StudentColumnsSelector.vue';
+import AvatarDisplay from '@/components/shared/AvatarDisplay.vue';
 import { useStudentStore } from '@/stores/useStudentStore';
 import studentService from '@/services/studentService';
 import { useRouter, useRoute } from 'vue-router';
@@ -199,7 +205,8 @@ const annexeGroupKey = (s) => {
 
 const groupedByAnnexe = computed(() => {
   const map = {};
-  (students.items || []).forEach(s => {
+  const items = Array.isArray(students.items) ? students.items : [];
+  items.forEach(s => {
     const key = annexeGroupKey(s) || 'No Annexe';
     if (!map[key]) map[key] = [];
     map[key].push(s);
@@ -208,7 +215,7 @@ const groupedByAnnexe = computed(() => {
 });
 
 const enrichStudents = async () => {
-  const items = students.items ?? [];
+  const items = Array.isArray(students.items) ? students.items : [];
   if (!items.length) return;
   try {
     const details = await Promise.all(items.map(s => studentService.show(s.id).then(r => r.data?.student ?? r.data ?? null).catch(() => null)));

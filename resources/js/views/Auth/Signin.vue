@@ -258,7 +258,7 @@
 import { ref } from 'vue'
 import CommonGridShape from '@/components/common/CommonGridShape.vue'
 import FullScreenLayout from '@/components/layout/FullScreenLayout.vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/useAuthStore'
 
 const email = ref('')
@@ -271,6 +271,7 @@ const error = ref(null)
 
 const auth = useAuthStore()
 const router = useRouter()
+const route = useRoute()
 
 const togglePasswordVisibility = () => {
   showPassword.value = !showPassword.value
@@ -283,8 +284,9 @@ const handleSubmit = async () => {
     const res = await auth.login({ email: email.value, password: password.value })
     // optional: fetch user profile
     try { await auth.fetchMe() } catch (_) {}
-    // redirect to dashboard
-    router.push('/')
+    // redirect to original destination or dashboard
+    const redirect = route.query.redirect
+    router.push(redirect && redirect !== '/signin' ? redirect : '/')
   } catch (e) {
     error.value = e.response?.data?.message || e.message || 'Login failed'
   } finally {

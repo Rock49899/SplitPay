@@ -2,6 +2,14 @@
   <AdminLayout>
     <PageBreadcrumb :pageTitle="`Finance — ${student?.first_name || ''} ${student?.last_name || ''}`" />
     <div class="space-y-4">
+      <!-- Student mini-header -->
+      <div v-if="student" class="flex items-center gap-3 bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-3">
+        <AvatarDisplay :src="student.avatar_url" :label="student.first_name" :size="44" />
+        <div>
+          <p class="font-semibold text-gray-900 text-sm">{{ student.first_name }} {{ student.last_name }}</p>
+          <p class="text-xs text-gray-500">{{ student.matricule }}</p>
+        </div>
+      </div>
       <ComponentCard title="Financial Summary">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
@@ -58,6 +66,7 @@ import studentService from '@/services/studentService';
 import Modal from '@/components/payment/Modal.vue';
 import PaymentLinkModal from '@/components/payment/PaymentLinkModal.vue';
 import PaymentLinksCard from '@/components/payment/PaymentLinksCard.vue';
+import AvatarDisplay from '@/components/shared/AvatarDisplay.vue';
 
 const route = useRoute();
 const id = route.params.id;

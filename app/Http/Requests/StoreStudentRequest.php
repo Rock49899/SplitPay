@@ -23,6 +23,7 @@ class StoreStudentRequest extends FormRequest
             'class'          => 'nullable|string|max:100',
             'school_year'    => 'required|string|max:20',
             'tuition_amount' => 'required|numeric|min:0',
+            'avatar'        => 'nullable|image|mimes:jpeg,jpg,png,webp|max:2048',
         ];
     }
 }

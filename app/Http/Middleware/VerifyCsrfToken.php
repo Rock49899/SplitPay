@@ -14,5 +14,8 @@ class VerifyCsrfToken extends Middleware
 	protected $except = [
 		// Exclude API routes (stateless) to avoid CSRF 419 for API clients
 		'api/*',
+		'api/payplus/webhook', 
 	];
 }
+
+

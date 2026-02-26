@@ -24,6 +24,7 @@ class UpdateStudentRequest extends FormRequest
             'school_year'  => 'sometimes|nullable|string|max:20',
             // statut : conforme à l'énumération en base (active, suspended, graduated)
             'status'       => 'sometimes|string|in:active,suspended,graduated',
+            'avatar'       => 'nullable|image|mimes:jpeg,jpg,png,webp|max:2048',
         ];
     }
 }

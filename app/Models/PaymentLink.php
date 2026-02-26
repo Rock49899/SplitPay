@@ -67,19 +67,19 @@ class PaymentLink extends Model
         'expire_at' => 'datetime',
     ];
     /**
-     * L'étudiant associé à ce lien
+     * Relation paiement(s) directs pour ce lien
      */
-    public function student(): BelongsTo
+    public function payments(): HasMany
     {
-        return $this->belongsTo(Student::class);
+        return $this->hasMany(Payment::class, 'payment_link_id');
     }
 
     /**
-     * L'utilisateur qui a créé ce lien
+     * L'étudiant associé (ancien schéma direct)
      */
-    public function creator(): BelongsTo
+    public function student(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'created_by');
+        return $this->belongsTo(\App\Models\Student::class);
     }
 
     //un lien pour plusieurs paiements
@@ -255,51 +255,36 @@ class PaymentLink extends Model
     /**
      * liens de paiement filtrés selon l'annexe de l'étudiant associé
      */
-    // protected static function booted()
-    // {
-    //     static::addGlobalScope('annexe', function (Builder $query) {
-    //         if (auth()->check() && !auth()->user()->isSuperAdminInstitution()) {
-    //             $annexeIds = auth()->user()->getAccessibleAnnexeIds();
-    //             if (!empty($annexeIds)) {
-    //                 $query->whereHas('student', function ($q) use ($annexeIds) {
-    //                     $q->whereIn('annexe_id', $annexeIds);
-    //                 });
-    //             } else {
-    //                 $query->whereRaw('1 = 0');
-    //             }
-    //         }
-    //     });
-    // }
     protected static function booted()
-{
-    static::addGlobalScope('annexe', function (Builder $query) {
+    {
+        static::addGlobalScope('annexe', function (Builder $query) {
 
-        $user = auth()->user();
+            $user = auth()->user();
 
-        if (!$user) {
-            return;
-        }
+            if (!$user) {
+                return;
+            }
 
-        if (method_exists($user, 'isSuperAdminInstitution') 
-            && $user->isSuperAdminInstitution()) {
-            return;
-        }
+            if (method_exists($user, 'isSuperAdminInstitution') 
+                && $user->isSuperAdminInstitution()) {
+                return;
+            }
 
-        if (!method_exists($user, 'getAccessibleAnnexeIds')) {
-            return;
-        }
+            if (!method_exists($user, 'getAccessibleAnnexeIds')) {
+                return;
+            }
 
-        $annexeIds = $user->getAccessibleAnnexeIds();
+            $annexeIds = $user->getAccessibleAnnexeIds();
 
-        if (!empty($annexeIds)) {
-            $query->whereHas('student', function ($q) use ($annexeIds) {
-                $q->whereIn('annexe_id', $annexeIds);
-            });
-        } else {
-            $query->whereRaw('1 = 0');
-        }
-    });
-}
+            if (!empty($annexeIds)) {
+                $query->whereHas('student', function ($q) use ($annexeIds) {
+                    $q->whereIn('annexe_id', $annexeIds);
+                });
+            } else {
+                $query->whereRaw('1 = 0');
+            }
+        });
+    }
 
 }
 

@@ -3,8 +3,13 @@ import api from './api';
 const index = (params = {}) => api.get('admin/students', { params });
 const show = (id) => api.get(`admin/students/${id}`);
 const store = (payload) => api.post('admin/students', payload);
-//  PATCH pour update partiel, fallback sur PUT si nécessaire
+//  PATCH pour update partiel (POST + _method=PATCH pour FormData, fallback sur PUT si nécessaire)
 const update = async (id, payload) => {
+  // FormData requires POST with _method spoofing (browsers don't support PATCH multipart)
+  if (payload instanceof FormData) {
+    payload.append('_method', 'PATCH');
+    return api.post(`admin/students/${id}`, payload);
+  }
   try {
     return await api.patch(`admin/students/${id}`, payload);
   } catch (err) {

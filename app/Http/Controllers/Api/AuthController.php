@@ -93,14 +93,27 @@ class AuthController extends Controller
         }]);
 
         $roles = collect();
+        $permissions = collect();
+        
         foreach ($user->annexes as $annexe) {
-            $role = \App\Models\Role::find($annexe->pivot->role_id);
+            $role = \App\Models\Role::with('permissions')->find($annexe->pivot->role_id);
             if ($role) {
                 $roles->push([
                     'code' => $role->code,
                     'label' => $role->label,
                     'annexe' => $annexe->name,
                 ]);
+                
+                // Ajouter les permissions de ce rôle (sans doublons)
+                foreach ($role->permissions as $perm) {
+                    if (!$permissions->contains('code', $perm->code)) {
+                        $permissions->push([
+                            'code' => $perm->code,
+                            'label' => $perm->label,
+                            'module' => $perm->module,
+                        ]);
+                    }
+                }
             }
         }
 
@@ -120,6 +133,7 @@ class AuthController extends Controller
                     ];
                 }),
                 'roles' => $roles,
+                'permissions' => $permissions->pluck('code')->toArray(), // Array simple des codes de permissions
             ],
         ], 200);
     }
