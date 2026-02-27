@@ -4,8 +4,14 @@
       class="flex items-center text-gray-700 dark:text-gray-400"
       @click.prevent="toggleDropdown"
     >
-      <span class="mr-3 overflow-hidden rounded-full h-11 w-11">
-        <img :src="user.avatar_url || '/images/user/owner.jpg'" alt="User" />
+      <span class="mr-3 relative" @click.stop="() => { if (user.avatar_url) showImageModal = true }">
+        <AvatarDisplay 
+          :src="user.avatar_url" 
+          :label="user.name" 
+          :size="44"
+          :clickable="!!user.avatar_url"
+          @click="showImageModal = true"
+        />
       </span>
 
       <span class="block mr-1 font-medium text-theme-sm">{{ user.name || 'User' }}</span>
@@ -53,6 +59,13 @@
       </button>
     </div>
     <!-- Dropdown End -->
+
+    <!-- Modal pour agrandir l'avatar -->
+    <ImageViewerModal
+      v-model="showImageModal"
+      :image-src="user.avatar_url || ''"
+      :image-alt="user.name"
+    />
   </div>
 </template>
 
@@ -62,10 +75,13 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '@/services/api'
 import { usePermissions } from '@/composables/usePermissions'
+import AvatarDisplay from '@/components/shared/AvatarDisplay.vue'
+import ImageViewerModal from '@/components/shared/ImageViewerModal.vue'
 
 const router = useRouter()
 const dropdownOpen = ref(false)
 const dropdownRef = ref(null)
+const showImageModal = ref(false)
 const { setUser, clearPermissions } = usePermissions()
 
 // données de l'utilisateur connecté
@@ -148,11 +164,19 @@ const handleClickOutside = (event) => {
 
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
+  // Écouter les mises à jour du profil utilisateur
+  window.addEventListener('user-profile-updated', fetchCurrentUser)
   fetchCurrentUser()
 })
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
+  window.removeEventListener('user-profile-updated', fetchCurrentUser)
+})
+
+// Exposer fetchCurrentUser pour pouvoir recharger l'avatar depuis d'autres composants
+defineExpose({
+  refreshUser: fetchCurrentUser
 })
 </script>
 
