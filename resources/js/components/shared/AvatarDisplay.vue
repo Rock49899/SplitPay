@@ -2,10 +2,14 @@
   <!-- Avatar with photo or fallback icon -->
   <div
     :style="{ width: sizePx, height: sizePx }"
-    class="shrink-0 rounded-full overflow-hidden bg-gray-100 border border-gray-200 flex items-center justify-center"
+    :class="[
+      'shrink-0 rounded-full overflow-hidden bg-gray-100 border border-gray-200 flex items-center justify-center',
+      clickable && src && !hasError ? 'cursor-pointer hover:ring-2 hover:ring-brand-500 transition-all' : ''
+    ]"
+    @click="handleClick"
   >
     <img
-      v-if="src"
+      v-if="src && !hasError"
       :src="src"
       :alt="label"
       class="w-full h-full object-cover"
@@ -43,18 +47,36 @@ const props = defineProps({
     type: String,
     default: 'avatar',
   },
-  /** Size in pixels (applies to both width and height) */
   size: {
     type: Number,
     default: 40,
   },
+  /** Make avatar clickable */
+  clickable: {
+    type: Boolean,
+    default: false,
+  },
 });
+
+const emit = defineEmits(['click']);
 
 // Reset on src change so error doesn't persist for a new src
 const hasError = ref(false);
-watch(() => props.src, () => { hasError.value = false; });
+watch(() => props.src, (newSrc) => { 
+  hasError.value = false;
+  if (newSrc) console.log('AvatarDisplay - Loading image:', newSrc);
+});
 
-const onImgError = () => { hasError.value = true; };
+const onImgError = () => { 
+  console.error('Failed to load avatar image:', props.src);
+  hasError.value = true; 
+};
+
+const handleClick = () => {
+  if (props.clickable && props.src && !hasError.value) {
+    emit('click');
+  }
+};
 
 const sizePx = computed(() => `${props.size}px`);
 const iconSizePx = computed(() => `${Math.round(props.size * 0.55)}px`);
