@@ -82,7 +82,9 @@ class Student extends Model
     {
         $path = $this->attributes['avatar'] ?? null;
         if (!$path) return null;
-        return Storage::disk('public')->url($path);
+        
+        // Retourner une URL relative au lieu d'absolue pour éviter les problèmes de domaine
+        return '/storage/' . $path;
     }
 
     /**
