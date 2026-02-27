@@ -4,9 +4,13 @@
       <div class="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
         <div class="flex flex-col items-center w-full gap-6 xl:flex-row">
           <div class="relative w-20 h-20 group">
-            <div class="w-20 h-20 overflow-hidden border border-gray-200 rounded-full dark:border-gray-800">
-              <img :src="avatarPreview || form.avatar_url || '/images/user/owner.jpg'" alt="user" class="w-full h-full object-cover" />
-            </div>
+            <AvatarDisplay 
+              :src="avatarPreview || form.avatar_url" 
+              :label="form.name" 
+              :size="80"
+              :clickable="!!(avatarPreview || form.avatar_url)"
+              @click="showImageModal = true"
+            />
             <label class="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 group-hover:opacity-100 cursor-pointer transition">
               <svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
@@ -100,17 +104,27 @@
         </div>
       </template>
     </Modal>
+
+    <!-- Modal pour agrandir l'avatar -->
+    <ImageViewerModal
+      v-model="showImageModal"
+      :image-src="avatarPreview || form.avatar_url || ''"
+      :image-alt="form.name"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, onMounted, computed } from 'vue'
 import Modal from './Modal.vue'
+import AvatarDisplay from '@/components/shared/AvatarDisplay.vue'
+import ImageViewerModal from '@/components/shared/ImageViewerModal.vue'
 import api from '@/services/api'
 import { useAnnexeStore } from '@/stores/useAnnexeStore'
 
 const annexeStore = useAnnexeStore()
 const isProfileInfoModal = ref(false)
+const showImageModal = ref(false)
 
 // Avatar
 const avatarFile = ref(null)
@@ -209,6 +223,9 @@ const saveProfile = async () => {
     avatarPreview.value = null
     isProfileInfoModal.value = false
     await load()
+    
+    // Notifier UserMenu de se rafraîchir
+    window.dispatchEvent(new CustomEvent('user-profile-updated'))
   } catch (e) {
     console.error('Failed saving profile', e)
     alert(e.response?.data?.message || e.message || 'Save failed')
@@ -222,6 +239,9 @@ const saveAvatar = async (file) => {
     fd.append('_method', 'PATCH')
     await api.post('admin/me', fd)
     await load()
+    
+    // Notifier UserMenu de se rafraîchir
+    window.dispatchEvent(new CustomEvent('user-profile-updated'))
   } catch (e) {
     console.error('Avatar upload failed', e)
   }
