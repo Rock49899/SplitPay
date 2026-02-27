@@ -8,6 +8,21 @@
       </div>
 
       <div class="grid grid-cols-1 gap-3">
+        <!-- Avatar upload -->
+        <div class="flex items-center gap-4 mb-2">
+          <div class="relative shrink-0">
+            <AvatarDisplay :src="avatarPreview" :label="form.name" :size="64" />
+            <label class="absolute -bottom-1 -right-1 w-6 h-6 bg-brand-500 rounded-full flex items-center justify-center cursor-pointer shadow">
+              <svg class="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              <input type="file" class="sr-only" accept="image/jpeg,image/jpg,image/png,image/webp" @change="onAvatarChange" />
+            </label>
+          </div>
+          <div class="text-xs text-gray-500 dark:text-gray-400">Click camera to add photo</div>
+        </div>
+        
         <input v-model="form.name" placeholder="Full name" class="px-3 py-2 rounded border bg-transparent text-gray-900 dark:text-white" />
         <input v-model="form.email" placeholder="Email" class="px-3 py-2 rounded border bg-transparent text-gray-900 dark:text-white" />
         <input v-model="form.password" type="password" placeholder="Password" class="px-3 py-2 rounded border bg-transparent text-gray-900 dark:text-white" />
@@ -52,6 +67,7 @@ import userService from '@/services/userService';
 import roleService from '@/services/roleService';
 import annexeService from '@/services/annexeService';
 import api from '@/services/api';
+import AvatarDisplay from '@/components/shared/AvatarDisplay.vue';
 
 const props = defineProps({
   roles: { type: Array, default: () => [] },
@@ -62,6 +78,17 @@ const emit = defineEmits(['created', 'close']);
 
 const rolesLocal = ref(props.roles ?? []);
 const annexesLocal = ref(props.annexes ?? []);
+
+// Avatar
+const avatarFile = ref(null);
+const avatarPreview = ref(null);
+
+const onAvatarChange = (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  avatarFile.value = file;
+  avatarPreview.value = URL.createObjectURL(file);
+};
 
 const form = ref({
   name: '',
@@ -105,16 +132,33 @@ const submit = async () => {
   loading.value = true;
   try {
     // create user with primary annexe and role
-    const payload = {
-      name: form.value.name,
-      email: form.value.email,
-      password: form.value.password,
-      phone: form.value.phone || null,
-      role_id: form.value.role_id || null,
-      annexe_id: form.value.primary_annexe || null,
-      is_active: true,
-      scope: 'annexe', // par défaut l'utilisateur créén à le scope annexe
-    };
+    let payload;
+    
+    // Si avatar présent, utiliser FormData
+    if (avatarFile.value && avatarFile.value instanceof File) {
+      payload = new FormData();
+      payload.append('name', form.value.name);
+      payload.append('email', form.value.email);
+      payload.append('password', form.value.password);
+      if (form.value.phone) payload.append('phone', form.value.phone);
+      if (form.value.role_id) payload.append('role_id', form.value.role_id);
+      if (form.value.primary_annexe) payload.append('annexe_id', form.value.primary_annexe);
+      payload.append('is_active', '1');
+      payload.append('scope', 'annexe');
+      payload.append('avatar', avatarFile.value);
+    } else {
+      payload = {
+        name: form.value.name,
+        email: form.value.email,
+        password: form.value.password,
+        phone: form.value.phone || null,
+        role_id: form.value.role_id || null,
+        annexe_id: form.value.primary_annexe || null,
+        is_active: true,
+        scope: 'annexe',
+      };
+    }
+    
     const res = await userService.store(payload);
     const created = res.data?.user ?? res.data;
     // assign other annexes
