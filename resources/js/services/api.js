@@ -9,6 +9,14 @@ const api = axios.create({
 	},
 });
 
+// Intercepteur: si FormData, laisser le navigateur gérer Content-Type (multipart/form-data + boundary)
+api.interceptors.request.use((config) => {
+	if (config.data instanceof FormData) {
+		delete config.headers['Content-Type'];
+	}
+	return config;
+});
+
 // helper to set/remove Authorization header
 function applyToken(token) {
 	if (token) {
