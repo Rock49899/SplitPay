@@ -38,6 +38,9 @@ class UserController extends Controller
                 return response()->json(['data' => [], 'total' => 0], 200);
             }
             $query->whereHas('annexes', fn ($q) => $q->whereIn('annexes.id', $annexeIds));
+            
+            // (l'admin principal ne doit pas apparaître dans la liste des admins annexe)
+            $query->where('scope', '!=', 'institution');
         }
 
         try {

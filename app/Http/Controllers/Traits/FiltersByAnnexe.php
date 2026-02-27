@@ -23,6 +23,12 @@ trait FiltersByAnnexe
     {
         $user = auth()->user();
         
+        // Vérifier d'abord par la colonne scope (plus simple et direct)
+        if (isset($user->scope) && $user->scope === 'institution') {
+            return true;
+        }
+        
+        // Fallback: vérifier par rôle (pour compatibilité)
         foreach ($user->annexes as $annexe) {
             $role = Role::find($annexe->pivot->role_id);
             if ($role && $role->code === 'super_admin_institution') {
