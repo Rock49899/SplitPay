@@ -71,17 +71,17 @@ class StudentController extends Controller
                 $query->where('email', 'like', "%{$email}%");
             }
 
-            // filtrer par classe 
-            if (($class = $request->get('class')) && Schema::hasColumn('students', 'class')) {
-                $query->where('class', 'like', "%{$class}%");
+            // filtrer par study_level_id
+            if ($studyLevelId = $request->get('study_level_id')) {
+                $query->where('study_level_id', $studyLevelId);
             }
 
-            // filtrer par année scolaire 
-            if (($year = $request->get('school_year')) && Schema::hasColumn('students', 'school_year')) {
-                $query->where('school_year', 'like', "%{$year}%");
+            // filtrer par specialization_id
+            if ($specializationId = $request->get('specialization_id')) {
+                $query->where('specialization_id', $specializationId);
             }
 
-            $students = $query->orderBy('last_name')->paginate($perPage);
+            $students = $query->with(['annexe', 'studyLevel', 'specialization'])->orderBy('last_name')->paginate($perPage);
 
             return response()->json($students, 200);
         } catch (QueryException $e) {
@@ -115,6 +115,8 @@ class StudentController extends Controller
             $studentModel = new Student();
             $with = [];
             if (method_exists($studentModel, 'annexe')) $with[] = 'annexe';
+            if (method_exists($studentModel, 'studyLevel')) $with[] = 'studyLevel';
+            if (method_exists($studentModel, 'specialization')) $with[] = 'specialization';
             if (method_exists($studentModel, 'payments')) $with[] = 'payments';
             if (method_exists($studentModel, 'paymentLinks')) $with[] = 'paymentLinks.installments.payments';
 

@@ -275,7 +275,7 @@ const baseMenuGroups = [
         subItems: [
           { name: "Study Levels", path: "/admin/study-levels", requiredPermission: "student.view", pro: false },
           { name: "Specializations", path: "/admin/specializations", requiredPermission: "student.view", pro: false },
-          { name: "Classes", path: "/admin/classes", requiredPermission: "student.view", pro: false },
+          // { name: "Classes", path: "/admin/classes", requiredPermission: "student.view", pro: false },
         ],
       },
       {

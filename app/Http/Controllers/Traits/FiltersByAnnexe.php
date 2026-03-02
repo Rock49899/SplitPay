@@ -23,7 +23,7 @@ trait FiltersByAnnexe
     {
         $user = auth()->user();
         
-        // Vérifier d'abord par la colonne scope (plus simple et direct)
+         // Vérifier d'abord par la colonne scope (plus simple et direct)
         if (isset($user->scope) && $user->scope === 'institution') {
             return true;
         }

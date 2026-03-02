@@ -20,10 +20,21 @@
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
-              <tr v-for="user in (usersInAnnexe || [])" :key="user.id">
+              <tr 
+                v-for="user in (usersInAnnexe || [])" 
+                :key="user.id"
+                @click="router.push(`/admin/users/${user.id}`)"
+                class="cursor-pointer hover:bg-gray-50 transition-colors"
+              >
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   <div class="flex items-center gap-2.5">
-                    <AvatarDisplay :src="user.avatar_url" :label="user.name" :size="32" />
+                    <AvatarDisplay 
+                      :src="user.avatar_url" 
+                      :label="user.name" 
+                      :size="32"
+                      :clickable="!!user.avatar_url"
+                      @click.stop="() => { selectedUserAvatar = { url: user.avatar_url, name: user.name }; showImageModal = true; }"
+                    />
                     <span>{{ user.name }}</span>
                   </div>
                 </td>
@@ -40,8 +51,8 @@
                   </span>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
-                  <router-link :to="`/admin/users/${user.id}`" class="text-brand-500 hover:underline mr-3">View</router-link>
-                  <button @click="remove(user.id)" class="text-red-500 hover:underline">Delete</button>
+                  <router-link @click.stop :to="`/admin/users/${user.id}`" class="text-brand-500 hover:underline mr-3">View</router-link>
+                  <button @click.stop="remove(user.id)" class="text-red-500 hover:underline">Delete</button>
                 </td>
               </tr>
               <tr v-if="!usersInAnnexe || usersInAnnexe.length === 0">
@@ -62,6 +73,13 @@
         </div>
       </div>
     </div>
+
+    <!-- Modal pour agrandir l'avatar -->
+    <ImageViewerModal
+      v-model="showImageModal"
+      :image-src="selectedUserAvatar.url"
+      :image-alt="selectedUserAvatar.name"
+    />
   </AdminLayout>
 </template>
 
@@ -74,6 +92,7 @@ import { useUserStore } from "@/stores/useUserStore";
 import { useRouter, useRoute } from 'vue-router';
 import CreateUser from '@/components/user/CreateUser.vue';
 import AvatarDisplay from '@/components/shared/AvatarDisplay.vue';
+import ImageViewerModal from '@/components/shared/ImageViewerModal.vue';
 import roleService from '@/services/roleService';
 import annexeService from '@/services/annexeService';
 
@@ -84,6 +103,8 @@ const route = useRoute();
 
 // modal + lookup state
 const showCreateModal = ref(false);
+const showImageModal = ref(false);
+const selectedUserAvatar = ref({ url: '', name: '' });
 const roles = ref([]);
 const annexes = ref([]);
 
@@ -124,7 +145,6 @@ watch(
     } catch (e) {
       console.error('Users search fetch failed', e);
       // optional: user message
-      // alert('Search failed. Please try again or check server logs.');
     }
   },
   { immediate: false }
@@ -135,7 +155,6 @@ const onCreated = async (created) => {
   await users.fetchUsers();
   showCreateModal.value = false;
   // optional: navigate to detail
-  // router.push(`/admin/users/${created.id}`);
 };
 
 const groupedByAnnexe = computed(() => {

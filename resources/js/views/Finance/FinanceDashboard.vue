@@ -2,13 +2,13 @@
   <AdminLayout>
     <PageBreadcrumb pageTitle="Finance Dashboard" />
     
-    <div class="p-6 space-y-6">
+    <div class=" space-y-6">
       <!-- KPIs -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="bg-white dark:bg-slate-800 rounded-lg p-6 shadow-sm border border-slate-200 dark:border-slate-700">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm font-medium text-slate-600 dark:text-slate-400">Total Paiements</p>
+              <p class="text-sm font-medium text-slate-600 dark:text-slate-400">Total Payments</p>
               <p class="text-2xl font-bold text-slate-900 dark:text-white mt-1">{{ kpis.total }}</p>
             </div>
             <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
@@ -22,7 +22,7 @@
         <div class="bg-white dark:bg-slate-800 rounded-lg p-6 shadow-sm border border-slate-200 dark:border-slate-700">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm font-medium text-slate-600 dark:text-slate-400">Encaissé</p>
+              <p class="text-sm font-medium text-slate-600 dark:text-slate-400">Cashed</p>
               <p class="text-2xl font-bold text-green-600 dark:text-green-400 mt-1">{{ formatMoney(kpis.total_success) }}</p>
             </div>
             <div class="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
@@ -36,7 +36,7 @@
         <div class="bg-white dark:bg-slate-800 rounded-lg p-6 shadow-sm border border-slate-200 dark:border-slate-700">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm font-medium text-slate-600 dark:text-slate-400">En attente</p>
+              <p class="text-sm font-medium text-slate-600 dark:text-slate-400">Pending</p>
               <p class="text-2xl font-bold text-orange-600 dark:text-orange-400 mt-1">{{ kpis.pending }}</p>
             </div>
             <div class="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
@@ -50,7 +50,7 @@
         <div class="bg-white dark:bg-slate-800 rounded-lg p-6 shadow-sm border border-slate-200 dark:border-slate-700">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm font-medium text-slate-600 dark:text-slate-400">Échoués</p>
+              <p class="text-sm font-medium text-slate-600 dark:text-slate-400">Failed</p>
               <p class="text-2xl font-bold text-red-600 dark:text-red-400 mt-1">{{ kpis.failed }}</p>
             </div>
             <div class="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center">
@@ -68,11 +68,11 @@
           <div class="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <!-- Search -->
             <div>
-              <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Recherche</label>
+              <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Search</label>
               <input
                 v-model="filters.q"
                 type="text"
-                placeholder="Référence, nom, tél..."
+                placeholder="RReference, name, phone..."
                 class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
                 @input="debounceSearch"
               />
@@ -86,7 +86,7 @@
                 class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
                 @change="loadPayments"
               >
-                <option value="">Toutes</option>
+                <option value="">All</option>
                 <option v-for="annexe in annexes" :key="annexe.id" :value="annexe.id">
                   {{ annexe.name }}
                 </option>
@@ -95,22 +95,22 @@
 
             <!-- Status -->
             <div>
-              <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Statut</label>
+              <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Status</label>
               <select
                 v-model="filters.status"
                 class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
                 @change="loadPayments"
               >
-                <option value="">Tous</option>
-                <option value="success">Réussi</option>
-                <option value="pending">En attente</option>
-                <option value="failed">Échoué</option>
+                <option value="">All</option>
+                <option value="success">Success</option>
+                <option value="pending">Pending</option>
+                <option value="failed">Failed</option>
               </select>
             </div>
 
             <!-- Date Range -->
             <div>
-              <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Période</label>
+              <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Period</label>
               <div class="flex gap-2">
                 <input
                   v-model="filters.from"
@@ -129,15 +129,15 @@
           </div>
 
           <!-- Broadcast Button -->
-          <button
-            @click="showBroadcast = true"
-            class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors whitespace-nowrap"
-          >
-            <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-            </svg>
-            Créer lien général
-          </button>
+            <button
+              @click="showBroadcast = true"
+              class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors whitespace-nowrap"
+            >
+              <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+              </svg>
+              Create general link
+            </button>
         </div>
       </div>
 
@@ -159,13 +159,13 @@
           <table class="w-full">
             <thead class="bg-slate-50 dark:bg-slate-700 border-b border-slate-200 dark:border-slate-600">
               <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Étudiant</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Payeur</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Student</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Payer</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Type</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Annexe</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Montant</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Méthode</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Statut</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Amount</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Method</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Status</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Date</th>
                 <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Actions</th>
               </tr>
@@ -227,7 +227,7 @@
                     @click.stop="viewDetails(payment)"
                     class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
                   >
-                    Détails
+                    Details
                   </button>
                 </td>
               </tr>
@@ -243,26 +243,26 @@
               :disabled="pagination.current_page === 1"
               class="relative inline-flex items-center px-4 py-2 border border-slate-300 dark:border-slate-600 text-sm font-medium rounded-md text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50"
             >
-              Précédent
+              Previous
             </button>
             <button
               @click="changePage(pagination.current_page + 1)"
               :disabled="pagination.current_page === pagination.last_page"
               class="ml-3 relative inline-flex items-center px-4 py-2 border border-slate-300 dark:border-slate-600 text-sm font-medium rounded-md text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50"
             >
-              Suivant
+              Next
             </button>
           </div>
           <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
             <div>
               <p class="text-sm text-slate-700 dark:text-slate-300">
-                Affichage de
+                Displaying
                 <span class="font-medium">{{ pagination.from }}</span>
-                à
+                to
                 <span class="font-medium">{{ pagination.to }}</span>
-                sur
+                of
                 <span class="font-medium">{{ pagination.total }}</span>
-                résultats
+                results
               </p>
             </div>
             <div>
@@ -314,7 +314,7 @@
       >
         <div class="bg-white dark:bg-slate-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-auto">
           <div class="sticky top-0 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-6 py-4 flex items-center justify-between">
-            <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Détails du paiement</h3>
+            <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Payment Details</h3>
             <button @click="showDetail = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -325,7 +325,7 @@
           <div v-if="selectedPayment" class="p-6 space-y-6">
             <!-- Student Info -->
             <div>
-              <h4 class="text-sm font-medium text-slate-500 dark:text-slate-400 mb-3">ÉTUDIANT</h4>
+              <h4 class="text-sm font-medium text-slate-500 dark:text-slate-400 mb-3">STUDENT</h4>
               <div class="flex items-center space-x-4">
                 <AvatarDisplay
                   :src="selectedPayment.student?.avatar_url"
@@ -345,35 +345,35 @@
             <!-- Payment Info -->
             <div class="grid grid-cols-2 gap-4">
               <div>
-                <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Montant</p>
+                <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Amount</p>
                 <p class="text-lg font-bold text-slate-900 dark:text-white">{{ formatMoney(selectedPayment.amount) }}</p>
               </div>
               <div>
-                <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Statut</p>
+                <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Status</p>
                 <span :class="getStatusClass(selectedPayment.status)" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium mt-1">
                   {{ getStatusLabel(selectedPayment.status) }}
                 </span>
               </div>
               <div>
-                <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Type de paiement</p>
+                <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Payment Type</p>
                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200 capitalize mt-1">
                   {{ getPaymentTypeLabel(selectedPayment.payment_link?.type) }}
                 </span>
               </div>
               <div>
-                <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Méthode</p>
+                <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Method</p>
                 <p class="text-sm text-slate-900 dark:text-white uppercase">{{ selectedPayment.method }}</p>
               </div>
               <div>
-                <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Référence</p>
+                <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Reference</p>
                 <p class="text-sm text-slate-900 dark:text-white font-mono">{{ selectedPayment.reference }}</p>
               </div>
               <div>
-                <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Payeur</p>
+                <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Payer</p>
                 <p class="text-sm text-slate-900 dark:text-white">{{ selectedPayment.payer_name || 'N/A' }}</p>
               </div>
               <div>
-                <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Téléphone</p>
+                <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Phone</p>
                 <p class="text-sm text-slate-900 dark:text-white">{{ selectedPayment.payer_phone || 'N/A' }}</p>
               </div>
               <div>
@@ -392,25 +392,25 @@
 
             <!-- Update Status -->
             <div v-if="selectedPayment.status !== 'success'" class="border-t border-slate-200 dark:border-slate-700 pt-6">
-              <h4 class="text-sm font-medium text-slate-900 dark:text-white mb-4">Modifier le statut</h4>
+              <h4 class="text-sm font-medium text-slate-900 dark:text-white mb-4">Update Status</h4>
               <div class="space-y-4">
                 <div>
-                  <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Nouveau statut</label>
+                  <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">New Status</label>
                   <select
                     v-model="updateForm.status"
                     class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
                   >
-                    <option value="success">Réussi</option>
-                    <option value="failed">Échoué</option>
-                    <option value="pending">En attente</option>
+                    <option value="success">Success</option>
+                    <option value="failed">Failed</option>
+                    <option value="pending">Pending</option>
                   </select>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Note (optionnel)</label>
+                  <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Note (optional)</label>
                   <textarea
                     v-model="updateForm.note"
                     rows="3"
-                    placeholder="Raison de la modification..."
+                    placeholder="Reason for update..."
                     class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
                   ></textarea>
                 </div>
@@ -419,15 +419,15 @@
                   :disabled="updating"
                   class="w-full px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
                 >
-                  <span v-if="updating">Mise à jour...</span>
-                  <span v-else>Mettre à jour le statut</span>
+                  <span v-if="updating">Updating...</span>
+                  <span v-else>Update Status</span>
                 </button>
               </div>
             </div>
 
             <!-- Metadata -->
             <div v-if="selectedPayment.metadata && Object.keys(selectedPayment.metadata).length > 0" class="border-t border-slate-200 dark:border-slate-700 pt-6">
-              <h4 class="text-sm font-medium text-slate-500 dark:text-slate-400 mb-3">MÉTADONNÉES</h4>
+              <h4 class="text-sm font-medium text-slate-500 dark:text-slate-400 mb-3">METADATA</h4>
               <pre class="bg-slate-50 dark:bg-slate-900 p-4 rounded-lg text-xs text-slate-700 dark:text-slate-300 overflow-auto">{{ JSON.stringify(selectedPayment.metadata, null, 2) }}</pre>
             </div>
           </div>
@@ -444,7 +444,7 @@
       >
         <div class="bg-white dark:bg-slate-800 rounded-lg shadow-xl max-w-2xl w-full">
           <div class="border-b border-slate-200 dark:border-slate-700 px-6 py-4 flex items-center justify-between">
-            <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Créer un lien de paiement général</h3>
+            <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Create general payment link</h3>
             <button @click="showBroadcast = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -454,14 +454,14 @@
 
           <div class="p-6 space-y-4">
             <div>
-              <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Cible</label>
+              <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Target</label>
               <select
                 v-model="broadcastForm.target"
                 class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
               >
-                <option value="all">Tous les étudiants</option>
-                <option value="annexe">Étudiants d'une annexe</option>
-                <option value="class">Étudiants d'une classe</option>
+                <option value="all">All students</option>
+                <option value="annexe">Students from an annexe</option>
+                <option value="class">Students from a class</option>
               </select>
             </div>
 
@@ -471,7 +471,7 @@
                 v-model="broadcastForm.annexe_id"
                 class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
               >
-                <option value="">Sélectionner une annexe</option>
+                <option value="">Select an annexe</option>
                 <option v-for="annexe in annexes" :key="annexe.id" :value="annexe.id">
                   {{ annexe.name }}
                 </option>
@@ -479,18 +479,18 @@
             </div>
 
             <div v-if="broadcastForm.target === 'class'">
-              <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Classe</label>
+              <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Class</label>
               <input
                 v-model="broadcastForm.class"
                 type="text"
-                placeholder="Ex: Licence 1 Informatique"
+                placeholder="Ex: Bachelor 1 Computer Science"
                 class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
               />
             </div>
 
             <div class="grid grid-cols-2 gap-4">
               <div>
-                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Montant (XOF)</label>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Amount (XOF)</label>
                 <input
                   v-model.number="broadcastForm.amount"
                   type="number"
@@ -504,9 +504,9 @@
                   v-model="broadcastForm.type"
                   class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
                 >
-                  <option value="tuition">Scolarité</option>
-                  <option value="registration">Inscription</option>
-                  <option value="other">Autre</option>
+                  <option value="tuition">Tuition</option>
+                  <option value="registration">Registration</option>
+                  <option value="other">Other</option>
                 </select>
               </div>
             </div>
@@ -516,14 +516,14 @@
               <textarea
                 v-model="broadcastForm.description"
                 rows="3"
-                placeholder="Objet du paiement..."
+                placeholder="Payment purpose..."
                 class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
               ></textarea>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
               <div>
-                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Date limite</label>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Due date</label>
                 <input
                   v-model="broadcastForm.due_date"
                   type="date"
@@ -548,7 +548,7 @@
                 class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-slate-300 rounded"
               />
               <label for="send-email" class="ml-2 block text-sm text-slate-700 dark:text-slate-300">
-                Envoyer par email automatiquement
+                Send automatically by email
               </label>
             </div>
 
@@ -557,15 +557,15 @@
                 @click="showBroadcast = false"
                 class="flex-1 px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
               >
-                Annuler
+                Cancel
               </button>
               <button
                 @click="createBroadcast"
                 :disabled="broadcasting"
                 class="flex-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
               >
-                <span v-if="broadcasting">Création...</span>
-                <span v-else>Créer les liens</span>
+                <span v-if="broadcasting">Creating...</span>
+                <span v-else>Create links</span>
               </button>
             </div>
 

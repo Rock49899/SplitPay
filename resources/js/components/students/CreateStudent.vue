@@ -26,12 +26,25 @@
         <input v-model="form.last_name" placeholder="Last name" class="px-3 py-2 rounded border bg-transparent text-gray-900 dark:text-white" />
         <input v-model="form.email" placeholder="Email" class="px-3 py-2 rounded border bg-transparent text-gray-900 dark:text-white" />
         <input v-model="form.phone" placeholder="Phone" class="px-3 py-2 rounded border bg-transparent text-gray-900 dark:text-white" />
-        <input v-model="form.birth_date" type="date" placeholder="Birth date" class="px-3 py-2 rounded border bg-transparent text-gray-900 dark:text-white" />
 
         <input v-model="form.matricule" placeholder="Matricule" class="px-3 py-2 rounded border bg-transparent text-gray-900 dark:text-white" />
-        <input v-model="form.student_number" placeholder="Student number" class="px-3 py-2 rounded border bg-transparent text-gray-900 dark:text-white" />
-        <input v-model="form.class_name" placeholder="Class / Section" class="px-3 py-2 rounded border bg-transparent text-gray-900 dark:text-white" />
-        <input v-model="form.study_year" placeholder="Study year" class="px-3 py-2 rounded border bg-transparent text-gray-900 dark:text-white" />
+        
+        <div>
+          <label class="block text-sm mb-1 text-gray-700 dark:text-gray-400">Study Level</label>
+          <select v-model="form.study_level_id" class="w-full px-3 py-2 rounded border bg-transparent text-gray-900 dark:text-white">
+            <option :value="null">Select study level</option>
+            <option v-for="level in studyLevels" :key="level.id" :value="level.id">{{ level.label }}</option>
+          </select>
+        </div>
+        
+        <div>
+          <label class="block text-sm mb-1 text-gray-700 dark:text-gray-400">Specialization</label>
+          <select v-model="form.specialization_id" class="w-full px-3 py-2 rounded border bg-transparent text-gray-900 dark:text-white">
+            <option :value="null">Select specialization</option>
+            <option v-for="spec in specializations" :key="spec.id" :value="spec.id">{{ spec.label }}</option>
+          </select>
+        </div>
+        
         <input v-model.number="form.tuition_amount" placeholder="Tuition amount" type="number" class="px-3 py-2 rounded border bg-transparent text-gray-900 dark:text-white" />
         <label class="inline-flex items-center gap-2">
           <input type="checkbox" v-model="form.is_active" />
@@ -66,6 +79,8 @@
 import { ref, onMounted } from 'vue';
 import studentService from '@/services/studentService';
 import annexeService from '@/services/annexeService';
+import studyLevelService from '@/services/studyLevelService';
+import specializationService from '@/services/specializationService';
 import api from '@/services/api';
 import { useAnnexeStore } from '@/stores/useAnnexeStore';
 const annexeStore = useAnnexeStore();
@@ -77,6 +92,8 @@ const props = defineProps({
 const emit = defineEmits(['created', 'close']);
 
 const annexesLocal = ref(props.annexes ?? []);
+const studyLevels = ref([]);
+const specializations = ref([]);
 
 // Avatar
 const avatarFile = ref(null);
@@ -94,11 +111,11 @@ const form = ref({
   last_name: '',
   email: '',
   phone: '',
-  birth_date: '',
   matricule: '',
-  student_number: '',
-  class_name: '',
-  study_year: '',
+  study_level_id: null,
+  specialization_id: null,
+  study_level_id: null,
+  specialization_id: null,
   tuition_amount: null,
   is_active: true,
   annexes: [],
@@ -113,7 +130,27 @@ onMounted(async () => {
     await annexeStore.fetchAnnexes();
     annexesLocal.value = annexeStore.items;
   }
+  await loadStudyLevels();
+  await loadSpecializations();
 });
+
+const loadStudyLevels = async () => {
+  try {
+    const res = await studyLevelService.index();
+    studyLevels.value = res.data?.data ?? res.data ?? [];
+  } catch (err) {
+    console.error('Failed to load study levels', err);
+  }
+};
+
+const loadSpecializations = async () => {
+  try {
+    const res = await specializationService.index();
+    specializations.value = res.data?.data ?? res.data ?? [];
+  } catch (err) {
+    console.error('Failed to load specializations', err);
+  }
+};
 
 const close = () => emit('close');
 
@@ -124,8 +161,8 @@ const submit = async () => {
     error.value = 'First and last name required';
     return;
   }
-  if (!form.value.matricule || !form.value.student_number) {
-    error.value = 'Matricule and student number are required';
+  if (!form.value.matricule) {
+    error.value = 'Matricule is required';
     return;
   }
   if (!form.value.annexes.length && !form.value.primary_annexe) {
@@ -140,11 +177,9 @@ const submit = async () => {
     fd.append('last_name', form.value.last_name);
     if (form.value.email) fd.append('email', form.value.email);
     if (form.value.phone) fd.append('phone', form.value.phone);
-    if (form.value.birth_date) fd.append('birth_date', form.value.birth_date);
     fd.append('matricule', form.value.matricule);
-    fd.append('student_number', form.value.student_number ?? '');
-    if (form.value.class_name) fd.append('class_name', form.value.class_name);
-    if (form.value.study_year) fd.append('study_year', form.value.study_year);
+    if (form.value.study_level_id) fd.append('study_level_id', form.value.study_level_id);
+    if (form.value.specialization_id) fd.append('specialization_id', form.value.specialization_id);
     if (form.value.tuition_amount != null) fd.append('tuition_amount', form.value.tuition_amount);
     fd.append('is_active', form.value.is_active ? '1' : '0');
     fd.append('annexe_id', form.value.primary_annexe || (form.value.annexes[0] ?? ''));

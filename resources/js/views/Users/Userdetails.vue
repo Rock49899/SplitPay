@@ -6,7 +6,13 @@
         <!-- Avatar header -->
         <div class="flex items-center gap-4 mb-6 pb-5 border-b border-gray-100">
           <div class="relative shrink-0">
-            <AvatarDisplay :src="avatarPreview || user?.avatar_url" :label="form.name" :size="72" />
+            <AvatarDisplay 
+              :src="avatarPreview || user?.avatar_url" 
+              :label="form.name" 
+              :size="72"
+              :clickable="!!(avatarPreview || user?.avatar_url)"
+              @click="showImageModal = true"
+            />
             <label v-if="editMode" class="absolute -bottom-1 -right-1 w-6 h-6 bg-brand-500 rounded-full flex items-center justify-center cursor-pointer shadow">
               <svg class="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
@@ -19,6 +25,7 @@
             <p class="font-semibold text-gray-900">{{ form.name || '—' }}</p>
             <p class="text-sm text-gray-500">{{ form.email }}</p>
             <p v-if="editMode" class="text-xs text-gray-400 mt-0.5">Click the camera icon to change photo</p>
+            <p v-else-if="avatarPreview || user?.avatar_url" class="text-xs text-gray-400 mt-0.5">Click photo to enlarge</p>
           </div>
         </div>
 
@@ -184,6 +191,13 @@
 
       <div v-if="error" class="text-sm text-red-600 mt-2">{{ error }}</div>
     </div>
+
+    <!-- Modal pour agrandir l'avatar -->
+    <ImageViewerModal
+      v-model="showImageModal"
+      :image-src="avatarPreview || user?.avatar_url || ''"
+      :image-alt="form.name"
+    />
   </AdminLayout>
 </template>
 
@@ -196,6 +210,7 @@ import ComponentCard from '@/components/common/ComponentCard.vue';
 import userService from '@/services/userService';
 import api from '@/services/api';
 import AvatarDisplay from '@/components/shared/AvatarDisplay.vue';
+import ImageViewerModal from '@/components/shared/ImageViewerModal.vue';
 import { useRoleStore } from '@/stores/useRoleStore';
 import { useAnnexeStore } from '@/stores/useAnnexeStore';
 
@@ -220,6 +235,7 @@ const isPrimary = ref(false);
 // Avatar
 const avatarFile = ref(null);
 const avatarPreview = ref(null);
+const showImageModal = ref(false);
 const onAvatarChange = (e) => {
   const file = e.target.files?.[0];
   if (!file) return;
@@ -311,6 +327,9 @@ const save = async () => {
     avatarPreview.value = null;
     await load();
     editMode.value = false;
+    
+    // Notifier UserMenu de se rafraîchir si c'est le profil de l'utilisateur connecté
+    window.dispatchEvent(new CustomEvent('user-profile-updated'));
   } catch (e) {
     error.value = e.response?.data?.message || e.message || 'Update failed';
   } finally {

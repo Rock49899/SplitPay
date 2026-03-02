@@ -2,7 +2,7 @@
   <AdminLayout>
     <PageBreadcrumb pageTitle="Classes" />
     
-    <div class="p-6">
+    <div >
       <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
         <!-- Header -->
         <div class="p-6 border-b border-slate-200 dark:border-slate-700">

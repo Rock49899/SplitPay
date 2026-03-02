@@ -5,7 +5,7 @@
     <div class="">
       <div class="flex items-center justify-between mb-4">
         <div class="flex items-center gap-3">
-          <button @click="showCreate = true" class="px-4 py-2 bg-brand-500 text-white rounded">Create Annexe</button>
+          <button v-if="isSuperAdminInstitution" @click="showCreate = true" class="px-4 py-2 bg-brand-500 text-white rounded">Create Annexe</button>
         </div>
       </div>
 
@@ -111,6 +111,7 @@ import ComponentCard from '@/components/common/ComponentCard.vue';
 import CreateAnnexe from '@/components/annexes/CreateAnnexe.vue';
 import { useAnnexeStore } from '@/stores/useAnnexeStore';
 import { useRoleStore } from '@/stores/useRoleStore';
+import { usePermissions } from '@/composables/usePermissions';
 import userService from '@/services/userService';
 import { useRouter, useRoute } from 'vue-router';
 import api from '@/services/api';
@@ -120,6 +121,7 @@ const route = useRoute();
 
 const annexeStore = useAnnexeStore();
 const roleStore = useRoleStore();
+const { isSuperAdminInstitution } = usePermissions();
 
 const annexes = computed(() => annexeStore.items);
 
