@@ -5,13 +5,10 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Builder;
-use App\Models\Annexe;
-use App\Models\PaymentLink;
-use App\Models\Payment;
+use App\Models\Enrollment;
 
 class Student extends Model
 {
@@ -44,23 +41,11 @@ class Student extends Model
         'email',
         'phone',
         'avatar',
-        'class',
-        'school_year',
-        'tuition_amount',
-        'amount_paid',
+        'specialization_id', // filière semi-permanente (ne change pas d'année en année)
         'status',
-        'study_level_id',
-        'specialization_id',
-        'class_id',
     ];
 
-    /**
-     * Casts pour les attributs numériques
-     */
-    protected $casts = [
-        'tuition_amount' => 'decimal:2',
-        'amount_paid' => 'decimal:2',
-    ];
+    protected $casts = [];
 
     /**
      * Attributs ajoutés au JSON retourné (compatibilité frontend)
@@ -96,15 +81,8 @@ class Student extends Model
     }
 
     /**
-     * Le niveau d'études de l'étudiant
-     */
-    public function studyLevel(): BelongsTo
-    {
-        return $this->belongsTo(StudyLevel::class, 'study_level_id');
-    }
-
-    /**
-     * La spécialisation/filière de l'étudiant
+     * La filière de l'étudiant (semi-permanent, stocké sur students pour filtrage rapide).
+     * Le niveau d'études courant est accessible via currentEnrollment → levelFee → studyLevel.
      */
     public function specialization(): BelongsTo
     {
@@ -112,11 +90,22 @@ class Student extends Model
     }
 
     /**
-     * La classe de l'étudiant
+     * Tous les enrollments (historique annuel) de l'étudiant, du plus récent au plus ancien.
      */
-    public function studentClass(): BelongsTo
+    public function enrollments(): HasMany
     {
-        return $this->belongsTo(StudentClass::class, 'class_id');
+        return $this->hasMany(Enrollment::class)->orderBy('school_year', 'desc');
+    }
+
+    /**
+     * Enrollment actif le plus récent (année courante).
+     * Utilisé comme source de vérité pour tuition_amount / amount_paid.
+     */
+    public function currentEnrollment(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(Enrollment::class)
+            ->where('status', 'active')
+            ->ofMany('school_year', 'max');
     }
 
     /**
@@ -154,23 +143,19 @@ class Student extends Model
     }
 
     /**
-     * Montant restant à payer
+     * Montant restant à payer (délégué à currentEnrollment).
      */
     public function getRemainingAmountAttribute(): float
     {
-        return $this->tuition_amount - $this->amount_paid;
+        return $this->currentEnrollment?->remaining ?? 0.0;
     }
 
     /**
-     * Taux de paiement en pourcentage
+     * Taux de paiement en pourcentage (délégué à currentEnrollment).
      */
     public function getPaymentRateAttribute(): float
     {
-        if ($this->tuition_amount == 0) {
-            return 0;
-        }
-        
-        return ($this->amount_paid / $this->tuition_amount) * 100;
+        return $this->currentEnrollment?->recovery_rate ?? 0.0;
     }
 
     /**
@@ -182,11 +167,12 @@ class Student extends Model
     }
 
     /**
-     * Vérifier si l'étudiant a terminé de payer
+     * Vérifier si l'étudiant a terminé de payer (délégué à currentEnrollment).
      */
     public function hasFullyPaid(): bool
     {
-        return $this->amount_paid >= $this->tuition_amount;
+        $enrollment = $this->currentEnrollment;
+        return $enrollment ? (float) $enrollment->amount_paid >= (float) $enrollment->tuition_amount : false;
     }
 
     /**
@@ -214,27 +200,25 @@ class Student extends Model
     }
 
     /**
-     * Enregistrer un paiement
+     * Enregistrer un paiement sur l'enrollment actif.
      */
     public function recordPayment(float $amount): void
     {
-        $this->increment('amount_paid', $amount);
+        $enrollment = $this->currentEnrollment;
+        if ($enrollment) {
+            $enrollment->increment('amount_paid', $amount);
+            if ((float) $enrollment->fresh()->amount_paid >= (float) $enrollment->tuition_amount) {
+                $enrollment->update(['status' => 'completed']);
+            }
+        }
     }
 
     /**
-     * Scope pour filtrer par année scolaire
+     * Scope : étudiants qui ont un enrollment pour l'année donnée.
      */
     public function scopeForSchoolYear($query, string $schoolYear)
     {
-        return $query->where('school_year', $schoolYear);
-    }
-
-    /**
-     * Scope pour filtrer par classe
-     */
-    public function scopeInClass($query, string $class)
-    {
-        return $query->where('class', $class);
+        return $query->whereHas('enrollments', fn($q) => $q->where('school_year', $schoolYear));
     }
 
     /**
@@ -246,11 +230,13 @@ class Student extends Model
     }
 
     /**
-     * Scope pour étudiants avec paiement incomplet
+     * Scope : étudiants avec solde impayé sur leur enrollment actif.
      */
     public function scopeWithOutstandingBalance($query)
     {
-        return $query->whereRaw('amount_paid < tuition_amount');
+        return $query->whereHas('currentEnrollment',
+            fn($q) => $q->whereRaw('amount_paid < tuition_amount')
+        );
     }
 
     /**
