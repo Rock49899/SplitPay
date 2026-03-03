@@ -4,90 +4,71 @@ namespace Database\Seeders;
 
 use App\Models\StudyLevel;
 use App\Models\Specialization;
-use App\Models\StudentClass;
+use App\Models\LevelFee;
 use Illuminate\Database\Seeder;
 
 class AcademicSeeder extends Seeder
 {
     public function run(): void
     {
-        // Niveaux d'études
-        $l1 = StudyLevel::updateOrCreate(
-            ['code' => 'L1'],
-            ['label' => 'Licence 1', 'description' => 'Première année de licence']
-        );
-        $l2 = StudyLevel::updateOrCreate(
-            ['code' => 'L2'],
-            ['label' => 'Licence 2', 'description' => 'Deuxième année de licence']
-        );
-        $l3 = StudyLevel::updateOrCreate(
-            ['code' => 'L3'],
-            ['label' => 'Licence 3', 'description' => 'Troisième année de licence']
-        );
-        $m1 = StudyLevel::updateOrCreate(
-            ['code' => 'M1'],
-            ['label' => 'Master 1', 'description' => 'Première année de master']
-        );
-        $m2 = StudyLevel::updateOrCreate(
-            ['code' => 'M2'],
-            ['label' => 'Master 2', 'description' => 'Deuxième année de master']
-        );
-
-        $this->command->info('Study levels créés: L1, L2, L3, M1, M2');
-
-        // Spécialisations
-        $info = Specialization::updateOrCreate(
-            ['code' => 'INFO'],
-            ['label' => 'Informatique', 'description' => 'Génie logiciel et systèmes informatiques']
-        );
-        $gestion = Specialization::updateOrCreate(
-            ['code' => 'GESTION'],
-            ['label' => 'Gestion', 'description' => 'Management et gestion des entreprises']
-        );
-        $compta = Specialization::updateOrCreate(
-            ['code' => 'COMPTA'],
-            ['label' => 'Comptabilité', 'description' => 'Comptabilité et finance']
-        );
-        $droit = Specialization::updateOrCreate(
-            ['code' => 'DROIT'],
-            ['label' => 'Droit', 'description' => 'Sciences juridiques']
-        );
-
-        $this->command->info('Specializations créées: INFO, GESTION, COMPTA, DROIT');
-
-        // Classes (croisement niveau × spécialisation)
-        $classes = [
-            // L1
-            ['study_level_id' => $l1->id, 'specialization_id' => $info->id, 'code' => 'A', 'label' => 'L1 Informatique - Groupe A'],
-            ['study_level_id' => $l1->id, 'specialization_id' => $info->id, 'code' => 'B', 'label' => 'L1 Informatique - Groupe B'],
-            ['study_level_id' => $l1->id, 'specialization_id' => $gestion->id, 'code' => 'A', 'label' => 'L1 Gestion - Groupe A'],
-            
-            // L2
-            ['study_level_id' => $l2->id, 'specialization_id' => $info->id, 'code' => 'A', 'label' => 'L2 Informatique - Groupe A'],
-            ['study_level_id' => $l2->id, 'specialization_id' => $gestion->id, 'code' => 'A', 'label' => 'L2 Gestion - Groupe A'],
-            ['study_level_id' => $l2->id, 'specialization_id' => $compta->id, 'code' => 'A', 'label' => 'L2 Comptabilité - Groupe A'],
-            
-            // L3
-            ['study_level_id' => $l3->id, 'specialization_id' => $info->id, 'code' => 'A', 'label' => 'L3 Informatique - Groupe A'],
-            ['study_level_id' => $l3->id, 'specialization_id' => $droit->id, 'code' => 'A', 'label' => 'L3 Droit - Groupe A'],
-            
-            // M1
-            ['study_level_id' => $m1->id, 'specialization_id' => $info->id, 'code' => 'A', 'label' => 'M1 Informatique - Groupe A'],
-            ['study_level_id' => $m1->id, 'specialization_id' => $gestion->id, 'code' => 'A', 'label' => 'M1 Gestion - Groupe A'],
+        // ── Niveaux d'études (avec ordre de progression) ──────────────────
+        $levelDefs = [
+            ['code' => 'L1', 'label' => 'Licence 1', 'order' => 1, 'description' => 'Première année de licence'],
+            ['code' => 'L2', 'label' => 'Licence 2', 'order' => 2, 'description' => 'Deuxième année de licence'],
+            ['code' => 'L3', 'label' => 'Licence 3', 'order' => 3, 'description' => 'Troisième année de licence'],
+            ['code' => 'M1', 'label' => 'Master 1',  'order' => 4, 'description' => 'Première année de master'],
+            ['code' => 'M2', 'label' => 'Master 2',  'order' => 5, 'description' => 'Deuxième année de master'],
         ];
-
-        foreach ($classes as $classData) {
-            StudentClass::updateOrCreate(
-                [
-                    'study_level_id' => $classData['study_level_id'],
-                    'specialization_id' => $classData['specialization_id'],
-                    'code' => $classData['code']
-                ],
-                ['label' => $classData['label']]
+        $studyLevels = [];
+        foreach ($levelDefs as $d) {
+            $studyLevels[$d['code']] = StudyLevel::updateOrCreate(
+                ['code' => $d['code']],
+                ['label' => $d['label'], 'order' => $d['order'], 'description' => $d['description']]
             );
         }
+        $this->command->info('Study levels créés : L1(1) L2(2) L3(3) M1(4) M2(5)');
 
-        $this->command->info('Classes créées: ' . count($classes) . ' classes');
+        // ── Spécialisations ───────────────────────────────────────────────
+        $specDefs = [
+            ['code' => 'INFO',    'label' => 'Informatique',  'description' => 'Génie logiciel et systèmes informatiques'],
+            ['code' => 'GESTION', 'label' => 'Gestion',       'description' => 'Management et gestion des entreprises'],
+            ['code' => 'COMPTA',  'label' => 'Comptabilité',  'description' => 'Comptabilité et finance'],
+            ['code' => 'DROIT',   'label' => 'Droit',         'description' => 'Sciences juridiques'],
+        ];
+        $specializations = [];
+        foreach ($specDefs as $d) {
+            $specializations[$d['code']] = Specialization::updateOrCreate(
+                ['code' => $d['code']],
+                ['label' => $d['label'], 'description' => $d['description']]
+            );
+        }
+        $this->command->info('Specializations créées : INFO, GESTION, COMPTA, DROIT');
+
+        // ── Barèmes de scolarité (level_fees) ─────────────────────────────
+        // Tarif générique (specialization_id = null => s'applique à toutes les filières)
+        $genericFees = ['L1' => 450_000, 'L2' => 450_000, 'L3' => 500_000, 'M1' => 600_000, 'M2' => 600_000];
+        // Supplément Informatique (tarif spécifique prioritaire)
+        $infoExtra   = ['L1' =>  50_000, 'L2' =>  50_000, 'L3' =>  50_000, 'M1' =>  75_000, 'M2' =>  75_000];
+
+        foreach (['2024-2025', '2025-2026'] as $year) {
+            foreach ($genericFees as $code => $amount) {
+                LevelFee::updateOrCreate(
+                    ['study_level_id' => $studyLevels[$code]->id, 'specialization_id' => null, 'school_year' => $year],
+                    ['tuition_amount' => $amount]
+                );
+            }
+            foreach ($infoExtra as $code => $extra) {
+                LevelFee::updateOrCreate(
+                    [
+                        'study_level_id'    => $studyLevels[$code]->id,
+                        'specialization_id' => $specializations['INFO']->id,
+                        'school_year'       => $year,
+                    ],
+                    ['tuition_amount' => $genericFees[$code] + $extra]
+                );
+            }
+        }
+        $this->command->info('Barèmes créés pour 2024-2025 et 2025-2026 (génériques + supplément INFO)');
         $this->command->info('✓ Academic data seeded successfully!');
     }
 }

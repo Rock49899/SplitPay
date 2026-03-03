@@ -7,179 +7,169 @@ use App\Models\Annexe;
 use App\Models\User;
 use App\Models\Role;
 use App\Models\Student;
+use App\Models\StudyLevel;
+use App\Models\Specialization;
+use App\Models\LevelFee;
+use App\Models\Enrollment;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class DevelopmentDataSeeder extends Seeder
 {
-    //données tests
     public function run(): void
     {
         $this->command->info('Création des données de test...');
-        $this->command->newLine();
 
-        $this->command->info('Création de l\'institution...');
-        
+        // ── Institution + Annexes ──────────────────────────────────────────
         $institution = Institution::create([
-            'name' => 'Institut Supérieur de Technologie',
-            'email' => 'contact@ist-edu.com',
-            'phone' => '+229 97 00 00 00',
-            'address' => 'Avenue de la République',
-            'city' => 'Cotonou',
+            'name'      => 'Institut Supérieur de Technologie',
+            'email'     => 'contact@ist-edu.com',
+            'phone'     => '+229 97 00 00 00',
+            'address'   => 'Avenue de la République',
+            'city'      => 'Cotonou',
             'is_active' => true,
         ]);
-        
-        $this->command->info('Institution créée : ' . $institution->name);
 
-        $this->command->info('Création des annexes');
-        
         $annexeNord = Annexe::create([
             'institution_id' => $institution->id,
-            'name' => 'Campus Nord',
-            'address' => 'Quartier Akpakpa',
-            'city' => 'Cotonou',
+            'name'      => 'Campus Nord',
+            'address'   => 'Quartier Akpakpa',
+            'city'      => 'Cotonou',
             'is_active' => true,
         ]);
-        
+
         $annexeSud = Annexe::create([
             'institution_id' => $institution->id,
-            'name' => 'Campus Sud',
-            'address' => 'Quartier Fidjrossè',
-            'city' => 'Cotonou',
+            'name'      => 'Campus Sud',
+            'address'   => 'Quartier Fidjrossè',
+            'city'      => 'Cotonou',
             'is_active' => true,
         ]);
-        
-        $this->command->info('2 annexes créées : Campus Nord, Campus Sud');
+        $this->command->info('1 institution + 2 annexes créées');
 
-        $roleSuperAdminInstitution = Role::where('code', 'super_admin_institution')->first();
-        $roleSuperAdminAnnexe = Role::where('code', 'super_admin_annexe')->first();
+        // ── Utilisateurs ───────────────────────────────────────────────────
+        $roleSuperAdmin   = Role::where('code', 'super_admin_institution')->first();
         $roleGestionnaire = Role::where('code', 'gestionnaire')->first();
 
-       
-        $this->command->info('Création du Super Admin Institution');
-        
         $superAdmin = User::create([
-            'annexe_id' => $annexeNord->id, // Annexe principale
-            'name' => 'Admin Principal',
-            'email' => 'admin@ist-edu.com',
-            'password' => Hash::make('password'), 
-            'phone' => '+229 97 11 11 11',
-            'is_active' => true,
-            'scope' => 'institution',
-        ]);
-        
-        // Assigner le rôle via user_annexes
-        $superAdmin->annexes()->attach($annexeNord->id, [
-            'role_id' => $roleSuperAdminInstitution->id,
-            'is_principal' => true,
-            'assigned_by' => null,
-            'assigned_at' => now(),
-        ]);
-        
-        $this->command->info(' Super Admin : admin@ist-edu.com | password');
-
-        $this->command->info('Création du gestionnaire Campus Nord...');
-        
-        $gestionnaireNord = User::create([
             'annexe_id' => $annexeNord->id,
-            'name' => 'Marie Dupont',
-            'email' => 'marie@ist-edu.com',
-            'password' => Hash::make('password'),
-            'phone' => '+229 97 22 22 22',
+            'name'      => 'Admin Principal',
+            'email'     => 'admin@ist-edu.com',
+            'password'  => Hash::make('password'),
+            'phone'     => '+229 97 11 11 11',
             'is_active' => true,
-            'scope' => 'annexe',
+            'scope'     => 'institution',
         ]);
-        
-        $gestionnaireNord->annexes()->attach($annexeNord->id, [
-            'role_id' => $roleGestionnaire->id,
+        $superAdmin->annexes()->attach($annexeNord->id, [
+            'role_id'      => $roleSuperAdmin->id,
             'is_principal' => true,
-            'assigned_by' => $superAdmin->id,
-            'assigned_at' => now(),
+            'assigned_at'  => now(),
         ]);
-        
-      
-        $this->command->info(' Gestionnaire Nord : marie@ist-edu.com | password');
 
-        $this->command->info('Création du gestionnaire Campus Sud...');
-        
-        $gestionnaireSud = User::create([
-            'annexe_id' => $annexeSud->id,
-            'name' => 'Jean Martin',
-            'email' => 'jean@ist-edu.com',
-            'password' => Hash::make('password'),
-            'phone' => '+229 97 33 33 33',
-            'is_active' => true,
-            'scope' => 'annexe',
-        ]);
-        
-        $gestionnaireSud->annexes()->attach($annexeSud->id, [
-            'role_id' => $roleGestionnaire->id,
-            'is_principal' => true,
-            'assigned_by' => $superAdmin->id,
-            'assigned_at' => now(),
-        ]);
-        
-        $this->command->info(' Gestionnaire Sud : jean@ist-edu.com | password');
-
-        $this->command->info('Création des étudiants Campus Nord...');
-        
-        $etudiantsNord = [
-            ['matricule' => 'ETU2024001', 'first_name' => 'Amina', 'last_name' => 'Kouassi', 'class' => 'Licence 1 Info'],
-            ['matricule' => 'ETU2024002', 'first_name' => 'Koffi', 'last_name' => 'Mensah', 'class' => 'Licence 1 Info'],
-            ['matricule' => 'ETU2024003', 'first_name' => 'Fatoumata', 'last_name' => 'Diallo', 'class' => 'Licence 2 Info'],
-            ['matricule' => 'ETU2024004', 'first_name' => 'Ibrahim', 'last_name' => 'Traoré', 'class' => 'Licence 2 Info'],
-            ['matricule' => 'ETU2024005', 'first_name' => 'Aïcha', 'last_name' => 'Camara', 'class' => 'Master 1 Info'],
-        ];
-        
-        foreach ($etudiantsNord as $etudiantData) {
-            Student::create(array_merge($etudiantData, [
-                'annexe_id' => $annexeNord->id,
-                'email' => strtolower($etudiantData['first_name']) . '@etudiant.com',
-                'phone' => '+229 97 ' . rand(40, 49) . ' ' . rand(10, 99) . ' ' . rand(10, 99),
-                'school_year' => '2024-2025',
-                'tuition_amount' => 500000,
-                'amount_paid' => rand(0, 500000),
-                'status' => 'active',
-            ]));
+        foreach ([
+            ['name' => 'Marie Dupont', 'email' => 'marie@ist-edu.com', 'annexe' => $annexeNord, 'phone' => '+229 97 22 22 22'],
+            ['name' => 'Jean Martin',  'email' => 'jean@ist-edu.com',  'annexe' => $annexeSud,  'phone' => '+229 97 33 33 33'],
+        ] as $g) {
+            $user = User::create([
+                'annexe_id' => $g['annexe']->id,
+                'name'      => $g['name'],
+                'email'     => $g['email'],
+                'password'  => Hash::make('password'),
+                'phone'     => $g['phone'],
+                'is_active' => true,
+                'scope'     => 'annexe',
+            ]);
+            $user->annexes()->attach($g['annexe']->id, [
+                'role_id'      => $roleGestionnaire->id,
+                'is_principal' => true,
+                'assigned_by'  => $superAdmin->id,
+                'assigned_at'  => now(),
+            ]);
         }
-        
-        $this->command->info(' 5 étudiants créés pour Campus Nord');
+        $this->command->info('3 utilisateurs créés (admin@ist-edu.com | password)');
 
-        $this->command->info('Création des étudiants Campus Sud');
-        
-        $etudiantsSud = [
-            ['matricule' => 'ETU2024006', 'first_name' => 'Sébastien', 'last_name' => 'Kouadio', 'class' => 'Licence 1 Gestion'],
-            ['matricule' => 'ETU2024007', 'first_name' => 'Aminata', 'last_name' => 'Sow', 'class' => 'Licence 1 Gestion'],
-            ['matricule' => 'ETU2024008', 'first_name' => 'Moussa', 'last_name' => 'Keita', 'class' => 'Licence 2 Gestion'],
-            ['matricule' => 'ETU2024009', 'first_name' => 'Mariama', 'last_name' => 'Barry', 'class' => 'Licence 2 Gestion'],
-            ['matricule' => 'ETU2024010', 'first_name' => 'Youssouf', 'last_name' => 'Touré', 'class' => 'Master 1 Gestion'],
-        ];
-        
-        foreach ($etudiantsSud as $etudiantData) {
-            Student::create(array_merge($etudiantData, [
-                'annexe_id' => $annexeSud->id,
-                'email' => strtolower($etudiantData['first_name']) . '@etudiant.com',
-                'phone' => '+229 97 ' . rand(50, 59) . ' ' . rand(10, 99) . ' ' . rand(10, 99),
-                'school_year' => '2024-2025',
-                'tuition_amount' => 450000,
-                'amount_paid' => rand(0, 450000),
-                'status' => 'active',
-            ]));
+        // ── Récupérer niveaux et spécialisations (créés par AcademicSeeder) ─
+        $levels = StudyLevel::all()->keyBy('code');
+        $specs  = Specialization::all()->keyBy('code');
+
+        if ($levels->isEmpty() || $specs->isEmpty()) {
+            $this->command->warn('AcademicSeeder doit être exécuté avant DevelopmentDataSeeder.');
+            $this->command->warn('Lancer : php artisan db:seed --class=AcademicSeeder d\'abord.');
+            return;
         }
-        
-        $this->command->info(' 5 étudiants créés pour Campus Sud');
 
-        $this->command->newLine();
-        $this->command->info('Données de test créées avec succès !');
+        // ── Étudiants Campus Nord — spécialisation : Informatique ──────────
+        $nordStudents = [
+            ['matricule' => 'ETU2024001', 'first_name' => 'Amina',     'last_name' => 'Kouassi', 'level' => 'L1'],
+            ['matricule' => 'ETU2024002', 'first_name' => 'Koffi',     'last_name' => 'Mensah',  'level' => 'L1'],
+            ['matricule' => 'ETU2024003', 'first_name' => 'Fatoumata', 'last_name' => 'Diallo',  'level' => 'L2'],
+            ['matricule' => 'ETU2024004', 'first_name' => 'Ibrahim',   'last_name' => 'Traoré',  'level' => 'L2'],
+            ['matricule' => 'ETU2024005', 'first_name' => 'Aïcha',     'last_name' => 'Camara',  'level' => 'M1'],
+        ];
+
+        // ── Étudiants Campus Sud — spécialisation : Gestion ────────────────
+        $sudStudents = [
+            ['matricule' => 'ETU2024006', 'first_name' => 'Sébastien', 'last_name' => 'Kouadio', 'level' => 'L1'],
+            ['matricule' => 'ETU2024007', 'first_name' => 'Aminata',   'last_name' => 'Sow',     'level' => 'L1'],
+            ['matricule' => 'ETU2024008', 'first_name' => 'Moussa',    'last_name' => 'Keita',   'level' => 'L2'],
+            ['matricule' => 'ETU2024009', 'first_name' => 'Mariama',   'last_name' => 'Barry',   'level' => 'L2'],
+            ['matricule' => 'ETU2024010', 'first_name' => 'Youssouf',  'last_name' => 'Touré',   'level' => 'M1'],
+        ];
+
+        $this->seedStudents($nordStudents, $annexeNord, $specs['INFO'],    $levels, '2024-2025');
+        $this->seedStudents($sudStudents,  $annexeSud,  $specs['GESTION'], $levels, '2024-2025');
+
         $this->command->newLine();
         $this->command->info('RÉSUMÉ :');
-        $this->command->info('   - 1 institution');
-        $this->command->info('   - 2 annexes (Campus Nord, Campus Sud)');
-        $this->command->info('   - 3 utilisateurs (1 Super Admin + 2 Gestionnaires)');
-        $this->command->info('   - 10 étudiants (5 par campus)');
-        $this->command->newLine();
-        $this->command->info('CONNEXION :');
-        $this->command->info('   Email    : admin@ist-edu.com');
-        $this->command->info('   Password : password');
+        $this->command->info('  - 1 institution, 2 annexes');
+        $this->command->info('  - 3 utilisateurs (1 Super Admin + 2 Gestionnaires)');
+        $this->command->info('  - 10 étudiants avec enrollments 2024-2025 + paiements partiels');
+        $this->command->info('  Connexion : admin@ist-edu.com | password');
+    }
+
+    private function seedStudents(array $list, Annexe $annexe, Specialization $spec, $levels, string $year): void
+    {
+        foreach ($list as $data) {
+            $level = $levels[$data['level']] ?? null;
+
+            if (!$level) {
+                $this->command->warn("  ⚠ Niveau '{$data['level']}' introuvable — étudiant {$data['matricule']} ignoré");
+                continue;
+            }
+
+            $student = Student::create([
+                'id'                => (string) Str::uuid(),
+                'annexe_id'         => $annexe->id,
+                'matricule'         => $data['matricule'],
+                'first_name'        => $data['first_name'],
+                'last_name'         => $data['last_name'],
+                'email'             => Str::lower(iconv('UTF-8', 'ASCII//TRANSLIT', $data['first_name'])) . '@etudiant.com',
+                'phone'             => '+229 97 ' . rand(40, 59) . ' ' . rand(10, 99) . ' ' . rand(10, 99),
+                'specialization_id' => $spec->id,
+                'status'            => 'active',
+            ]);
+
+            // Résoudre le barème : d'abord filière spécifique, sinon générique
+            $fee = LevelFee::resolve($level->id, $spec->id, $year);
+
+            if (!$fee) {
+                $this->command->warn("  ⚠ Aucun barème trouvé pour {$level->code} / {$spec->code} / {$year} — enrollment ignoré pour {$student->matricule}");
+                continue;
+            }
+
+            $tuition    = (int) $fee->tuition_amount;
+            $amountPaid = rand(0, $tuition);
+
+            Enrollment::create([
+                'student_id'     => $student->id,
+                'level_fee_id'   => $fee->id,
+                'tuition_amount' => $tuition,
+                'amount_paid'    => $amountPaid,
+                'school_year'    => $year,
+                'status'         => 'active',
+            ]);
+        }
+        $this->command->info('  ' . count($list) . ' étudiants créés → ' . $annexe->name . ' (' . $spec->label . ')');
     }
 }
