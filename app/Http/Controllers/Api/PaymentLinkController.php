@@ -75,17 +75,25 @@ class PaymentLinkController extends Controller
         ], 403);
     }
 
-    // si c'est scolarité, on plafonne au restant dû
+    // si c'est scolarité, on plafonne au restant dû sur l'enrollment actif
     if ($type === 'tuition') {
-        $remaining = max(0, $student->tuition_amount - $student->amount_paid);
+        $enrollment = $student->enrollments()
+            ->where('status', 'active')
+            ->latest('school_year')
+            ->first();
 
-        if ($remaining <= 0) {
-            return response()->json([
-                'message' => 'This student has already fully paid tuition.'
-            ], 422);
+        if ($enrollment) {
+            $remaining = max(0, (float) $enrollment->tuition_amount - (float) $enrollment->amount_paid);
+            if ($remaining <= 0) {
+                return response()->json([
+                    'message' => 'This student has already fully paid tuition.'
+                ], 422);
+            }
+            $amount = min($v['amount'], $remaining);
+        } else {
+            // Pas d'enrollment actif — on accepte le montant tel quel
+            $amount = $v['amount'];
         }
-
-        $amount = min($v['amount'], $remaining);
     } else {
         $amount = $v['amount'];
     }
@@ -205,20 +213,14 @@ class PaymentLinkController extends Controller
 
     /**
      * Broadcast (create) payment links for multiple students at once.
-     * POST /api/admin/payment-links/broadcast
-     *
-     * target: 'all' | 'annexe' | 'class'
-     * annexe_id: required when target == 'annexe'
-     * class: required when target == 'class'
-     * amount, description, due_date, expire_at, send_email, currency, type
-     */
+      */
     public function broadcast(Request $request)
     {
         $v = $request->validate([
-            'target'      => 'required|in:all,annexe,class',
-            'annexe_id'   => 'required_if:target,annexe|nullable|exists:annexes,id',
-            'class'       => 'required_if:target,class|nullable|string|max:100',
-            'school_year' => 'nullable|string|max:20',
+            'target'            => 'required|in:all,annexe,specialization',
+            'annexe_id'         => 'required_if:target,annexe|nullable|exists:annexes,id',
+            'specialization_id' => 'required_if:target,specialization|nullable|exists:specializations,id',
+            'school_year'       => 'nullable|string|max:20',
             'amount'      => 'required|numeric|min:1',
             'currency'    => 'nullable|string|max:10',
             'type'        => 'nullable|string|in:tuition,registration,other',
@@ -232,14 +234,14 @@ class PaymentLinkController extends Controller
 
         if ($v['target'] === 'annexe') {
             $query->where('annexe_id', $v['annexe_id']);
-        } elseif ($v['target'] === 'class') {
-            $query->where('class', $v['class']);
+        } elseif ($v['target'] === 'specialization') {
+            $query->where('specialization_id', $v['specialization_id']);
             if (!empty($v['annexe_id'])) {
                 $query->where('annexe_id', $v['annexe_id']);
             }
         }
         if (!empty($v['school_year'])) {
-            $query->where('school_year', $v['school_year']);
+            $query->whereHas('enrollments', fn ($q) => $q->where('school_year', $v['school_year']));
         }
 
         $students = $query->get();

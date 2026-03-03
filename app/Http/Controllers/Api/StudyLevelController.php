@@ -26,8 +26,9 @@ class StudyLevelController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'code' => 'required|string|max:50|unique:study_levels,code',
-            'label' => 'required|string|max:255',
+            'code'        => 'required|string|max:50|unique:study_levels,code',
+            'label'       => 'required|string|max:255',
+            'order'       => 'nullable|integer|min:1',
             'description' => 'nullable|string',
         ]);
 
@@ -47,8 +48,9 @@ class StudyLevelController extends Controller
         $studyLevel = StudyLevel::findOrFail($id);
         
         $validated = $request->validate([
-            'code' => 'required|string|max:50|unique:study_levels,code,' . $id,
-            'label' => 'required|string|max:255',
+            'code'        => 'required|string|max:50|unique:study_levels,code,' . $id,
+            'label'       => 'required|string|max:255',
+            'order'       => 'nullable|integer|min:1',
             'description' => 'nullable|string',
         ]);
 

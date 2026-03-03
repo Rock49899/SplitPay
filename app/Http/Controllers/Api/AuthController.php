@@ -123,6 +123,9 @@ class AuthController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
                 'phone' => $user->phone,
+                'bio' => $user->bio,
+                'avatar' => $user->avatar,
+                'avatar_url' => $user->avatar_url,
                 'scope' => $user->scope,
                 'is_active' => $user->is_active,
                 'annexes' => $user->annexes->map(function($annexe) {

@@ -88,15 +88,24 @@ Route::middleware('auth:sanctum')->prefix('admin')->group(function () {
     Route::match(['put', 'patch'], 'specializations/{id}', [\App\Http\Controllers\Api\SpecializationController::class, 'update'])->middleware('permission:student.edit');
     Route::delete('specializations/{id}', [\App\Http\Controllers\Api\SpecializationController::class, 'destroy'])->middleware('permission:student.delete');
 
-    // Classes
-    Route::get('classes', [\App\Http\Controllers\Api\StudentClassController::class, 'index'])->middleware('permission:student.view');
-    Route::post('classes', [\App\Http\Controllers\Api\StudentClassController::class, 'store'])->middleware('permission:student.create');
-    Route::get('classes/{id}', [\App\Http\Controllers\Api\StudentClassController::class, 'show'])->middleware('permission:student.view');
-    Route::match(['put', 'patch'], 'classes/{id}', [\App\Http\Controllers\Api\StudentClassController::class, 'update'])->middleware('permission:student.edit');
-    Route::delete('classes/{id}', [\App\Http\Controllers\Api\StudentClassController::class, 'destroy'])->middleware('permission:student.delete');
+    // Années scolaires disponibles
+    Route::get('school-years', [\App\Http\Controllers\Api\PromotionController::class, 'schoolYears']);
+
+    // Promotions / Clôture d'année scolaire
+    Route::get('promotions/preview', [\App\Http\Controllers\Api\PromotionController::class, 'preview'])->middleware('permission:student.edit');
+    Route::post('promotions',        [\App\Http\Controllers\Api\PromotionController::class, 'execute'])->middleware('permission:student.edit');
+
+    // Level Fees (Barème de scolarité : niveau + filière + année → montant)
+    Route::get('level-fees/resolve',        [\App\Http\Controllers\Api\LevelFeeController::class, 'resolve'])->middleware('permission:student.view');
+    Route::post('level-fees/copy-year',     [\App\Http\Controllers\Api\LevelFeeController::class, 'copyYear'])->middleware('permission:student.create');
+    Route::get('level-fees',                [\App\Http\Controllers\Api\LevelFeeController::class, 'index'])->middleware('permission:student.view');
+    Route::post('level-fees',               [\App\Http\Controllers\Api\LevelFeeController::class, 'store'])->middleware('permission:student.create');
+    Route::match(['put', 'patch'], 'level-fees/{levelFee}', [\App\Http\Controllers\Api\LevelFeeController::class, 'update'])->middleware('permission:student.edit');
+    Route::delete('level-fees/{levelFee}', [\App\Http\Controllers\Api\LevelFeeController::class, 'destroy'])->middleware('permission:student.delete');
 
     // Payments management
     Route::get('payments', [PaymentController::class, 'index'])->middleware('permission:payment.view');
+    Route::get('payments/recent', [PaymentController::class, 'recent'])->middleware('permission:payment.view');
     Route::get('payments/{id}', [PaymentController::class, 'show'])->middleware('permission:payment.view');
     Route::patch('payments/{id}/status', [PaymentController::class, 'updateStatus'])->middleware('permission:payment.view');
 
@@ -111,6 +120,17 @@ Route::middleware('auth:sanctum')->prefix('admin')->group(function () {
 
     // Rapport / KPIs
     Route::get('report/summary', [\App\Http\Controllers\Api\ReportController::class, 'summary'])->middleware('permission:dashboard.view');
+
+    // Enrollments (historique + ajustement montant scolarité)
+    Route::get('enrollments', [\App\Http\Controllers\Api\EnrollmentController::class, 'index'])->middleware('permission:student.view');
+    Route::match(['put', 'patch'], 'enrollments/{enrollment}', [\App\Http\Controllers\Api\EnrollmentController::class, 'update'])->middleware('permission:student.edit');
+
+    // Dashboard
+    Route::prefix('dashboard')->middleware('permission:dashboard.view')->group(function () {
+        Route::get('kpis',                [\App\Http\Controllers\Api\DashboardController::class, 'kpis']);
+        Route::get('monthly-collections', [\App\Http\Controllers\Api\DashboardController::class, 'monthlyCollections']);
+        Route::get('annexe-stats',        [\App\Http\Controllers\Api\DashboardController::class, 'annexeStats']);
+    });
 });
 // public: accessible sans authentification
 // Route::get('payment-links/token/{token}', [PaymentLinkController::class, 'publicShow']);

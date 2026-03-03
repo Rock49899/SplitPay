@@ -9,6 +9,8 @@ use App\Http\Requests\StoreStudentRequest;
 use App\Http\Requests\UpdateStudentRequest;
 use Illuminate\Http\Request;
 use App\Models\Student;
+use App\Models\Enrollment;
+use App\Models\LevelFee;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Database\QueryException;
@@ -71,17 +73,25 @@ class StudentController extends Controller
                 $query->where('email', 'like', "%{$email}%");
             }
 
-            // filtrer par study_level_id
+            // filtrer par study_level_id (via enrollment)
             if ($studyLevelId = $request->get('study_level_id')) {
-                $query->where('study_level_id', $studyLevelId);
+                $query->whereHas('enrollments.levelFee',
+                    fn($q) => $q->where('study_level_id', $studyLevelId)
+                );
             }
 
-            // filtrer par specialization_id
+            // filtrer par specialization_id (colonne directe sur students)
             if ($specializationId = $request->get('specialization_id')) {
                 $query->where('specialization_id', $specializationId);
             }
 
-            $students = $query->with(['annexe', 'studyLevel', 'specialization'])->orderBy('last_name')->paginate($perPage);
+            // filtrer par année scolaire (via enrollments)
+            if ($schoolYear = $request->get('school_year')) {
+                $query->whereHas('enrollments', fn ($q) => $q->where('school_year', $schoolYear));
+            }
+
+            $students = $query->with(['annexe', 'specialization', 'currentEnrollment.levelFee.studyLevel'])
+                ->orderBy('last_name')->paginate($perPage);
 
             return response()->json($students, 200);
         } catch (QueryException $e) {
@@ -94,65 +104,77 @@ class StudentController extends Controller
     {
         $validated = $request->validated();
 
+        // Extraire les champs d'enrollment (ne vont pas sur la table students)
+        $studyLevelId     = $validated['study_level_id'] ?? null;
+        $schoolYear       = $validated['school_year']    ?? null;
+        $classId          = $validated['class_id']       ?? null;
+        unset($validated['study_level_id'], $validated['school_year'], $validated['class_id'], $validated['tuition_amount']);
+
         if ($request->hasFile('avatar')) {
             $validated['avatar'] = $request->file('avatar')->store('avatars', 'public');
         }
 
         $student = Student::create(array_merge($validated, [
-            'id' => (string) Str::uuid(),
-            'amount_paid' => 0,
+            'id'     => (string) Str::uuid(),
             'status' => 'active',
         ]));
 
-        return response()->json(['message' => 'Student created', 'student' => $student], 201);
+        // Créer l'enrollment automatiquement si niveau + année fournis
+        if ($studyLevelId && $schoolYear) {
+            $fee = LevelFee::resolve(
+                (int) $studyLevelId,
+                $student->specialization_id ? (int) $student->specialization_id : null,
+                $schoolYear
+            );
+
+            Enrollment::create([
+                'student_id'     => $student->id,
+                'level_fee_id'   => $fee?->id,   // null si aucun barème configuré
+                'tuition_amount' => $fee?->tuition_amount ?? 0,
+                'amount_paid'    => 0,
+                'school_year'    => $schoolYear,
+                'status'         => 'active',
+            ]);
+        }
+
+        return response()->json([
+            'message' => 'Student created',
+            'student' => $student->load('specialization', 'currentEnrollment.levelFee.studyLevel'),
+        ], 201);
     }
 
-    // Retourne un étudiant avec les relations nécessaires au frontend
-    // et les informations financières calculées à partir des champs stockés en base
+    // Retourne un étudiant avec ses relations et les données financières
+    // issues de l'enrollment actif (source de vérité).
     public function show($id)
     {
         try {
-            $studentModel = new Student();
-            $with = [];
-            if (method_exists($studentModel, 'annexe')) $with[] = 'annexe';
-            if (method_exists($studentModel, 'studyLevel')) $with[] = 'studyLevel';
-            if (method_exists($studentModel, 'specialization')) $with[] = 'specialization';
-            if (method_exists($studentModel, 'payments')) $with[] = 'payments';
-            if (method_exists($studentModel, 'paymentLinks')) $with[] = 'paymentLinks.installments.payments';
+            $student = Student::with([
+                'annexe',
+                'specialization',
+                'currentEnrollment.levelFee.studyLevel',
+                'enrollments.levelFee.studyLevel',
+            ])->findOrFail($id);
 
-            $student = count($with) ? Student::with($with)->findOrFail($id) : Student::findOrFail($id);
-
-            // Utilise tuition_amount et amount_paid tels qu'ils sont stockés dans la table students
-            $tuition = (float) ($student->tuition_amount ?? 0);
-            $amountPaid = (float) ($student->amount_paid ?? 0);
-
-            // Si amount_paid est absent ou zéro, on cherche les paiements chargés en relation
-            // et on fait la somme comme solution de secours
-            if ($amountPaid <= 0 && method_exists($student, 'payments') && $student->relationLoaded('payments')) {
-                $amountPaid = (float) collect($student->payments)->sum(function ($p) {
-                    return (float) ($p->amount ?? $p['amount'] ?? 0);
-                });
-            }
-
-            $amountDue = max(0, $tuition - $amountPaid);
-            $lastPayment = null;
-            if (method_exists($student, 'payments') && $student->relationLoaded('payments')) {
-                $lastPayment = collect($student->payments)->sortByDesc('created_at')->first();
-            }
+            $enrollment = $student->currentEnrollment;
+            $tuition    = (float) ($enrollment?->tuition_amount ?? 0);
+            $amountPaid = (float) ($enrollment?->amount_paid    ?? 0);
+            $amountDue  = max(0, $tuition - $amountPaid);
 
             $finance = [
-                'tuition_amount'   => $tuition,
-                'amount_paid'      => $amountPaid,
-                'amount_due'       => $amountDue,
-                'last_payment_date'=> $lastPayment ? ($lastPayment->created_at->toDateString() ?? $lastPayment->created_at ?? null) : null,
+                'tuition_amount'    => $tuition,
+                'amount_paid'       => $amountPaid,
+                'amount_due'        => $amountDue,
+                'recovery_rate'     => $enrollment?->recovery_rate ?? 0,
+                'school_year'       => $enrollment?->school_year,
+                'study_level'       => $enrollment?->levelFee?->studyLevel?->label,
+                'last_payment_date' => null,
             ];
 
             return response()->json(['student' => $student, 'finance' => $finance], 200);
         } catch (\Throwable $e) {
             \Log::error('StudentController@show failed', [
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'id' => $id,
+                'id'    => $id,
             ]);
             return response()->json(['message' => 'Failed to fetch student.'], 500);
         }
@@ -161,64 +183,45 @@ class StudentController extends Controller
     public function financials($id)
     {
         try {
-            $student = Student::findOrFail($id);
+            $student = Student::with([
+                'currentEnrollment',
+                'enrollments.levelFee.studyLevel',
+            ])->findOrFail($id);
 
-            // Privilégier amount_paid stocké dans la table students
-            $amountPaid = (float) ($student->amount_paid ?? 0);
+            $enrollment = $student->currentEnrollment;
+            $tuition    = (float) ($enrollment?->tuition_amount ?? 0);
+            $amountPaid = (float) ($enrollment?->amount_paid    ?? 0);
+            $amountDue  = max(0, $tuition - $amountPaid);
 
-            // Si amount_paid stocké est nul, on calcule la somme des paiements existants en repli
-            if ($amountPaid <= 0) {
-                if (method_exists($student, 'payments')) {
-                    $student->loadMissing('payments');
-                    $payments = $student->payments ?? collect([]);
-                    $amountPaid = (float) $payments->sum(function ($p) {
-                        return (float) ($p->amount ?? $p['amount'] ?? 0);
-                    });
-                    $lastPayment = $payments->sortByDesc('created_at')->first();
-                } elseif (method_exists($student, 'paymentLinks')) {
-
-                $student->loadMissing('paymentLinks.installments.payments');
-                    $payments = collect([]);
-                    foreach ($student->paymentLinks ?? [] as $pl) {
-                        foreach ($pl->installments ?? [] as $inst) {
-                            if (is_iterable($inst->payments)) {
-                                $payments = $payments->concat($inst->payments);
-                            }
-                        }
-                    }
-                    $amountPaid = (float) $payments->sum(function ($p) {
-                        return (float) ($p->amount ?? $p['amount'] ?? 0);
-                    });
-                    $lastPayment = $payments->sortByDesc('created_at')->first();
-                } else {
-                    $lastPayment = null;
-                }
-            } else {
-                // si amount_paid est présent en base, tenter de récupérer la date du dernier paiement si relation disponible
-                $lastPayment = null;
-                if (method_exists($student, 'payments')) {
-                    $student->loadMissing('payments');
-                    $lastPayment = $student->payments ? collect($student->payments)->sortByDesc('created_at')->first() : null;
-                }
-            }
-
-            $tuition = (float) ($student->tuition_amount ?? 0);
-            $amountDue = max(0, $tuition - $amountPaid);
+            // Historique des paiements directs (via table payments)
+            $payments = \App\Models\Payment::where('student_id', $student->id)
+                ->orderByDesc('paid_at')
+                ->take(10)
+                ->get();
 
             return response()->json([
                 'data' => [
-                    'tuition_amount' => $tuition,
-                    'amount_paid' => $amountPaid,
-                    'amount_due' => $amountDue,
-                    'last_payment_date' => $lastPayment ? ($lastPayment->created_at->toDateString() ?? $lastPayment->created_at ?? null) : null,
-                    'recent_payments' => isset($payments) ? collect($payments)->sortByDesc('created_at')->take(10)->values() : [],
-                ]
+                    'tuition_amount'    => $tuition,
+                    'amount_paid'       => $amountPaid,
+                    'amount_due'        => $amountDue,
+                    'recovery_rate'     => $enrollment?->recovery_rate ?? 0,
+                    'school_year'       => $enrollment?->school_year,
+                    'last_payment_date' => $payments->first()?->paid_at?->toDateString(),
+                    'recent_payments'   => $payments,
+                    'history'           => $student->enrollments->map(fn($e) => [
+                        'school_year'    => $e->school_year,
+                        'study_level'    => $e->levelFee?->studyLevel?->label,
+                        'tuition_amount' => $e->tuition_amount,
+                        'amount_paid'    => $e->amount_paid,
+                        'recovery_rate'  => $e->recovery_rate,
+                        'status'         => $e->status,
+                    ]),
+                ],
             ], 200);
         } catch (\Throwable $e) {
             \Log::error('StudentController@financials failed', [
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'id' => $id,
+                'id'    => $id,
             ]);
             return response()->json(['message' => 'Failed to fetch financials.'], 500);
         }
@@ -235,8 +238,13 @@ class StudentController extends Controller
 
     public function update(UpdateStudentRequest $request, $id)
     {
-        $student = Student::findOrFail($id);
+        $student   = Student::findOrFail($id);
         $validated = $request->validated();
+
+        // Extraire les champs d'enrollment
+        $studyLevelId = $validated['study_level_id'] ?? null;
+        $schoolYear   = $validated['school_year']    ?? null;
+        unset($validated['study_level_id'], $validated['school_year']);
 
         if ($request->hasFile('avatar')) {
             if ($student->avatar) {
@@ -247,7 +255,28 @@ class StudentController extends Controller
 
         $student->update($validated);
 
-        return response()->json(['message' => 'Student updated', 'student' => $student], 200);
+        // Si le niveau ou l'année sont fournis, mettre à jour l'enrollment
+        if ($studyLevelId && $schoolYear) {
+            $fee = LevelFee::resolve(
+                (int) $studyLevelId,
+                $student->specialization_id ? (int) $student->specialization_id : null,
+                $schoolYear
+            );
+
+            Enrollment::updateOrCreate(
+                ['student_id' => $student->id, 'school_year' => $schoolYear],
+                [
+                    'level_fee_id'   => $fee?->id,
+                    'tuition_amount' => $fee?->tuition_amount ?? 0,
+                    // amount_paid n'est PAS écrasé
+                ]
+            );
+        }
+
+        return response()->json([
+            'message' => 'Student updated',
+            'student' => $student->fresh(['specialization', 'currentEnrollment.levelFee.studyLevel']),
+        ], 200);
     }
 
     public function destroy($id)

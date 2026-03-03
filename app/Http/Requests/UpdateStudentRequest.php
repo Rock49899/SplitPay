@@ -20,13 +20,13 @@ class UpdateStudentRequest extends FormRequest
             'email'             => 'sometimes|nullable|email|max:150',
             'phone'             => 'sometimes|nullable|string|max:20',
             'matricule'         => 'sometimes|nullable|string|max:50',
-            'study_level_id'    => 'sometimes|nullable|integer|exists:study_levels,id',
             'specialization_id' => 'sometimes|nullable|integer|exists:specializations,id',
-            'class_id'          => 'sometimes|nullable|integer|exists:classes,id',
-            'tuition_amount'    => 'sometimes|nullable|numeric|min:0',
             // statut : conforme à l'énumération en base (active, suspended, graduated)
             'status'            => 'sometimes|string|in:active,suspended,graduated',
             'avatar'            => 'sometimes|file|image|mimes:jpeg,jpg,png,webp|max:2048',
+            // Champs d'enrollment (traités à part dans le controller)
+            'study_level_id'    => 'sometimes|nullable|integer|exists:study_levels,id',
+            'school_year'       => 'sometimes|nullable|string|max:20',
         ];
     }
     

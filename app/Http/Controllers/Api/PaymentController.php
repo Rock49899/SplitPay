@@ -145,6 +145,52 @@ class PaymentController extends Controller
     }
 
     /**
+     * GET /api/admin/payments/recent
+     * Les N derniers paiements pour le widget dashboard, scopé par rôle.
+     */
+    public function recent(Request $request)
+    {
+        $query = Payment::with(['student.annexe', 'paymentLink', 'installment'])
+            ->orderByDesc('created_at');
+
+        // Même scope que index()
+        if (!$this->isSuperAdminInstitution()) {
+            $annexeIds = $this->getUserAnnexeIds();
+            if (empty($annexeIds)) {
+                return response()->json(['data' => []], 200);
+            }
+            $query->whereHas('student', fn ($q) => $q->whereIn('annexe_id', $annexeIds));
+        }
+
+        // Filtres
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+        if ($request->filled('method')) {
+            $query->where('method', $request->method);
+        }
+        // Type via paymentLink.type (tuition | registration | other)
+        if ($request->filled('type')) {
+            $query->whereHas('paymentLink', fn ($q) => $q->where('type', $request->type));
+        }
+        if ($request->filled('from')) {
+            $query->whereDate('created_at', '>=', $request->from);
+        }
+        if ($request->filled('to')) {
+            $query->whereDate('created_at', '<=', $request->to);
+        }
+        // Filtre par annexe (pour super_admin_institution)
+        if ($request->filled('annexe_id')) {
+            $query->whereHas('student', fn ($q) => $q->where('annexe_id', $request->annexe_id));
+        }
+
+        $limit    = min((int) $request->get('limit', 5), 20);
+        $payments = $query->limit($limit)->get();
+
+        return response()->json(['data' => $payments]);
+    }
+
+    /**
      * Show a single payment (admin)
      * Route: GET /api/payments/{payment}
      */
