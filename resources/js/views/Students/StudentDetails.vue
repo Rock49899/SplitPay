@@ -66,9 +66,22 @@
           </div>
 
           <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Année scolaire</label>
+            <template v-if="!editMode">
+              <p class="mt-1 text-gray-900">{{ student?.current_enrollment?.school_year ?? '—' }}</p>
+            </template>
+            <template v-else>
+              <select v-model="form.school_year" class="mt-1 block w-full rounded-md border px-3 py-2 text-white bg-gray-800">
+                <option :value="null">— Sélectionner —</option>
+                <option v-for="y in schoolYearOptions" :key="y" :value="y">{{ y }}</option>
+              </select>
+            </template>
+          </div>
+
+          <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Study Level</label>
             <template v-if="!editMode">
-              <p class="mt-1 text-gray-900">{{ student?.study_level?.label ?? student?.study_level?.code ?? '—' }}</p>
+              <p class="mt-1 text-gray-900">{{ student?.current_enrollment?.level_fee?.study_level?.label ?? '—' }}</p>
             </template>
             <template v-else>
               <select v-model="form.study_level_id" class="mt-1 block w-full rounded-md border px-3 py-2 text-white bg-gray-800">
@@ -171,6 +184,7 @@ import ImageViewerModal from '@/components/shared/ImageViewerModal.vue';
 import studentService from '@/services/studentService';
 import studyLevelService from '@/services/studyLevelService';
 import specializationService from '@/services/specializationService';
+import { useSchoolYear } from '@/composables/useSchoolYear';
 
 const route = useRoute();
 const router = useRouter();
@@ -179,6 +193,7 @@ const id = route.params.id;
 const student = ref(null);
 const studyLevels = ref([]);
 const specializations = ref([]);
+const { options: schoolYearOptions } = useSchoolYear(5);
 // Avatar
 const avatarFile = ref(null);
 const avatarPreview = ref(null);
@@ -195,6 +210,7 @@ const form = ref({
   last_name: '',
   email: '',
   phone: '',
+  school_year: null,
   study_level_id: null,
   specialization_id: null,
 });
@@ -219,7 +235,8 @@ const load = async () => {
       last_name: s?.last_name ?? '',
       email: s?.email ?? '',
       phone: s?.phone ?? '',
-      study_level_id: s?.study_level_id ?? null,
+      school_year: s?.current_enrollment?.school_year ?? null,
+      study_level_id: s?.current_enrollment?.level_fee?.study_level_id ?? null,
       specialization_id: s?.specialization_id ?? null,
     };
 
@@ -249,7 +266,8 @@ const cancelEdit = () => {
       last_name: student.value.last_name ?? '',
       email: student.value.email ?? '',
       phone: student.value.phone ?? '',
-      study_level_id: student.value.study_level_id ?? null,
+      school_year: student.value.current_enrollment?.school_year ?? null,
+      study_level_id: student.value.current_enrollment?.level_fee?.study_level_id ?? null,
       specialization_id: student.value.specialization_id ?? null,
     };
   }

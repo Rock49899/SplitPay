@@ -84,7 +84,7 @@
                 <td v-if="visibleColumns.includes('matricule')" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ s.matricule ?? '-' }}</td>
                 <td v-if="visibleColumns.includes('email')" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ s.email ?? '-' }}</td>
                 <td v-if="visibleColumns.includes('phone')" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ s.phone ?? '-' }}</td>
-                <td v-if="visibleColumns.includes('study_level')" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ s.study_level?.label ?? s.study_level?.code ?? '-' }}</td>
+                <td v-if="visibleColumns.includes('study_level')" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ s?.current_enrollment?.level_fee?.study_level?.label ?? '—' }}</td>
                 <td v-if="visibleColumns.includes('specialization')" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ s.specialization?.label ?? s.specialization?.code ?? '-' }}</td>
                 <td v-if="visibleColumns.includes('annexes')" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {{ annexeNames(s) || '-' }}
@@ -137,12 +137,14 @@ import StudentColumnsSelector from '@/components/students/StudentColumnsSelector
 import AvatarDisplay from '@/components/shared/AvatarDisplay.vue';
 import ImageViewerModal from '@/components/shared/ImageViewerModal.vue';
 import { useStudentStore } from '@/stores/useStudentStore';
+import { useActiveYearStore } from '@/stores/useActiveYearStore';
 import studentService from '@/services/studentService';
 import studyLevelService from '@/services/studyLevelService';
 import specializationService from '@/services/specializationService';
 import { useRouter, useRoute } from 'vue-router';
 import { useAnnexeStore } from '@/stores/useAnnexeStore';
 const annexeStore = useAnnexeStore();
+const activeYearStore = useActiveYearStore();
 
 const currentPageTitle = ref('Students');
 const students = useStudentStore();
@@ -345,12 +347,16 @@ const loadSpecializations = async () => {
   }
 };
 
+// Recharger quand l'année active change (sélecteur AppHeader ou clôture d'année)
+watch(() => activeYearStore.activeYear, () => loadStudents(1))
+
 const loadStudents = async (page = 1) => {
   loading.value = true;
   try {
     const params = {
       per_page: perPage.value,
       page,
+      school_year: activeYearStore.activeYear || undefined,
       annexe_id: filters.annexe_id || undefined,
       study_level_id: filters.study_level_id || undefined,
       specialization_id: filters.specialization_id || undefined,

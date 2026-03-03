@@ -49,6 +49,8 @@
     v-if="showCreate"
     :student-id="id"
     :remaining="finance.amount_due"
+    :tuition-amount="finance.tuition_amount"
+    :enrollment-id="currentEnrollmentId"
     :initial-currency="form.currency"
     @created="onLinkCreated"
     @close="showCreate = false"
@@ -72,6 +74,7 @@ const route = useRoute();
 const id = route.params.id;
 
 const student = ref(null);
+const currentEnrollmentId = ref(null);
 const finance = ref({ tuition_amount: null, amount_paid: 0, amount_due: 0, last_payment_date: null });
 const showCreate = ref(false);
 const isCreating = ref(false);
@@ -88,6 +91,9 @@ const load = async () => {
     const sRes = await studentService.show(id);
     const s = sRes.data?.student ?? sRes.data ?? {};
     student.value = s;
+    // enrollment courant pour le modal de lien de paiement
+    currentEnrollmentId.value = s?.current_enrollment?.id ?? null;
+
     let fin = sRes.data?.finance ?? null;
     if (!fin) {
       try {
@@ -96,21 +102,11 @@ const load = async () => {
         if (fin && fin.data) fin = fin.data;
       } catch { fin = null; }
     }
-    if (!fin) {
-      const amountPaid = Number(student.value?.amount_paid ?? 0) || 0;
-      const tuition = Number(student.value?.tuition_amount ?? 0) || 0;
-      fin = {
-        tuition_amount: tuition,
-        amount_paid: amountPaid,
-        amount_due: Math.max(0, tuition - amountPaid),
-        last_payment_date: student.value?.last_payment_date ?? student.value?.last_payment_at ?? null,
-      };
-    }
     finance.value = {
-      tuition_amount: Number(fin.tuition_amount ?? 0),
-      amount_paid: Number(fin.amount_paid ?? 0),
-      amount_due: Number(fin.amount_due ?? Math.max(0, (fin.tuition_amount ?? 0) - (fin.amount_paid ?? 0))),
-      last_payment_date: fin.last_payment_date ?? null,
+      tuition_amount: Number(fin?.tuition_amount ?? 0),
+      amount_paid:    Number(fin?.amount_paid    ?? 0),
+      amount_due:     Number(fin?.amount_due     ?? Math.max(0, (fin?.tuition_amount ?? 0) - (fin?.amount_paid ?? 0))),
+      last_payment_date: fin?.last_payment_date ?? null,
     };
   } catch (e) {
     console.error('Failed to load finance', e);
