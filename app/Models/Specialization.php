@@ -14,11 +14,6 @@ class Specialization extends Model
         'description',
     ];
 
-    public function classes(): HasMany
-    {
-        return $this->hasMany(StudentClass::class, 'specialization_id');
-    }
-
     public function students(): HasMany
     {
         return $this->hasMany(Student::class, 'specialization_id');

@@ -23,11 +23,6 @@ class StudyLevel extends Model
         'description',
     ];
 
-    public function classes(): HasMany
-    {
-        return $this->hasMany(StudentClass::class, 'study_level_id');
-    }
-
     public function students(): HasMany
     {
         return $this->hasMany(Student::class, 'study_level_id');
