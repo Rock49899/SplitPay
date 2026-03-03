@@ -15,6 +15,29 @@
             </select>
           </div>
 
+          <!-- Confirmation scolarité avec réduction possible (tuition + barème connu) -->
+          <div v-if="isTuition && props.tuitionAmount > 0"
+            class="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Scolarité de référence
+              <span v-if="tuitionChanged" class="text-orange-500 text-xs ml-2">
+                ↳ réduction appliquée
+              </span>
+            </label>
+            <input
+              type="number"
+              v-model.number="confirmedTuition"
+              min="0" step="500"
+              class="w-full border rounded px-3 py-2 text-sm"
+              @input="syncAmount"
+            />
+            <p class="text-xs text-gray-400 mt-1">
+              Montant initial : {{ fmtAmount(props.tuitionAmount) }}
+              &nbsp;&mdash;&nbsp;
+              Restant effectif : <strong>{{ fmtAmount(effectiveRemaining) }}</strong>
+            </p>
+          </div>
+
           <!-- Tranche number (uniquement pour tuition) -->
           <div v-if="isTuition">
             <label class="block text-sm text-gray-600">Tranche number</label>
@@ -38,7 +61,7 @@
               :max="maxAllowed"
             />
             <div v-if="isTuition" class="text-xs text-gray-500 mt-1">
-              Remaining due: {{ remaining }} — Max allowed: {{ maxAllowed }}
+              Restant dû : {{ fmtAmount(effectiveRemaining) }} &mdash; Max : {{ fmtAmount(maxAllowed) }}
             </div>
           </div>
 
@@ -83,16 +106,36 @@
 import { reactive, computed, ref } from 'vue'
 import Modal from '@/components/payment/Modal.vue'
 import paymentLinkService from '@/services/paymentLinkService'
+import api from '@/services/api'
 
 const props = defineProps({
-  studentId: { type: String, required: true },
-  remaining: { type: Number, default: 0 },
-  initialCurrency: { type: String, default: 'USD' },
+  studentId:      { type: String, required: true },
+  remaining:      { type: Number, default: 0 },
+  initialCurrency:{ type: String, default: 'USD' },
+  tuitionAmount:  { type: Number, default: 0 },   // tarif configuré dans level_fees
+  enrollmentId:   { type: [Number, String], default: null }, // pour PATCH si réduction
 })
 
 const emit = defineEmits(['close','created'])
 
 const currencies = ['USD','EUR','XOF']
+
+// ── Scolarité confirmée (admin peut réduire pour accorder une remise) ──────────
+const confirmedTuition = ref(Number(props.tuitionAmount ?? 0) || Number(props.remaining ?? 0))
+
+// Montant déjà payé (déduit du tarif initial)
+const amountPaid = computed(() => Math.max(0, Number(props.tuitionAmount ?? 0) - Number(props.remaining ?? 0)))
+// Restant effectif après application de la réduction
+const effectiveRemaining = computed(() => Math.max(0, confirmedTuition.value - amountPaid.value))
+// La scolarité a-t-elle été modifiée ?
+const tuitionChanged = computed(() => confirmedTuition.value !== Number(props.tuitionAmount ?? 0))
+
+// Si on change la scolarité, recaler le montant du lien si nécessaire
+const syncAmount = () => {
+  if (form.type === 'tuition' && form.amount > effectiveRemaining.value) {
+    form.amount = effectiveRemaining.value
+  }
+}
 
 const form = reactive({
   type: 'tuition',
@@ -100,14 +143,17 @@ const form = reactive({
   due_date: null,
   description: '',
   currency: props.initialCurrency,
-  tranche_number: 1, // valeur par défaut
+  tranche_number: 1,
 })
 
 const loading = ref(false)
 const isTuition = computed(() => form.type === 'tuition')
 const maxAllowed = computed(() =>
-  isTuition.value ? Number(props.remaining ?? 0) : 1e12
+  isTuition.value ? effectiveRemaining.value : 1e12
 )
+
+const fmtAmount = (v) =>
+  new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XAF', maximumFractionDigits: 0 }).format(v)
 
 const close = () => emit('close')
 
@@ -115,25 +161,31 @@ const createLink = async () => {
   try {
     loading.value = true
 
-    // Ajustement montant pour tuition
+    // 1. Si réduction accordée et enrollment connu → mettre à jour la scolarité de l'enrollment
+    if (isTuition.value && tuitionChanged.value && props.enrollmentId) {
+      await api.patch(`admin/enrollments/${props.enrollmentId}`, {
+        tuition_amount: confirmedTuition.value,
+      })
+    }
+
+    // 2. Ajustement montant lien
     if (isTuition.value) {
-      const remaining = Number(props.remaining ?? 0)
-      if (!form.amount || form.amount <= 0) form.amount = remaining
-      if (form.amount > remaining) form.amount = remaining
+      const max = effectiveRemaining.value
+      if (!form.amount || form.amount <= 0) form.amount = max
+      if (form.amount > max) form.amount = max
     }
 
-    // Préparer payload
+    // 3. Créer le lien
     const payload = {
-      student_id: props.studentId,
-      type: form.type,
-      amount: form.amount,
-      description: form.description,
-      due_date: form.due_date ?? null,
-      currency: form.currency,
-      tranche_number: isTuition.value ? form.tranche_number : null, // envoi conditionnel
+      student_id:     props.studentId,
+      type:           form.type,
+      amount:         form.amount,
+      description:    form.description,
+      due_date:       form.due_date ?? null,
+      currency:       form.currency,
+      tranche_number: isTuition.value ? form.tranche_number : null,
     }
 
-    // Création du lien
     const res = await paymentLinkService.store(payload)
     const link = res.data?.payment_link ?? res.data ?? res
 

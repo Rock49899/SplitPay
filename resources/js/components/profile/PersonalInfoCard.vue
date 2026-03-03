@@ -56,6 +56,26 @@
           <form @submit.prevent="saveProfile" class="flex flex-col">
             <div class="custom-scrollbar overflow-y-auto p-2 max-h-[60vh]">
               <div class="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
+
+                <!-- Photo de profil -->
+                <div class="col-span-2 flex flex-col items-center gap-2">
+                  <div class="relative w-24 h-24 group">
+                    <AvatarDisplay
+                      :src="avatarPreview || form.avatar_url"
+                      :label="form.name"
+                      :size="96"
+                    />
+                    <label class="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 group-hover:opacity-100 cursor-pointer transition">
+                      <svg class="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      <input type="file" class="sr-only" accept="image/jpeg,image/jpg,image/png,image/webp" @change="onAvatarChange" />
+                    </label>
+                  </div>
+                  <p class="text-xs text-gray-400 dark:text-gray-500">Hover the photo and click to change</p>
+                </div>
+
                 <div class="col-span-2">
                   <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Name</label>
                   <input type="text" v-model="form.name" class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 dark:text-white dark:bg-gray-800 dark:border-gray-700" />
@@ -92,16 +112,30 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import Modal from './Modal.vue'
+import AvatarDisplay from '@/components/shared/AvatarDisplay.vue'
 import api from '@/services/api'
 import { useAnnexeStore } from '@/stores/useAnnexeStore'
 
 const annexeStore = useAnnexeStore()
 const isProfileInfoModal = ref(false)
+
+// Avatar
+const avatarFile = ref(null)
+const avatarPreview = ref(null)
+
+const onAvatarChange = (e) => {
+  const file = e.target.files?.[0]
+  if (!file) return
+  avatarFile.value = file
+  avatarPreview.value = URL.createObjectURL(file)
+}
+
 const form = reactive({
   name: '',
   email: '',
   phone: '',
   bio: '',
+  avatar_url: '',
   annexe_id: null,
 })
 const annexeName = ref('')
@@ -128,6 +162,7 @@ const load = async () => {
     form.email = u.email ?? ''
     form.phone = u.phone ?? ''
     form.bio = u.bio ?? ''
+    form.avatar_url = u.avatar_url ?? u.avatar ?? ''
     form.annexe_id = u.annexe_id ?? u.annexe?.id ?? null
     roleLabel.value = u.role?.name ?? u.role_name ?? u.title ?? u.role ?? ''
     const ann = annexeStore.items?.find(a => String(a.id) === String(form.annexe_id))
@@ -138,57 +173,29 @@ const load = async () => {
 }
 
 const saveProfile = async () => {
-  const endpoints = [
-    'admin/me',
-    'api/admin/me',
-  ];
-  const methods = ['put', 'patch', 'post'];
-
-  const payload = {
-    name: form.name,
-    email: form.email,
-    phone: form.phone,
-    bio: form.bio,
-  };
-
-  let success = false;
-  let lastError = null;
-
   try {
-    for (const ep of endpoints) {
-      for (const m of methods) {
-        try {
-          const res = await api[m](ep, payload);
-          if (res && res.status >= 200 && res.status < 300) {
-            success = true;
-            break;
-          }
-        } catch (err) {
-          lastError = err;
-          // si méthode non autorisée (405) ou route absente (404), essayer la prochaine combinaison
-          const status = err?.response?.status;
-          if (status === 405 || status === 404) {
-            continue;
-          }
-          // pour autres erreurs (500, validation...), on remonte
-          throw err;
-        }
-      }
-      if (success) break;
-    }
+    const fd = new FormData()
+    fd.append('name', form.name)
+    fd.append('email', form.email)
+    if (form.phone) fd.append('phone', form.phone)
+    if (form.bio) fd.append('bio', form.bio)
+    if (avatarFile.value) fd.append('avatar', avatarFile.value)
+    fd.append('_method', 'PATCH')
 
-    if (!success) {
-      // si aucune combinaison n'a fonctionné, lever l'erreur la plus récente
-      throw lastError ?? new Error('No endpoint accepted the update request');
-    }
+    await api.post('admin/me', fd)
 
-    isProfileInfoModal.value = false;
-    await load();
+    avatarFile.value = null
+    avatarPreview.value = null
+    isProfileInfoModal.value = false
+    await load()
+
+    // Notify UserMenu and other consumers to refresh
+    window.dispatchEvent(new CustomEvent('user-profile-updated'))
   } catch (e) {
-    console.error('Failed saving profile info', e);
-    alert(e.response?.data?.message || e.message || 'Save failed');
+    console.error('Failed saving profile info', e)
+    alert(e.response?.data?.message || e.message || 'Save failed')
   }
-};
+}
 
 onMounted(load)
 </script>

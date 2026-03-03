@@ -69,6 +69,26 @@
           <form @submit.prevent="saveProfile" class="flex flex-col">
             <div class="custom-scrollbar overflow-y-auto p-2 max-h-[60vh]">
               <div class="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
+
+                <!-- Photo de profil -->
+                <div class="col-span-2 flex flex-col items-center gap-2">
+                  <div class="relative w-24 h-24 group">
+                    <AvatarDisplay
+                      :src="avatarPreview || form.avatar_url"
+                      :label="form.name"
+                      :size="96"
+                    />
+                    <label class="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 group-hover:opacity-100 cursor-pointer transition">
+                      <svg class="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      <input type="file" class="sr-only" accept="image/jpeg,image/jpg,image/png,image/webp" @change="onAvatarChangeModal" />
+                    </label>
+                  </div>
+                  <p class="text-xs text-gray-400 dark:text-gray-500">Hover the photo and click to change</p>
+                </div>
+
                 <div class="col-span-2">
                   <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Name</label>
                   <input type="text" v-model="form.name" class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 dark:text-white dark:bg-gray-800 dark:border-gray-700" />
@@ -130,13 +150,21 @@ const showImageModal = ref(false)
 const avatarFile = ref(null)
 const avatarPreview = ref(null)
 
+// Hover overlay outside modal → auto-save immediately
 const onAvatarChange = (e) => {
   const file = e.target.files?.[0]
   if (!file) return
   avatarFile.value = file
   avatarPreview.value = URL.createObjectURL(file)
-  // auto-save avatar immediately
   saveAvatar(file)
+}
+
+// Picker inside the Edit modal → only preview, saved on "Save Changes"
+const onAvatarChangeModal = (e) => {
+  const file = e.target.files?.[0]
+  if (!file) return
+  avatarFile.value = file
+  avatarPreview.value = URL.createObjectURL(file)
 }
 
 // form uses single name field (backend has "name")

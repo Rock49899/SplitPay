@@ -57,7 +57,7 @@ const router = createRouter({
     {
       path: '/admin/study-levels',
       name: 'StudyLevels',
-      component: () => import('../views/Academic/StudyLevelList.vue').catch(() => import('../views/Placeholders/PlaceholderPage.vue')),
+      component: () => import('../views/Academic/StudyLevelList.vue'),
       meta: { title: 'Study Levels', requiresAuth: true },
     },
     {
@@ -67,10 +67,10 @@ const router = createRouter({
       meta: { title: 'Specializations', requiresAuth: true },
     },
     {
-      path: '/admin/classes',
-      name: 'Classes',
-      component: () => import('../views/Academic/ClassList.vue').catch(() => import('../views/Placeholders/PlaceholderPage.vue')),
-      meta: { title: 'Classes', requiresAuth: true },
+      path: '/admin/school-year/close',
+      name: 'SchoolYearClose',
+      component: () => import('../views/Academic/SchoolYearClose.vue').catch(() => import('../views/Placeholders/PlaceholderPage.vue')),
+      meta: { title: 'Clôture d\'année scolaire', requiresAuth: true },
     },
     {
       path: '/finances',
