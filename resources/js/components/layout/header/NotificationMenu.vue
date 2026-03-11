@@ -37,7 +37,12 @@
       <div
         class="flex items-center justify-between pb-3 mb-3 border-b border-gray-100 dark:border-gray-800"
       >
-        <h5 class="text-lg font-semibold text-gray-800 dark:text-white/90">Notification</h5>
+        <h5 class="text-lg font-semibold text-gray-800 dark:text-white/90">
+          Notifications
+          <span v-if="unreadCount > 0" class="ml-2 px-2 py-0.5 text-xs bg-orange-500 text-white rounded-full">
+            {{ unreadCount }}
+          </span>
+        </h5>
 
         <button @click="closeDropdown" class="text-gray-500 dark:text-gray-400">
           <svg
@@ -58,148 +63,156 @@
         </button>
       </div>
 
-      <ul class="flex flex-col h-auto overflow-y-auto custom-scrollbar">
-        <li v-for="notification in notifications" :key="notification.id" @click="handleItemClick">
-          <a
-            class="flex gap-3 rounded-lg border-b border-gray-100 p-3 px-4.5 py-3 hover:bg-gray-100 dark:border-gray-800 dark:hover:bg-white/5"
-            href="#"
+      <ul v-if="!loading && notifications.length > 0" class="flex flex-col h-auto overflow-y-auto custom-scrollbar">
+        <li 
+          v-for="notification in notifications" 
+          :key="notification.id" 
+          @click="handleNotificationClick(notification)"
+          class="cursor-pointer"
+        >
+          <div
+            :class="[
+              'flex gap-3 rounded-lg border-b border-gray-100 p-3 px-4.5 py-3 hover:bg-gray-100 dark:border-gray-800 dark:hover:bg-white/5 transition-colors',
+              getNotificationClass(notification)
+            ]"
           >
-            <span class="relative block w-full h-10 rounded-full z-1 max-w-10">
-              <img :src="notification.userImage" alt="User" class="overflow-hidden rounded-full" />
-              <span
-                :class="notification.status === 'online' ? 'bg-success-500' : 'bg-error-500'"
-                class="absolute bottom-0 right-0 z-10 h-2.5 w-full max-w-2.5 rounded-full border-[1.5px] border-white dark:border-gray-900"
-              ></span>
+            <span class="text-2xl flex-shrink-0 mt-1">
+              {{ getNotificationIcon(notification.type) }}
             </span>
 
-            <span class="block">
-              <span class="mb-1.5 block text-theme-sm text-gray-500 dark:text-gray-400">
-                <span class="font-medium text-gray-800 dark:text-white/90">
-                  {{ notification.userName }}
-                </span>
-                {{ notification.action }}
-                <span class="font-medium text-gray-800 dark:text-white/90">
-                  {{ notification.project }}
-                </span>
+            <span class="block flex-1">
+              <span class="mb-1.5 block font-medium text-gray-800 dark:text-white/90">
+                {{ notification.title }}
               </span>
-
-              <span class="flex items-center gap-2 text-gray-500 text-theme-xs dark:text-gray-400">
-                <span>{{ notification.type }}</span>
-                <span class="w-1 h-1 bg-gray-400 rounded-full"></span>
-                <span>{{ notification.time }}</span>
+              <span class="block text-theme-sm text-gray-600 dark:text-gray-400 mb-1">
+                {{ notification.message }}
+              </span>
+              <span class="text-gray-500 text-theme-xs dark:text-gray-500">
+                {{ formatTime(notification.created_at) }}
               </span>
             </span>
-          </a>
+
+            <span v-if="!notification.is_read" class="flex-shrink-0">
+              <span class="inline-block w-2 h-2 bg-blue-500 rounded-full"></span>
+            </span>
+          </div>
         </li>
       </ul>
 
-      <router-link
-        to="#"
-        class="mt-3 flex justify-center rounded-lg border border-gray-300 bg-white p-3 text-theme-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200"
+      <div v-else-if="loading" class="flex justify-center items-center py-8">
+        <svg class="animate-spin h-8 w-8 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+      </div>
+
+      <div v-else class="flex flex-col items-center justify-center py-8 text-gray-500 dark:text-gray-400">
+        <svg class="w-16 h-16 mb-2 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+        </svg>
+        <p class="text-sm">Aucune notification</p>
+      </div>
+
+      <button
         @click="handleViewAllClick"
+        class="mt-3 flex justify-center rounded-lg border border-gray-300 bg-white p-3 text-theme-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200 transition-colors"
       >
-        View All Notification
-      </router-link>
+        View All Notifications
+      </button>
     </div>
     <!-- Dropdown End -->
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
-import { RouterLink } from 'vue-router'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { RouterLink, useRouter } from 'vue-router'
+import notificationService from '@/services/notificationService'
 
+const router = useRouter()
 const dropdownOpen = ref(false)
-const notifying = ref(true)
 const dropdownRef = ref(null)
 
-const notifications = ref([
-  {
-    id: 1,
-    userName: 'Terry Franci',
-    userImage: '/images/user/user-02.jpg',
-    action: 'requests permission to change',
-    project: 'Project - Nganter App',
-    type: 'Project',
-    time: '5 min ago',
-    status: 'online',
-  },
-  {
-    id: 2,
-    userName: 'Terry Franci',
-    userImage: '/images/user/user-03.jpg',
-    action: 'requests permission to change',
-    project: 'Project - Nganter App',
-    type: 'Project',
-    time: '5 min ago',
-    status: 'offline',
-  },
-  {
-    id: 3,
-    userName: 'Terry Franci',
-    userImage: '/images/user/user-04.jpg',
-    action: 'requests permission to change',
-    project: 'Project - Nganter App',
-    type: 'Project',
-    time: '5 min ago',
-    status: 'online',
-  },
-  {
-    id: 4,
-    userName: 'Terry Franci',
-    userImage: '/images/user/user-05.jpg',
-    action: 'requests permission to change',
-    project: 'Project - Nganter App',
-    type: 'Project',
-    time: '5 min ago',
-    status: 'online',
-  },
-  {
-    id: 5,
-    userName: 'Terry Franci',
-    userImage: '/images/user/user-06.jpg',
-    action: 'requests permission to change',
-    project: 'Project - Nganter App',
-    type: 'Project',
-    time: '5 min ago',
-    status: 'offline',
-  },
-  {
-    id: 6,
-    userName: 'Terry Franci',
-    userImage: '/images/user/user-07.jpg',
-    action: 'requests permission to change',
-    project: 'Project - Nganter App',
-    type: 'Project',
-    time: '5 min ago',
-    status: 'online',
-  },
-  {
-    id: 7,
-    userName: 'Terry Franci',
-    userImage: '/images/user/user-08.jpg',
-    action: 'requests permission to change',
-    project: 'Project - Nganter App',
-    type: 'Project',
-    time: '5 min ago',
-    status: 'online',
-  },
-  {
-    id: 7,
-    userName: 'Terry Franci',
-    userImage: '/images/user/user-09.jpg',
-    action: 'requests permission to change',
-    project: 'Project - Nganter App',
-    type: 'Project',
-    time: '5 min ago',
-    status: 'online',
-  },
-  // Add more notifications here...
-])
+const notifications = ref([])
+const unreadCount = ref(0)
+const loading = ref(false)
+
+// Badge clignotant si notifications non lues
+const notifying = computed(() => unreadCount.value > 0)
+
+/**
+ * Charger les notifications récentes non lues
+ */
+const loadNotifications = async () => {
+  try {
+    loading.value = true
+    const [notificationsResponse, countResponse] = await Promise.all([
+      notificationService.getRecent(10),
+      notificationService.getUnreadCount(),
+    ])
+
+    notifications.value = notificationsResponse.data.data || []
+    unreadCount.value = countResponse.data.count || 0
+  } catch (error) {
+    console.error('Failed to load notifications:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+/**
+ * Formater le temps relatif
+ */
+const formatTime = (date) => {
+  try {
+    const now = new Date()
+    const then = new Date(date)
+    const diffInSeconds = Math.floor((now - then) / 1000)
+    
+    if (diffInSeconds < 60) return 'à l\'instant'
+    if (diffInSeconds < 3600) return `il y a ${Math.floor(diffInSeconds / 60)} min`
+    if (diffInSeconds < 86400) return `il y a ${Math.floor(diffInSeconds / 3600)} h`
+    if (diffInSeconds < 604800) return `il y a ${Math.floor(diffInSeconds / 86400)} j`
+    
+    return then.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  } catch {
+    return 'récemment'
+  }
+}
+
+/**
+ * Obtenir l'icône selon le type de notification
+ */
+const getNotificationIcon = (type) => {
+  switch (type) {
+    case 'payment_received':
+      return '🟢'
+    case 'payment_failed':
+      return '🔴'
+    case 'due_date_approaching':
+      return '⏰'
+    case 'payment_overdue':
+      return '🚨'
+    default:
+      return 'ℹ️'
+  }
+}
+
+/**
+ * Obtenir la classe de couleur selon le type
+ */
+const getNotificationClass = (notification) => {
+  if (!notification.is_read) {
+    return 'bg-blue-50 dark:bg-blue-900/10 border-l-2 border-l-blue-500'
+  }
+  return ''
+}
 
 const toggleDropdown = () => {
+  if (!dropdownOpen.value) {
+    loadNotifications()
+  }
   dropdownOpen.value = !dropdownOpen.value
-  notifying.value = false
 }
 
 const closeDropdown = () => {
@@ -212,25 +225,42 @@ const handleClickOutside = (event) => {
   }
 }
 
-const handleItemClick = (event) => {
-  event.preventDefault()
-  // Handle the item click action here
-  console.log('Notification item clicked')
+/**
+ * Marquer une notification comme lue
+ */
+const handleNotificationClick = async (notification) => {
+  if (!notification.is_read) {
+    try {
+      await notificationService.markAsRead(notification.id)
+      notification.is_read = true
+      unreadCount.value = Math.max(0, unreadCount.value - 1)
+    } catch (error) {
+      console.error('Failed to mark notification as read:', error)
+    }
+  }
   closeDropdown()
 }
 
-const handleViewAllClick = (event) => {
-  event.preventDefault()
-  // Handle the "View All Notification" action here
-  console.log('View All Notifications clicked')
+/**
+ * Aller vers la page de toutes les notifications
+ */
+const handleViewAllClick = () => {
+  router.push({ name: 'NotificationList' })
   closeDropdown()
 }
 
+// Charger les notifications au montage
 onMounted(() => {
+  loadNotifications()
   document.addEventListener('click', handleClickOutside)
-})
-
-onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside)
+  
+  // Rafraîchir toutes les 60 secondes
+  const intervalId = setInterval(loadNotifications, 60000)
+  
+  // Nettoyer l'intervalle au démontage
+  onUnmounted(() => {
+    clearInterval(intervalId)
+    document.removeEventListener('click', handleClickOutside)
+  })
 })
 </script>

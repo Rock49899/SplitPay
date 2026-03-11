@@ -93,7 +93,7 @@ class AuthController extends Controller
         }]);
 
         $roles = collect();
-        $permissions = collect();
+        $permissionsByAnnexe = []; // Permissions groupées par annexe
         
         foreach ($user->annexes as $annexe) {
             $role = \App\Models\Role::with('permissions')->find($annexe->pivot->role_id);
@@ -102,18 +102,17 @@ class AuthController extends Controller
                     'code' => $role->code,
                     'label' => $role->label,
                     'annexe' => $annexe->name,
+                    'annexe_id' => $annexe->id,
                 ]);
                 
-                // Ajouter les permissions de ce rôle (sans doublons)
-                foreach ($role->permissions as $perm) {
-                    if (!$permissions->contains('code', $perm->code)) {
-                        $permissions->push([
-                            'code' => $perm->code,
-                            'label' => $perm->label,
-                            'module' => $perm->module,
-                        ]);
-                    }
-                }
+                // Stocker les permissions par annexe (pas de fusion)
+                $permissionsByAnnexe[$annexe->id] = $role->permissions->map(function($perm) {
+                    return [
+                        'code' => $perm->code,
+                        'label' => $perm->label,
+                        'module' => $perm->module,
+                    ];
+                })->toArray();
             }
         }
 
@@ -136,8 +135,57 @@ class AuthController extends Controller
                     ];
                 }),
                 'roles' => $roles,
-                'permissions' => $permissions->pluck('code')->toArray(), // Array simple des codes de permissions
+                'permissions_by_annexe' => $permissionsByAnnexe, // Permissions groupées par annexe
             ],
+        ], 200);
+    }
+
+    /**
+     * Récupère les informations de l'utilisateur pour une annexe spécifique
+     * Route: GET /admin/me/annexe/{annexeId}
+     */
+    public function meForAnnexe(Request $request, $annexeId)
+    {
+        $user = $request->user();
+        
+        // Vérifier que l'utilisateur a accès à cette annexe
+        $user->load(['annexes' => function($query) use ($annexeId) {
+            $query->where('annexes.id', $annexeId)
+                  ->where('is_active', true);
+        }]);
+        
+        $annexe = $user->annexes->first();
+        
+        if (!$annexe) {
+            return response()->json([
+                'message' => 'Vous n\'avez pas accès à cette annexe'
+            ], 403);
+        }
+        
+        $role = \App\Models\Role::with('permissions')->find($annexe->pivot->role_id);
+        
+        $permissions = [];
+        if ($role) {
+            $permissions = $role->permissions->pluck('code')->toArray();
+        }
+        
+        return response()->json([
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'annexe_id' => $annexe->id,
+                'scope' => $user->scope,
+            ],
+            'annexe' => [
+                'id' => $annexe->id,
+                'name' => $annexe->name,
+            ],
+            'role' => $role ? [
+                'code' => $role->code,
+                'label' => $role->label,
+            ] : null,
+            'permissions' => $permissions,
         ], 200);
     }
 }

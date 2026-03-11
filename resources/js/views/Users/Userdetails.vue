@@ -24,15 +24,15 @@
           <div>
             <p class="font-semibold text-gray-900">{{ form.name || '—' }}</p>
             <p class="text-sm text-gray-500">{{ form.email }}</p>
-            <p v-if="editMode" class="text-xs text-gray-400 mt-0.5">Click the camera icon to change photo</p>
-            <p v-else-if="avatarPreview || user?.avatar_url" class="text-xs text-gray-400 mt-0.5">Click photo to enlarge</p>
+            <p v-if="editMode" class="text-xs text-gray-400 mt-0.5">Cliquez sur l'icône caméra pour changer la photo</p>
+            <p v-else-if="avatarPreview || user?.avatar_url" class="text-xs text-gray-400 mt-0.5">Cliquez sur la photo pour agrandir</p>
           </div>
         </div>
 
         <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
           <!-- Name -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Name</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Nom</label>
             <template v-if="!editMode">
               <p class="mt-1 text-gray-900 dark:text-white">{{ form.name || '—' }}</p>
             </template>
@@ -54,7 +54,7 @@
 
           <!-- Phone -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Phone</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Téléphone</label>
             <template v-if="!editMode">
               <p class="mt-1 text-gray-900 dark:text-white">{{ form.phone || '—' }}</p>
             </template>
@@ -104,12 +104,12 @@
           <div class="flex items-center gap-3">
             <template v-if="!editMode">
               <span :class="form.is_active ? 'text-green-600' : 'text-red-600'">
-                {{ form.is_active ? 'Active' : 'Inactive' }}
+                {{ form.is_active ? 'Actif' : 'Inactif' }}
               </span>
             </template>
             <template v-else>
               <input type="checkbox" id="is_active" v-model="form.is_active" class="h-4 w-4" />
-              <label for="is_active" class="text-sm text-gray-700 dark:text-gray-400">Active</label>
+              <label for="is_active" class="text-sm text-gray-700 dark:text-gray-400">Actif</label>
             </template>
           </div>
         </div>
@@ -131,22 +131,22 @@
               fill=""
             />
           </svg>
-          Edit
+          Modifier
         </button>
           <button v-else @click="save" :disabled="saving" class="px-4 py-2 bg-brand-500 text-white rounded disabled:opacity-50">
-            <span v-if="!saving">Save</span><span v-else>Saving...</span>
+            <span v-if="!saving">Enregistrer</span><span v-else>Enregistrement...</span>
           </button>
-          <button v-if="editMode" @click="cancelEdit" class="px-4 py-2 border rounded">Cancel</button>
-          <button @click="goBack" class="ml-auto px-4 py-2 border rounded">Back</button>
+          <button v-if="editMode" @click="cancelEdit" class="px-4 py-2 border rounded">Annuler</button>
+          <button @click="goBack" class="ml-auto px-4 py-2 border rounded">Retour</button>
         </div>
       </ComponentCard>
 
       <ComponentCard title="Roles & Permissions">
         <div class="grid grid-cols-1 gap-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Select Annexe</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Sélectionner une annexe</label>
             <select v-model="selectedAnnexe" class="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:bg-gray-800 dark:text-white dark:border-gray-700">
-              <option value="">-- select annexe --</option>
+              <option value="">-- sélectionner une annexe --</option>
               <option v-for="a in annexes" :key="a.id" :value="a.id">{{ a.name }}</option>
             </select>
           </div>

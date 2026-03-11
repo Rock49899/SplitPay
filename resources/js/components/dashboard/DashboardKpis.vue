@@ -22,7 +22,7 @@
         </svg>
       </div>
       <div class="mt-4">
-        <p class="text-xs font-medium text-gray-500 dark:text-gray-400">Total Collected</p>
+        <p class="text-xs font-medium text-gray-500 dark:text-gray-400">Total collecté</p>
         <p class="mt-1 text-lg font-bold text-gray-800 dark:text-white/90 leading-tight">{{ fmtMoney(kpis.total_collected) }}</p>
         <p class="mt-0.5 text-xs text-gray-400 dark:text-gray-500">{{ schoolYear }}</p>
       </div>
@@ -36,9 +36,9 @@
         </svg>
       </div>
       <div class="mt-4">
-        <p class="text-xs font-medium text-gray-500 dark:text-gray-400">Pending</p>
+        <p class="text-xs font-medium text-gray-500 dark:text-gray-400">En attente</p>
         <p class="mt-1 text-lg font-bold text-gray-800 dark:text-white/90 leading-tight">{{ fmtMoney(kpis.total_pending) }}</p>
-        <p class="mt-0.5 text-xs text-gray-400 dark:text-gray-500">In progress</p>
+        <p class="mt-0.5 text-xs text-gray-400 dark:text-gray-500">En cours</p>
       </div>
     </div>
 
@@ -50,9 +50,9 @@
         </svg>
       </div>
       <div class="mt-4">
-        <p class="text-xs font-medium text-gray-500 dark:text-gray-400">Outstanding</p>
+        <p class="text-xs font-medium text-gray-500 dark:text-gray-400">Impayé</p>
         <p class="mt-1 text-lg font-bold text-gray-800 dark:text-white/90 leading-tight">{{ fmtMoney(kpis.total_unpaid) }}</p>
-        <p class="mt-0.5 text-xs text-gray-400 dark:text-gray-500">Not yet paid</p>
+        <p class="mt-0.5 text-xs text-gray-400 dark:text-gray-500">Pas encore payé</p>
       </div>
     </div>
 
@@ -64,9 +64,9 @@
         </svg>
       </div>
       <div class="mt-4">
-        <p class="text-xs font-medium text-gray-500 dark:text-gray-400">Students</p>
+        <p class="text-xs font-medium text-gray-500 dark:text-gray-400">Étudiants</p>
         <p class="mt-1 text-lg font-bold text-gray-800 dark:text-white/90 leading-tight">{{ fmtNum(kpis.students_count) }}</p>
-        <p class="mt-0.5 text-xs text-gray-400 dark:text-gray-500">Active</p>
+        <p class="mt-0.5 text-xs text-gray-400 dark:text-gray-500">Actifs</p>
       </div>
     </div>
 
@@ -81,9 +81,9 @@
         </svg>
       </div>
       <div class="mt-4">
-        <p class="text-xs font-medium text-gray-500 dark:text-gray-400">Branches</p>
+        <p class="text-xs font-medium text-gray-500 dark:text-gray-400">Annexes</p>
         <p class="mt-1 text-lg font-bold text-gray-800 dark:text-white/90 leading-tight">{{ kpis.annexes_count ?? '—' }}</p>
-        <p class="mt-0.5 text-xs text-gray-400 dark:text-gray-500">Active</p>
+        <p class="mt-0.5 text-xs text-gray-400 dark:text-gray-500">Actives</p>
       </div>
     </div>
 
@@ -100,7 +100,7 @@
         </svg>
       </div>
       <div class="mt-4">
-        <p class="text-xs font-medium text-gray-500 dark:text-gray-400">Recovery Rate</p>
+        <p class="text-xs font-medium text-gray-500 dark:text-gray-400">Taux de recouvrement</p>
         <p class="mt-1 text-lg font-bold leading-tight" :class="rateColorClass">
           {{ kpis.recovery_rate ?? 0 }}%
         </p>

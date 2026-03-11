@@ -3,17 +3,17 @@
     <!-- Header -->
     <div class="flex flex-col gap-1 mb-5 sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <h3 class="text-base font-semibold text-gray-800 dark:text-white/90">Monthly Collections</h3>
-        <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Collected vs. pending — {{ schoolYear }}</p>
+        <h3 class="text-base font-semibold text-gray-800 dark:text-white/90">Collectes mensuelles</h3>
+        <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Collecté vs. en attente — {{ schoolYear }}</p>
       </div>
       <div class="flex items-center gap-3">
         <span class="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
           <span class="inline-block h-2 w-2 rounded-full bg-brand-500"></span>
-          Collected
+          Collecté
         </span>
         <span class="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
           <span class="inline-block h-2 w-2 rounded-full bg-blue-300"></span>
-          Pending
+          En attente
         </span>
       </div>
     </div>

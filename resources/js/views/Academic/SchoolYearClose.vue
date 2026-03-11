@@ -1,6 +1,6 @@
 <template>
   <AdminLayout>
-    <PageBreadcrumb pageTitle="School year close" />
+    <PageBreadcrumb pageTitle="Clôture de l'année scolaire" />
 
     <div class="max-w-3xl mx-auto space-y-5">
 

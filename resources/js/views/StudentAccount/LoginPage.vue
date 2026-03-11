@@ -73,15 +73,15 @@
             <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
             </svg>
-            Back
+            Retour
           </button>
 
           <div class="card-header">
             <h1>Verification</h1>
             <p>
-              A code was sent to the email address linked to
+              Un code a été envoyé à l'adresse email associée à
               <strong class="text-gray-800">{{ matricule }}</strong>.
-              Valid for <strong>10 min</strong>.
+              Valide pendant <strong>10 min</strong>.
             </p>
           </div>
 

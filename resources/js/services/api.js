@@ -14,6 +14,13 @@ api.interceptors.request.use((config) => {
 	if (config.data instanceof FormData) {
 		delete config.headers['Content-Type'];
 	}
+	
+	// Ajouter automatiquement l'ID de l'annexe active
+	const activeAnnexeId = localStorage.getItem('active_annexe_id');
+	if (activeAnnexeId) {
+		config.headers['X-Active-Annexe-Id'] = activeAnnexeId;
+	}
+	
 	return config;
 });
 

@@ -55,7 +55,7 @@
         <LogoutIcon
           class="text-gray-500 group-hover:text-gray-700 dark:group-hover:text-gray-300"
         />
-        Sign out
+        Se déconnecter
       </button>
     </div>
     <!-- Dropdown End -->
@@ -71,10 +71,11 @@
 
 <script setup>
 import { UserCircleIcon, ChevronDownIcon, LogoutIcon, SettingsIcon, InfoCircleIcon } from '@/icons'
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '@/services/api'
 import { usePermissions } from '@/composables/usePermissions'
+import { useAnnexeContext } from '@/composables/useAnnexeContext'
 import AvatarDisplay from '@/components/shared/AvatarDisplay.vue'
 import ImageViewerModal from '@/components/shared/ImageViewerModal.vue'
 
@@ -82,17 +83,29 @@ const router = useRouter()
 const dropdownOpen = ref(false)
 const dropdownRef = ref(null)
 const showImageModal = ref(false)
-const { setUser, clearPermissions } = usePermissions()
+const { setUser, clearPermissions, hasAnyRole } = usePermissions()
+const { initializeContext, resetContext } = useAnnexeContext()
 
 // données de l'utilisateur connecté
-const user = ref({ name: '', email: '', avatar_url: '' })
+const user = ref({ name: '', email: '', avatar_url: '', scope: '', annexe_id: null })
 
-// éléments du menu
-const menuItems = [
-  { href: '/profile', icon: UserCircleIcon, text: 'Edit profile' },
-  { href: '/chat', icon: SettingsIcon, text: 'Account settings' },
-  { href: '/profile', icon: InfoCircleIcon, text: 'Support' },
-]
+// éléments du menu (calculés dynamiquement selon le rôle)
+const menuItems = computed(() => {
+  const items = [
+    { href: '/profile', icon: UserCircleIcon, text: 'Modifier le profil' },
+  ]
+  
+  // Ajouter "Paramètres annexe" uniquement pour les admins avec annexe_id valide
+  if (user.value.annexe_id && hasAnyRole(['super_admin_institution', 'super_admin_annexe', 'admin_annexe'])) {
+    items.push({ 
+      href: `/admin/annexe/${user.value.annexe_id}/settings`, 
+      icon: SettingsIcon, 
+      text: 'Paramètres annexe' 
+    })
+  }
+  
+  return items
+})
 
 const toggleDropdown = () => { dropdownOpen.value = !dropdownOpen.value }
 const closeDropdown = () => { dropdownOpen.value = false }
@@ -104,7 +117,7 @@ const tryUrls = ['admin/me', 'me', 'user', 'api/user', 'api/admin/me']
 const hasAuth = () => {
 	// adapter si vous stockez le token ailleurs (cookie, vuex, pinia...)
 	try {
-		return !!localStorage.getItem('token')
+		return !!localStorage.getItem('api_token')
 	} catch {
 		return false
 	}
@@ -121,9 +134,28 @@ const fetchCurrentUser = async () => {
         user.value.name = payload.name ?? payload.first_name ?? payload.username ?? ''
         user.value.email = payload.email ?? ''
         user.value.avatar_url = payload.avatar_url ?? payload.avatar ?? ''
+        user.value.scope = payload.scope ?? ''
+        user.value.annexe_id = payload.annexe_id ?? null
         
-        // Sauvegarder l'utilisateur complet avec permissions
-        setUser(payload)
+        // Si super admin institution sans annexe_id, récupérer l'annexe principale
+        if (!user.value.annexe_id && payload.scope === 'institution') {
+          try {
+            const annexesRes = await api.get('/admin/annexes?per_page=1')
+            const annexes = annexesRes.data?.data ?? annexesRes.data
+            if (annexes && annexes.length > 0) {
+              user.value.annexe_id = annexes[0].id
+            }
+          } catch (err) {
+            console.warn('[UserMenu] Failed to fetch principal annexe:', err)
+          }
+        }
+        
+        // Initialiser le contexte multi-annexe AVANT setUser
+        // pour que les bonnes permissions soient appliquées
+        initializeContext(payload)
+        
+        // Note: setUser est appelé dans initializeContext après avoir appliqué
+        // les permissions de l'annexe active, donc on ne l'appelle pas ici
         
         return
       }
@@ -148,10 +180,18 @@ const signOut = async () => {
     console.error('Logout failed', e)
   } finally {
     // supprimer token local et permissions
-    try { localStorage.removeItem('token') } catch {}
+    try { localStorage.removeItem('api_token') } catch {}
     clearPermissions()
+    resetContext()
     closeDropdown()
-    router.push('/signin')
+    
+    // Redirection intelligente : seulement si on n'est pas déjà sur une page publique
+    const currentPath = router.currentRoute.value.path
+    const publicRoutes = ['/', '/signin', '/signup']
+    
+    if (!publicRoutes.includes(currentPath)) {
+      router.push({ name: 'Signin' })
+    }
   }
 }
 

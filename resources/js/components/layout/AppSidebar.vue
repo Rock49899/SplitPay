@@ -21,19 +21,29 @@
       ]"
     >
       <router-link to="/" class="flex items-center">
+        <!-- Logo de l'institution si disponible -->
+        <img
+          v-if="institutionLogo && (isExpanded || isHovered || isMobileOpen)"
+          :src="institutionLogo"
+          alt="Logo"
+          class="h-12 w-auto object-contain max-w-full"
+        />
+        <!-- Texte par défaut si pas de logo -->
         <span
-          v-if="isExpanded || isHovered || isMobileOpen"
+          v-else-if="isExpanded || isHovered || isMobileOpen"
           class="text-xl sm:text-2xl lg:text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white overflow-hidden truncate max-w-full"
         >
-          SplitPay
+          {{ institutionName || 'SplitPay' }}
         </span>
         <!-- badge compact quand sidebar réduite -->
         <span
           v-else
-          class="inline-flex items-center justify-center h-8 w-8 rounded bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-bold"
+          class="inline-flex items-center justify-center h-8 w-8 rounded bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-bold overflow-hidden"
           aria-hidden="true"
         >
-          SP
+          <!-- Mini logo ou initiales -->
+          <img v-if="institutionLogo" :src="institutionLogo" alt="Logo" class="h-full w-full object-contain" />
+          <span v-else>{{ institutionName?.[0] || 'SP' }}</span>
         </span>
       </router-link>
     </div>
@@ -204,11 +214,13 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useRoute } from "vue-router";
 import { usePermissions } from "@/composables/usePermissions";
+import api from "@/services/api";
 
 import {
+  AnnexeIcon,
   GridIcon,
   CalenderIcon,
   UserCircleIcon,
@@ -222,15 +234,52 @@ import {
   TableIcon,
   ListIcon,
   PlugInIcon,
+  BellIcon,
 } from "../../icons";
 // import SidebarWidget from "./SidebarWidget.vue";
 import BoxCubeIcon from "@/icons/BoxCubeIcon.vue";
 import { useSidebar } from "@/composables/useSidebar";
 
 const route = useRoute();
-const { hasPermission, isGestionnaire, isComptable } = usePermissions();
+const { hasPermission, isGestionnaire, isComptable, user } = usePermissions();
 
 const { isExpanded, isMobileOpen, isHovered, openSubmenu } = useSidebar();
+
+// Variables pour le logo et le nom de l'institution
+const institutionLogo = ref(null)
+const institutionName = ref('')
+
+// Charger les informations de l'institution
+const fetchInstitutionInfo = async () => {
+  try {
+    // Récupérer l'utilisateur actuel
+    const meResponse = await api.get('/admin/me').catch(() => api.get('/me'))
+    const currentUser = meResponse.data?.user ?? meResponse.data
+    
+    if (currentUser?.annexe_id) {
+      // Récupérer l'annexe
+      const annexeResponse = await api.get(`/admin/annexes/${currentUser.annexe_id}`)
+      const annexe = annexeResponse.data?.annexe ?? annexeResponse.data
+      
+      if (annexe?.institution_id) {
+        // Récupérer l'institution
+        const institutionResponse = await api.get(`/admin/institutions/${annexe.institution_id}`)
+        const institution = institutionResponse.data?.institution ?? institutionResponse.data
+        
+        institutionName.value = institution.name ?? ''
+        if (institution.logo) {
+          institutionLogo.value = `/storage/${institution.logo}`
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error fetching institution info:', error)
+  }
+}
+
+onMounted(() => {
+  fetchInstitutionInfo()
+})
 
 const baseMenuGroups = [
   {
@@ -238,31 +287,31 @@ const baseMenuGroups = [
     items: [
       {
         icon: GridIcon,
-        name: "Dashboard",
+        name: "Tableau de bord",
         path: "/",
         requiredPermission: "dashboard.view"
       },
       {
         icon: UserCircleIcon,
-        name: "User Profile",
+        name: "Profil utilisateur",
         path: "/profile",
         // No permission required
       },
 
       {
         icon: UserCircleIcon,
-        name: "Users",
+        name: "Utilisateurs",
         path: "/admin/users",
         requiredPermission: "user.view"
       },
       {
         icon: ListIcon,
-        name: "Students",
+        name: "Étudiants",
         path: "/admin/students",
         requiredPermission: "student.view"
       },
       {
-        icon: BoxCubeIcon,
+        icon: AnnexeIcon,
         name: "Annexes",
         path: "/admin/annexes",
         requiredPermission: "annexe.view",
@@ -270,51 +319,43 @@ const baseMenuGroups = [
       },
       {
         icon: DocsIcon,
-        name: "Academic",
+        name: "Académique",
         requiredPermission: "student.view",
         subItems: [
-          { name: "Study Levels", path: "/admin/study-levels", requiredPermission: "student.view", pro: false },
-          { name: "Specializations", path: "/admin/specializations", requiredPermission: "student.view", pro: false },
-          { name: "Study Year Close", path: "/admin/school-year/close", requiredPermission: "student.edit", pro: false },
+          { name: "Niveaux d'étude", path: "/admin/study-levels", requiredPermission: "student.view", pro: false },
+          { name: "Spécialisations", path: "/admin/specializations", requiredPermission: "student.view", pro: false },
+          { name: "Clôture de l'année", path: "/admin/school-year/close", requiredPermission: "student.edit", pro: false },
           // { name: "Classes", path: "/admin/classes", requiredPermission: "student.view", pro: false },
         ],
       },
       {
         icon: PieChartIcon,
-        name: "Payments",
+        name: "Paiements",
         path: "/finances",
         requiredPermission: "payment.view"
       },
       {
+        icon: BellIcon,
+        name: "Notifications",
+        path: "/admin/notifications",
+        requiredPermission: "notification.view"
+      },
+      {
+        icon: CalenderIcon,
+        name: "Rappels",
+        path: "/admin/reminders",
+        requiredPermission: "reminder.view"
+      },
+      {
         icon: PlugInIcon,
-        name: "Settings",
+        name: "Paramètres",
         path: "/settings",
         // No permission required
       },
 
     ],
   },
-  {
-    title: "Others",
-    items: [
-      {
-        icon: PieChartIcon,
-        name: "Charts",
-        path: "/charts",
-        // No permission required 
-      },
-
-      {
-        icon: PlugInIcon,
-        name: "Authentication",
-        // No permission required
-        subItems: [
-          { name: "Signin", path: "/signin", pro: false },
-          { name: "Signup", path: "/signup", pro: false },
-        ],
-      },
-    ],
-  },
+  
 ];
 
 // Filter menu items based on permissions

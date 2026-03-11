@@ -18,10 +18,12 @@
     "dependencies": {
         "@fullcalendar/vue3": "^6.1.20",
         "apexcharts": "^5.3.6",
+        "date-fns": "^4.1.0",
         "dropzone": "^6.0.0-beta.2",
         "flatpickr": "^4.6.13",
         "jsvectormap": "^1.7.0",
         "pinia": "^3.0.4",
+        "sweetalert2": "^11.26.21",
         "swiper": "^12.1.0",
         "vue": "^3.5.27",
         "vue-flatpickr-component": "^12.0.0",

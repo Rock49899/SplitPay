@@ -343,6 +343,9 @@ class PaymentController extends Controller
                     if ($link && $payment->amount >= $link->amount) {
                         $link->update(['status' => 'used']);
                     }
+
+                    // 🔔 CRÉER NOTIFICATION DE SUCCÈS
+                    \App\Models\Notification::paymentReceived($payment);
                 });
 
                 return response()->json(['status' => 'success', 'reference' => $reference]);
@@ -535,6 +538,9 @@ class PaymentController extends Controller
                         $link->update(['status' => 'used']);
                     }
 
+                    // 🔔 CRÉER NOTIFICATION DE SUCCÈS
+                    \App\Models\Notification::paymentReceived($payment);
+
                 } else {
                     
                     // Paiement échoué
@@ -542,6 +548,9 @@ class PaymentController extends Controller
                         'status' => 'failed',
                         'metadata' => ['error' => $request->input('response_text', 'Échec paiement'), 'response' => $request->all()],
                     ]);
+
+                    // 🔔 CRÉER NOTIFICATION D'ÉCHEC
+                    \App\Models\Notification::paymentFailed($payment);
                 }
             });
 

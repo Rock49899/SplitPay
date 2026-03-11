@@ -2,7 +2,7 @@
   <AdminLayout>
     <PageBreadcrumb :pageTitle="currentPageTitle" />
     <div class="flex justify-start mb-4">
-      <button @click="showCreateModal = true" class="px-4 py-2 bg-brand-500 text-white rounded">Create User</button>
+      <button @click="showCreateModal = true" class="px-4 py-2 bg-brand-500 text-white rounded">Créer un utilisateur</button>
     </div>
     <CreateUser v-if="showCreateModal" :roles="roles" :annexes="annexes" @created="onCreated" @close="showCreateModal = false" />
     <div class="space-y-5 sm:space-y-6">
@@ -11,11 +11,11 @@
           <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
               <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nom</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Annexes</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role(s)</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rôle(s)</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
                 <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
@@ -47,16 +47,16 @@
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm">
                   <span :class="user.is_active ? 'text-green-600' : 'text-red-600'">
-                    {{ user.is_active ? 'Active' : 'Inactive' }}
+                    {{ user.is_active ? 'Actif' : 'Inactif' }}
                   </span>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
-                  <router-link @click.stop :to="`/admin/users/${user.id}`" class="text-brand-500 hover:underline mr-3">View</router-link>
-                  <button @click.stop="remove(user.id)" class="text-red-500 hover:underline">Delete</button>
+                  <router-link @click.stop :to="`/admin/users/${user.id}`" class="text-brand-500 hover:underline mr-3">Voir</router-link>
+                  <button @click.stop="remove(user.id)" class="text-red-500 hover:underline">Supprimer</button>
                 </td>
               </tr>
               <tr v-if="!usersInAnnexe || usersInAnnexe.length === 0">
-                <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">No users</td>
+                <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">Aucun utilisateur</td>
               </tr>
             </tbody>
           </table>
@@ -67,9 +67,9 @@
       <div class="flex items-center justify-between">
         <div></div>
         <div class="flex items-center gap-2">
-          <button @click="prevPage" :disabled="users.page <= 1" class="px-3 py-1 border rounded">Prev</button>
+          <button @click="prevPage" :disabled="users.page <= 1" class="px-3 py-1 border rounded">Précédent</button>
           <span>Page {{ users.page }}</span>
-          <button @click="nextPage" :disabled="users.meta && users.page >= users.meta.last_page" class="px-3 py-1 border rounded">Next</button>
+          <button @click="nextPage" :disabled="users.meta && users.page >= users.meta.last_page" class="px-3 py-1 border rounded">Suivant</button>
         </div>
       </div>
     </div>
@@ -96,7 +96,7 @@ import ImageViewerModal from '@/components/shared/ImageViewerModal.vue';
 import roleService from '@/services/roleService';
 import annexeService from '@/services/annexeService';
 
-const currentPageTitle = ref("Users");
+const currentPageTitle = ref("Utilisateurs");
 const users = useUserStore();
 const router = useRouter();
 const route = useRoute();
@@ -168,24 +168,24 @@ const groupedByAnnexe = computed(() => {
     if (Array.isArray(u.user_annexes) && u.user_annexes.length > 0) {
       const primary = u.user_annexes.find(ua => ua.is_principal);
       if (primary && primary.annexe) {
-        annexeKey = primary.annexe.name || primary.annexe.id || "No Annexe";
+        annexeKey = primary.annexe.name || primary.annexe.id || "Aucune annexe";
       } else {
         // No primary, use first annexe
         const first = u.user_annexes[0];
         if (first && first.annexe) {
-          annexeKey = first.annexe.name || first.annexe.id || "No Annexe";
+          annexeKey = first.annexe.name || first.annexe.id || "Aucune annexe";
         }
       }
     }
     
     // Fallback to direct annexe relation
     if (!annexeKey && u.annexe) {
-      annexeKey = u.annexe.name || u.annexe.id || "No Annexe";
+      annexeKey = u.annexe.name || u.annexe.id || "Aucune annexe";
     }
     
     // Final fallback
     if (!annexeKey) {
-      annexeKey = "No Annexe";
+      annexeKey = "Aucune annexe";
     }
     
     if (!map[annexeKey]) map[annexeKey] = [];
@@ -209,7 +209,7 @@ const nextPage = async () => {
 };
 
 const remove = async (id) => {
-  if (!confirm("Delete this user?")) return;
+  if (!confirm("Supprimer cet utilisateur ?")) return;
   await users.deleteUser(id);
 };
 

@@ -47,6 +47,8 @@ class Installment extends Model
         'amount_paid',
         'status',
         'created_by',
+        'last_reminder_sent_at',
+        'reminder_count',
     ];
 
     /**
@@ -60,6 +62,7 @@ class Installment extends Model
             'amount' => 'decimal:2',
             'amount_paid' => 'decimal:2',
             'due_date' => 'date',
+            'last_reminder_sent_at' => 'datetime',
         ];
     }
 

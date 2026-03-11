@@ -19,8 +19,8 @@ class StoreAnnexeRequest extends FormRequest
             'name'           => 'required|string|max:255',
             'address'        => 'sometimes|nullable|string|max:1000',
             'city'           => 'sometimes|nullable|string|max:255',
-            // champ envoyé par le client, sera mappé dans le controller vers la colonne 'details'
-            'annexe_details' => 'sometimes|nullable|string',
+            // Accepter un objet JSON (array) pour les détails structurés
+            'annexe_details' => 'sometimes|nullable|array',
             'is_active'      => 'sometimes|boolean',
         ];
     }

@@ -36,7 +36,7 @@
           </div>
         </div>
 
-        <button @click="isProfileInfoModal = true" class="edit-button">Edit</button>
+        <button @click="isProfileInfoModal = true" class="edit-button">Modifier</button>
       </div>
     </div>
 
@@ -62,8 +62,8 @@
           </button>
 
           <div class="px-2 pr-14">
-            <h4 class="mb-2 text-2xl font-semibold text-gray-800 dark:text-white/90">Edit Profile</h4>
-            <p class="mb-6 text-sm text-gray-500 dark:text-gray-400 lg:mb-7">Update your details.</p>
+            <h4 class="mb-2 text-2xl font-semibold text-gray-800 dark:text-white/90">Modifier le profil</h4>
+            <p class="mb-6 text-sm text-gray-500 dark:text-gray-400 lg:mb-7">Mettez à jour vos informations.</p>
           </div>
 
           <form @submit.prevent="saveProfile" class="flex flex-col">
@@ -86,11 +86,11 @@
                       <input type="file" class="sr-only" accept="image/jpeg,image/jpg,image/png,image/webp" @change="onAvatarChangeModal" />
                     </label>
                   </div>
-                  <p class="text-xs text-gray-400 dark:text-gray-500">Hover the photo and click to change</p>
+                  <p class="text-xs text-gray-400 dark:text-gray-500">Survolez la photo et cliquez pour la modifier</p>
                 </div>
 
                 <div class="col-span-2">
-                  <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Name</label>
+                  <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Nom</label>
                   <input type="text" v-model="form.name" class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 dark:text-white dark:bg-gray-800 dark:border-gray-700" />
                 </div>
 
@@ -100,7 +100,7 @@
                 </div>
 
                 <div>
-                  <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Phone</label>
+                  <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Téléphone</label>
                   <input type="text" v-model="form.phone" class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 dark:text-white dark:bg-gray-800 dark:border-gray-700" />
                 </div>
 
@@ -110,15 +110,15 @@
                 </div>
 
                 <div class="col-span-2">
-                  <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Role</label>
+                  <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Rôle</label>
                   <p class="h-11 flex items-center px-4 rounded-lg border border-gray-300 bg-gray-50 text-sm text-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700">{{ roleLabel }}</p>
                 </div>
               </div>
             </div>
 
             <div class="flex items-center gap-3 px-2 mt-6 lg:justify-end">
-              <button @click.prevent="isProfileInfoModal = false" type="button" class="flex w-full justify-center rounded-lg border px-4 py-2.5 text-sm sm:w-auto">Close</button>
-              <button type="submit" class="flex w-full justify-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm text-white sm:w-auto">Save Changes</button>
+              <button @click.prevent="isProfileInfoModal = false" type="button" class="flex w-full justify-center rounded-lg border px-4 py-2.5 text-sm sm:w-auto">Fermer</button>
+              <button type="submit" class="flex w-full justify-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm text-white sm:w-auto">Enregistrer</button>
             </div>
           </form>
         </div>

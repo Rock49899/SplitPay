@@ -1,6 +1,6 @@
 <template>
   <AdminLayout>
-    <PageBreadcrumb pageTitle="Study Levels &amp; Fee Schedules" />
+    <PageBreadcrumb pageTitle="Niveaux d'étude &amp; Barèmes de scolarité" />
 
     <div>
       <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
@@ -9,18 +9,18 @@
         <div class="p-6 border-b border-slate-200 dark:border-slate-700">
           <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div class="flex-1 max-w-md">
-              <input v-model="search" type="text" placeholder="Search study level..."
+              <input v-model="search" type="text" placeholder="Rechercher un niveau d'étude..."
                 class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
                 @input="debounceSearch" />
             </div>
             <div class="flex gap-2">
               <button @click="showCopyModal = true"
                 class="px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg font-medium hover:bg-slate-50 dark:hover:bg-slate-700 text-sm">
-              Copy fee schedules
+              Copier les barèmes
               </button>
               <button @click="openCreateModal"
                 class="px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-lg font-medium">
-                + Add Study Level
+                + Ajouter un niveau
               </button>
             </div>
           </div>
@@ -38,18 +38,18 @@
               <tr>
                 <th class="w-8 px-4 py-3"></th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Code</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Label</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Order</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Libellé</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Ordre</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Description</th>
                 <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody class="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
               <tr v-if="loading">
-                <td colspan="6" class="px-6 py-12 text-center text-slate-500">Loading...</td>
+                <td colspan="6" class="px-6 py-12 text-center text-slate-500">Chargement...</td>
               </tr>
               <tr v-else-if="!loading && studyLevels.length === 0">
-                <td colspan="6" class="px-6 py-12 text-center text-slate-500">No study levels found</td>
+                <td colspan="6" class="px-6 py-12 text-center text-slate-500">Aucun niveau d'étude trouvé</td>
               </tr>
 
               <template v-if="!loading && studyLevels.length > 0">
@@ -60,7 +60,7 @@
                   <td class="px-4 py-4">
                     <button @click="toggleFees(level)"
                       class="w-6 h-6 flex items-center justify-center rounded text-slate-400 hover:text-brand-600 hover:bg-brand-50 transition-colors"
-                      :title="expandedId === level.id ? 'Hide fee schedule' : 'View fee schedule'">
+                      :title="expandedId === level.id ? 'Masquer les barèmes' : 'Voir les barèmes'">
                       <svg class="w-4 h-4 transition-transform" :class="expandedId === level.id ? 'rotate-90' : ''"
                         fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
@@ -72,8 +72,8 @@
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{{ level.order ?? '—' }}</td>
                   <td class="px-6 py-4 text-sm text-slate-500">{{ level.description || '—' }}</td>
                   <td class="px-6 py-4 whitespace-nowrap text-right text-sm space-x-3">
-                    <button @click="openEditModal(level)" class="text-brand-600 hover:text-brand-800 dark:text-brand-400">Edit</button>
-                    <button @click="deleteLevel(level)" class="text-red-600 hover:text-red-800 dark:text-red-400">Delete</button>
+                    <button @click="openEditModal(level)" class="text-brand-600 hover:text-brand-800 dark:text-brand-400">Modifier</button>
+                    <button @click="deleteLevel(level)" class="text-red-600 hover:text-red-800 dark:text-red-400">Supprimer</button>
                   </td>
                 </tr>
 
@@ -83,25 +83,25 @@
                     <div class="px-6 py-4 border-t border-dashed border-slate-200 dark:border-slate-700">
                       <div class="flex items-center justify-between mb-3">
                         <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                          Fee Schedule — {{ level.label }}
+                          Barèmes de scolarité — {{ level.label }}
                         </p>
                         <button @click="openFeeModal(level)"
                           class="px-3 py-1 text-xs bg-brand-500 text-white rounded-lg hover:bg-brand-600">
-                          + Add Fee
+                          + Ajouter un barème
                         </button>
                       </div>
 
                       <!-- Chargement des frais -->
-                      <div v-if="feesLoading" class="text-xs text-slate-400 py-2">Loading fees...</div>
+                      <div v-if="feesLoading" class="text-xs text-slate-400 py-2">Chargement des frais...</div>
 
                       <!-- Table des frais -->
                       <template v-else-if="feesMap[level.id]?.length">
                         <table class="w-full text-sm">
                           <thead>
                             <tr class="border-b border-slate-200 dark:border-slate-700">
-                              <th class="pb-2 text-left text-xs text-slate-500 font-medium">School Year</th>
-                              <th class="pb-2 text-left text-xs text-slate-500 font-medium">Specialization</th>
-                              <th class="pb-2 text-right text-xs text-slate-500 font-medium">Amount</th>
+                              <th class="pb-2 text-left text-xs text-slate-500 font-medium">Année scolaire</th>
+                              <th class="pb-2 text-left text-xs text-slate-500 font-medium">Spécialisation</th>
+                              <th class="pb-2 text-right text-xs text-slate-500 font-medium">Montant</th>
                               <th class="pb-2 text-right text-xs text-slate-500 font-medium">Actions</th>
                             </tr>
                           </thead>
@@ -110,22 +110,22 @@
                               class="hover:bg-white dark:hover:bg-slate-800">
                               <td class="py-2 text-slate-700 dark:text-slate-300">{{ fee.school_year }}</td>
                               <td class="py-2 text-slate-500">
-                                {{ fee.specialization?.label ?? 'Generic (all specializations)' }}
+                                {{ fee.specialization?.label ?? 'Générique (toutes spécialisations)' }}
                               </td>
                               <td class="py-2 text-right font-semibold text-slate-800 dark:text-white">
                                 {{ fmtAmount(fee.tuition_amount) }}
                               </td>
                               <td class="py-2 text-right space-x-2">
-                                <button @click="openFeeModal(level, fee)" class="text-brand-600 hover:text-brand-800 text-xs">Edit</button>
-                                <button @click="deleteFee(fee, level.id)" class="text-red-500 hover:text-red-700 text-xs">Delete</button>
+                                <button @click="openFeeModal(level, fee)" class="text-brand-600 hover:text-brand-800 text-xs">Modifier</button>
+                                <button @click="deleteFee(fee, level.id)" class="text-red-500 hover:text-red-700 text-xs">Supprimer</button>
                               </td>
                             </tr>
                           </tbody>
                         </table>
                       </template>
                       <p v-else class="text-xs text-slate-400 py-2">
-                        No fee schedule configured for this level.
-                        <button @click="openFeeModal(level)" class="text-brand-600 underline ml-1">Add one</button>
+                        Aucun barème configuré pour ce niveau.
+                        <button @click="openFeeModal(level)" class="text-brand-600 underline ml-1">En ajouter un</button>
                       </p>
                     </div>
                   </td>
@@ -146,7 +146,7 @@
         <div class="bg-white dark:bg-slate-800 rounded-lg shadow-xl max-w-md w-full">
           <div class="border-b border-slate-200 dark:border-slate-700 px-6 py-4 flex items-center justify-between">
             <h3 class="text-lg font-semibold text-slate-900 dark:text-white">
-              {{ editingLevel ? 'Edit Study Level' : 'New Study Level' }}
+              {{ editingLevel ? 'Modifier le niveau d\'étude' : 'Nouveau niveau d\'étude' }}
             </h3>
             <button @click="closeModal" class="text-slate-400 hover:text-slate-600">✕</button>
           </div>
@@ -157,15 +157,15 @@
                 class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Label *</label>
-              <input v-model="levelForm.label" type="text" required placeholder="e.g. Bachelor Year 1"
+              <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Libellé *</label>
+              <input v-model="levelForm.label" type="text" required placeholder="ex: Licence 1ère année"
                 class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Progression Order</label>
+              <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Ordre de progression</label>
               <input v-model.number="levelForm.order" type="number" min="1" placeholder="1, 2, 3…"
                 class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white" />
-              <p class="text-xs text-slate-400 mt-1">Sets the academic progression: order 1 → 2 → 3 drives automatic year-end promotion.</p>
+              <p class="text-xs text-slate-400 mt-1">Définit la progression académique : ordre 1 → 2 → 3 pilote la promotion automatique en fin d'année.</p>
             </div>
             <div>
               <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Description</label>
@@ -173,9 +173,9 @@
                 class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"></textarea>
             </div>
             <div class="flex justify-end gap-3 pt-2">
-              <button type="button" @click="closeModal" class="px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm">Cancel</button>
+              <button type="button" @click="closeModal" class="px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm">Annuler</button>
               <button type="submit" :disabled="savingLevel" class="px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-lg text-sm disabled:opacity-50">
-                {{ savingLevel ? 'Saving...' : 'Save' }}
+                {{ savingLevel ? 'Enregistrement...' : 'Enregistrer' }}
               </button>
             </div>
           </form>
@@ -191,7 +191,7 @@
         <div class="bg-white dark:bg-slate-800 rounded-lg shadow-xl max-w-md w-full">
           <div class="border-b border-slate-200 dark:border-slate-700 px-6 py-4 flex items-center justify-between">
             <h3 class="text-lg font-semibold text-slate-900 dark:text-white">
-              {{ editingFee ? 'Edit Fee Schedule' : 'New Fee Schedule' }}
+              {{ editingFee ? 'Modifier le barème' : 'Nouveau barème' }}
               <span class="text-sm font-normal text-slate-500 ml-1">— {{ feeTargetLevel?.label }}</span>
             </h3>
             <button @click="closeFeeModal" class="text-slate-400 hover:text-slate-600">✕</button>
@@ -229,9 +229,9 @@
             </div>
             <div v-if="feeError" class="text-sm text-red-500 bg-red-50 rounded-lg px-3 py-2">{{ feeError }}</div>
             <div class="flex justify-end gap-3 pt-2">
-              <button type="button" @click="closeFeeModal" class="px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm">Cancel</button>
+              <button type="button" @click="closeFeeModal" class="px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm">Annuler</button>
               <button type="submit" :disabled="savingFee" class="px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-lg text-sm disabled:opacity-50">
-                {{ savingFee ? 'Saving...' : 'Save' }}
+                {{ savingFee ? 'Enregistrement...' : 'Enregistrer' }}
               </button>
             </div>
           </form>

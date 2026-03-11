@@ -4,7 +4,7 @@
   >
     <div class="flex flex-col gap-2 mb-4 sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Recent Payments</h3>
+        <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Paiements récents</h3>
         <p v-if="scopeLabel" class="mt-0.5 text-theme-xs text-gray-400 dark:text-gray-500">{{ scopeLabel }}</p>
       </div>
 
@@ -23,14 +23,14 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z" />
           </svg>
-          Filter<span v-if="hasActiveFilters" class="ml-1 font-bold">·</span>
+          Filtrer<span v-if="hasActiveFilters" class="ml-1 font-bold">·</span>
         </button>
 
         <router-link
           to="/finances"
           class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-theme-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200"
         >
-          See all
+          Voir tout
         </router-link>
       </div>
     </div>
@@ -43,26 +43,26 @@
       >
         <!-- Status -->
         <div>
-          <label class="mb-1 block text-theme-xs font-medium text-gray-500 dark:text-gray-400">Status</label>
+          <label class="mb-1 block text-theme-xs font-medium text-gray-500 dark:text-gray-400">Statut</label>
           <select v-model="filters.status" class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-theme-sm text-gray-700 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
-            <option value="">All</option>
-            <option value="success">Paid</option>
-            <option value="pending">Pending</option>
-            <option value="failed">Failed</option>
+            <option value="">Tous</option>
+            <option value="success">Payé</option>
+            <option value="pending">En attente</option>
+            <option value="failed">Échoué</option>
           </select>
         </div>
 
         <!-- Method -->
         <div>
-          <label class="mb-1 block text-theme-xs font-medium text-gray-500 dark:text-gray-400">Method</label>
+          <label class="mb-1 block text-theme-xs font-medium text-gray-500 dark:text-gray-400">Méthode</label>
           <select v-model="filters.method" class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-theme-sm text-gray-700 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
-            <option value="">All</option>
+            <option value="">Toutes</option>
             <option value="mtn">MTN Mobile Money</option>
             <option value="moov">Moov Money</option>
-            <option value="cash">Cash</option>
-            <option value="bank_transfer">Bank Transfer</option>
-            <option value="card">Card</option>
-            <option value="cheque">Cheque</option>
+            <option value="cash">Espèces</option>
+            <option value="bank_transfer">Virement bancaire</option>
+            <option value="card">Carte</option>
+            <option value="cheque">Chèque</option>
           </select>
         </div>
 
@@ -70,31 +70,31 @@
         <div>
           <label class="mb-1 block text-theme-xs font-medium text-gray-500 dark:text-gray-400">Type</label>
           <select v-model="filters.type" class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-theme-sm text-gray-700 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
-            <option value="">All</option>
-            <option value="tuition">Tuition</option>
-            <option value="registration">Registration</option>
-            <option value="other">Other</option>
+            <option value="">Tous</option>
+            <option value="tuition">Scolarité</option>
+            <option value="registration">Inscription</option>
+            <option value="other">Autre</option>
           </select>
         </div>
 
         <!-- Branch filter (super_admin_institution only) -->
         <div v-if="isSuperAdminInstitution && annexes.length">
-          <label class="mb-1 block text-theme-xs font-medium text-gray-500 dark:text-gray-400">Branch</label>
+          <label class="mb-1 block text-theme-xs font-medium text-gray-500 dark:text-gray-400">Annexe</label>
           <select v-model="filters.annexe_id" class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-theme-sm text-gray-700 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
-            <option value="">All</option>
+            <option value="">Toutes</option>
             <option v-for="a in annexes" :key="a.id" :value="a.id">{{ a.name }}</option>
           </select>
         </div>
 
         <!-- Date from -->
         <div>
-          <label class="mb-1 block text-theme-xs font-medium text-gray-500 dark:text-gray-400">From</label>
+          <label class="mb-1 block text-theme-xs font-medium text-gray-500 dark:text-gray-400">Du</label>
           <input type="date" v-model="filters.from" class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-theme-sm text-gray-700 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300" />
         </div>
 
         <!-- Date to -->
         <div>
-          <label class="mb-1 block text-theme-xs font-medium text-gray-500 dark:text-gray-400">To</label>
+          <label class="mb-1 block text-theme-xs font-medium text-gray-500 dark:text-gray-400">Au</label>
           <input type="date" v-model="filters.to" class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-theme-sm text-gray-700 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300" />
         </div>
 
@@ -104,13 +104,13 @@
             @click="applyFilters"
             class="rounded-lg bg-brand-500 px-4 py-2 text-theme-sm font-medium text-white hover:bg-brand-600 transition"
           >
-            Apply
+            Appliquer
           </button>
           <button
             @click="resetFilters"
             class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-theme-sm font-medium text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 transition"
           >
-            Reset
+            Réinitialiser
           </button>
         </div>
       </div>
@@ -127,26 +127,26 @@
 
       <!-- Empty -->
       <div v-else-if="!payments.length" class="py-8 text-center text-theme-sm text-gray-400 dark:text-gray-500">
-        No payments found.
+        Aucun paiement trouvé.
       </div>
 
       <table v-else class="min-w-full">
         <thead>
           <tr class="border-t border-gray-100 dark:border-gray-800">
             <th class="py-3 pr-4 text-left">
-              <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Student</p>
+              <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Étudiant</p>
             </th>
             <th class="py-3 pr-4 text-left">
               <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Date</p>
             </th>
             <th v-if="isSuperAdminInstitution" class="py-3 pr-4 text-left">
-              <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Branch</p>
+              <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Annexe</p>
             </th>
             <th class="py-3 pr-4 text-left">
               <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Type</p>
             </th>
             <th class="py-3 pr-4 text-left">
-              <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Method</p>
+              <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Méthode</p>
             </th>
             <th class="py-3 pr-4 text-left">
               <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Amount</p>

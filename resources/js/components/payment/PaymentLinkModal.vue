@@ -2,7 +2,7 @@
   <Modal @close="close">
     <template #body>
       <div class="w-full max-w-lg p-6 bg-white dark:bg-gray-900 rounded-2xl">
-        <h3 class="text-lg font-semibold mb-3">Create Payment Link</h3>
+        <h3 class="text-lg font-semibold mb-3">Créer un lien de paiement</h3>
 
         <div class="space-y-3">
 
@@ -10,8 +10,8 @@
           <div>
             <label class="block text-sm text-gray-600">Type</label>
             <select v-model="form.type" class="w-full border rounded px-3 py-2">
-              <option value="tuition">Tuition</option>
-              <option value="other">Other</option>
+              <option value="tuition">Scolarité</option>
+              <option value="other">Autre</option>
             </select>
           </div>
 
@@ -40,7 +40,7 @@
 
           <!-- Tranche number (uniquement pour tuition) -->
           <div v-if="isTuition">
-            <label class="block text-sm text-gray-600">Tranche number</label>
+            <label class="block text-sm text-gray-600">Numéro de tranche</label>
             <input
               type="number"
               v-model.number="form.tranche_number"
@@ -52,7 +52,7 @@
 
           <!-- Amount -->
           <div>
-            <label class="block text-sm text-gray-600">Amount</label>
+            <label class="block text-sm text-gray-600">Montant</label>
             <input
               type="number"
               step="0.01"
@@ -67,7 +67,7 @@
 
           <!-- Due date -->
           <div>
-            <label class="block text-sm text-gray-600">Due date</label>
+            <label class="block text-sm text-gray-600">Échéance</label>
             <input type="date" v-model="form.due_date" class="w-full border rounded px-3 py-2" />
           </div>
 
@@ -79,7 +79,7 @@
 
           <!-- Currency -->
           <div>
-            <label class="block text-sm text-gray-600">Currency</label>
+            <label class="block text-sm text-gray-600">Devise</label>
             <select v-model="form.currency" class="w-full border rounded px-3 py-2">
               <option v-for="c in currencies" :key="c" :value="c">{{ c }}</option>
             </select>
@@ -87,13 +87,13 @@
 
           <!-- Boutons -->
           <div class="flex justify-end gap-2 mt-4">
-            <button @click="close" class="px-4 py-2 border rounded">Cancel</button>
+            <button @click="close" class="px-4 py-2 border rounded">Annuler</button>
             <button
               :disabled="loading"
               @click="createLink"
               class="px-4 py-2 bg-brand-500 text-white rounded"
             >
-              {{ loading ? 'Creating...' : 'Create Link' }}
+              {{ loading ? 'Création...' : 'Créer le lien' }}
             </button>
           </div>
         </div>

@@ -3,7 +3,7 @@
     <div class="fixed inset-0 bg-black/50" @click="close"></div>
     <div class="bg-white dark:bg-gray-900 rounded-lg p-6 z-50 w-full max-w-2xl shadow-lg">
       <div class="flex items-center justify-between mb-4">
-        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Create User</h3>
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Créer un utilisateur</h3>
         <button @click="close" class="text-gray-500 hover:text-gray-700">✕</button>
       </div>
 
@@ -20,24 +20,24 @@
               <input type="file" class="sr-only" accept="image/jpeg,image/jpg,image/png,image/webp" @change="onAvatarChange" />
             </label>
           </div>
-          <div class="text-xs text-gray-500 dark:text-gray-400">Click camera to add photo</div>
+          <div class="text-xs text-gray-500 dark:text-gray-400">Cliquez sur l'icône caméra pour ajouter une photo</div>
         </div>
         
-        <input v-model="form.name" placeholder="Full name" class="px-3 py-2 rounded border bg-transparent text-gray-900 dark:text-white" />
+        <input v-model="form.name" placeholder="Nom complet" class="px-3 py-2 rounded border bg-transparent text-gray-900 dark:text-white" />
         <input v-model="form.email" placeholder="Email" class="px-3 py-2 rounded border bg-transparent text-gray-900 dark:text-white" />
-        <input v-model="form.password" type="password" placeholder="Password" class="px-3 py-2 rounded border bg-transparent text-gray-900 dark:text-white" />
-        <input v-model="form.phone" placeholder="Phone" class="px-3 py-2 rounded border bg-transparent text-gray-900 dark:text-white" />
+        <input v-model="form.password" type="password" placeholder="Mot de passe" class="px-3 py-2 rounded border bg-transparent text-gray-900 dark:text-white" />
+        <input v-model="form.phone" placeholder="Téléphone" class="px-3 py-2 rounded border bg-transparent text-gray-900 dark:text-white" />
 
         <div>
-          <label class="block text-sm mb-1 text-gray-700 dark:text-gray-400">Role</label>
+          <label class="block text-sm mb-1 text-gray-700 dark:text-gray-400">Rôle</label>
           <select v-model="form.role_id" class="w-full rounded border px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
-            <option value="">-- select role --</option>
+            <option value="">-- sélectionner un rôle --</option>
             <option v-for="r in rolesLocal" :key="r.id" :value="r.id">{{ labelForRole(r) }}</option>
           </select>
         </div>
 
         <div>
-          <label class="block text-sm mb-1 text-gray-700 dark:text-gray-400">Annexes (choose one primary)</label>
+          <label class="block text-sm mb-1 text-gray-700 dark:text-gray-400">Annexes (choisissez-en une comme principale)</label>
           <div class="space-y-1 max-h-40 overflow-auto p-2 border rounded bg-gray-50 dark:bg-gray-800">
             <div v-for="a in annexesLocal" :key="a.id" class="flex items-center gap-2">
               <input type="checkbox" :value="a.id" v-model="form.annexes" />
@@ -48,10 +48,10 @@
         </div>
 
         <div class="flex gap-2 justify-end mt-3">
-          <button @click="close" class="px-3 py-2 border rounded">Cancel</button>
+          <button @click="close" class="px-3 py-2 border rounded">Annuler</button>
           <button @click="submit" :disabled="loading" class="px-4 py-2 bg-brand-500 text-white rounded">
-            <span v-if="!loading">Create</span>
-            <span v-else>Creating...</span>
+            <span v-if="!loading">Créer</span>
+            <span v-else>Création...</span>
           </button>
         </div>
 

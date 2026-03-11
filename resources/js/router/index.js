@@ -85,6 +85,24 @@ const router = createRouter({
       meta: { title: 'Settings', requiresAuth: true },
     },
     {
+      path: '/admin/annexe/:id/settings',
+      name: 'AnnexeSettings',
+      component: () => import('../views/Settings/AnnexeSettings.vue').catch(() => import('../views/Placeholders/PlaceholderPage.vue')),
+      meta: { title: 'Paramètres Annexe', requiresAuth: true },
+    },
+    {
+      path: '/admin/notifications',
+      name: 'NotificationList',
+      component: () => import('../views/Notifications/NotificationList.vue').catch(() => import('../views/Placeholders/PlaceholderPage.vue')),
+      meta: { title: 'Notifications', requiresAuth: true },
+    },
+    {
+      path: '/admin/reminders',
+      name: 'ReminderList',
+      component: () => import('../views/Settings/ReminderList.vue').catch(() => import('../views/Placeholders/PlaceholderPage.vue')),
+      meta: { title: 'Rappels Automatiques', requiresAuth: true },
+    },
+    {
       path: '/charts',
       name: 'Charts',
       component: () => import('../views/Chart/LineChart/LineChart.vue'),
@@ -159,12 +177,47 @@ const router = createRouter({
 
 export default router
 
-router.beforeEach((to, from, next) => {
+// Helper function to get role-based dashboard route
+function getRoleDashboard(user) {
+  if (!user) return { name: 'Dashboard' };
+  
+  switch(user.role) {
+    case 'super_admin':
+    case 'gestionnaire':
+    case 'comptable':
+      return { name: 'Dashboard' };
+    default:
+      return { name: 'Dashboard' };
+  }
+}
+
+router.beforeEach(async (to, from, next) => {
   document.title = `Vue.js ${to.meta.title ?? ''} | SplitPay`;
+
+  const token = localStorage.getItem('api_token');
+  const userStr = localStorage.getItem('user');
+  const user = userStr ? JSON.parse(userStr) : null;
+
+  // Redirect to dashboard if already authenticated and trying to access signin/signup
+  if ((to.name === 'Signin' || to.name === 'Signup') && token) {
+    return next(getRoleDashboard(user));
+  }
+
+  // Hide signup if institution already exists
+  if (to.name === 'Signup') {
+    try {
+      const response = await fetch('/api/check-institution');
+      const data = await response.json();
+      if (data.exists) {
+        return next({ name: 'Signin' });
+      }
+    } catch (error) {
+      console.error('Failed to check institution existence:', error);
+    }
+  }
 
   // Protection espace admin
   if (to.meta.requiresAuth) {
-    const token = localStorage.getItem('api_token');
     if (!token) {
       return next({ name: 'Signin', query: { redirect: to.fullPath } });
     }
@@ -172,8 +225,8 @@ router.beforeEach((to, from, next) => {
 
   // Protection espace étudiant
   if (to.meta.requiresStudentAuth) {
-    const token = localStorage.getItem('student_token');
-    if (!token) {
+    const studentToken = localStorage.getItem('student_token');
+    if (!studentToken) {
       return next({ name: 'StudentLogin' });
     }
   }

@@ -5,21 +5,21 @@
       <!-- ── Header bar  -->
       <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 class="text-xl font-semibold text-gray-800 dark:text-white/90">Dashboard</h1>
+          <h1 class="text-xl font-semibold text-gray-800 dark:text-white/90">Tableau de bord</h1>
           <p class="mt-0.5 text-sm text-gray-400 dark:text-gray-500">
-            {{ isSuperAdminInstitution ? 'Institution-wide overview' : scopeLabel }}
+            {{ isSuperAdminInstitution ? 'Vue d\'éensemble de l\'établissement' : scopeLabel }}
           </p>
         </div>
 
-        <!-- School year selector -->
+        <!-- Sélecteur d'année académique -->
         <div class="flex items-center gap-2">
-          <label class="text-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Academic year</label>
+          <label class="text-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Année académique</label>
           <input
             list="dashboard-year-list"
             :value="selectedYear"
             @change="onYearInput"
             @keydown.enter="onYearInput"
-            placeholder="Ex: 2025-2026"
+            placeholder="Ex : 2025-2026"
             class="w-32 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 focus:outline-none focus:border-brand-500"
           />
           <datalist id="dashboard-year-list">
@@ -90,9 +90,9 @@ const selectedYear = computed({
 // ── Scope label (non-institution roles) ────────────────────────────────────────
 
 const scopeLabel = computed(() => {
-  if (isSuperAdminAnnexe.value)  return 'Branch administrator view'
-  if (isComptable.value)         return 'Accountant view'
-  if (isGestionnaire.value)      return 'Manager view'
+  if (isSuperAdminAnnexe.value)  return 'Vue administrateur d\'établissement annexe'
+  if (isComptable.value)         return 'Vue comptable'
+  if (isGestionnaire.value)      return 'Vue gestionnaire'
   return ''
 })
 

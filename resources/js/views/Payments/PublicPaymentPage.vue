@@ -52,14 +52,14 @@
             :disabled="loading"
             class="w-full bg-brand-500 text-white py-2 rounded mt-3"
           >
-            {{ loading ? 'Redirecting...' : 'Pay Now' }}
+            {{ loading ? 'Redirection...' : 'Payer maintenant' }}
           </button>
 
         </div>
       </div>
 
       <div v-else>
-        Loading...
+        Chargement...
       </div>
 
     </div>

@@ -26,7 +26,7 @@
                   stroke-linejoin="round"
                 />
               </svg>
-              Back to dashboard
+              Retour au tableau de bord
             </router-link>
           </div>
           <div class="flex flex-col justify-center flex-1 w-full max-w-md mx-auto">
@@ -35,10 +35,10 @@
                 <h1
                   class="mb-2 font-semibold text-gray-800 text-title-sm dark:text-white/90 sm:text-title-md"
                 >
-                  Sign In
+                  Connexion
                 </h1>
                 <p class="text-sm text-gray-500 dark:text-gray-400">
-                  Enter your email and password to sign in!
+                  Entrez votre email et mot de passe pour vous connecter!
                 </p>
               </div>
               <div>
@@ -70,7 +70,7 @@
                         fill="#EB4335"
                       />
                     </svg>
-                    Sign in with Google
+                    Se connecter avec Google
                   </button>
                 
                 </div>
@@ -80,7 +80,7 @@
                   </div>
                   <div class="relative flex justify-center text-sm">
                     <span class="p-2 text-gray-400 bg-white dark:bg-gray-900 sm:px-5 sm:py-2"
-                      >Or</span
+                      >Ou</span
                     >
                   </div>
                 </div>
@@ -116,7 +116,7 @@
                           v-model="password"
                           :type="showPassword ? 'text' : 'password'"
                           id="password"
-                          placeholder="Enter your password"
+                          placeholder="Entrez votre mot de passe"
                           class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent py-2.5 pl-4 pr-11 text-sm text-white placeholder:text-gray-400 dark:placeholder:text-white/60 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10"
                         />
                         <span

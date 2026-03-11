@@ -58,6 +58,38 @@ class Annexe extends Model
     }
 
     /**
+     * Accesseur pour récupérer l'email depuis annexe_details
+     */
+    public function getEmailAttribute(): ?string
+    {
+        return $this->annexe_details['email'] ?? null;
+    }
+
+    /**
+     * Accesseur pour récupérer le téléphone depuis annexe_details
+     */
+    public function getPhoneAttribute(): ?string
+    {
+        return $this->annexe_details['phone'] ?? null;
+    }
+
+    /**
+     * Accesseur pour récupérer le fax depuis annexe_details
+     */
+    public function getFaxAttribute(): ?string
+    {
+        return $this->annexe_details['fax'] ?? null;
+    }
+
+    /**
+     * Accesseur pour récupérer le site web depuis annexe_details
+     */
+    public function getWebsiteAttribute(): ?string
+    {
+        return $this->annexe_details['website'] ?? null;
+    }
+
+    /**
      * L'institution parente de cette annexe
      */
     public function institution(): BelongsTo

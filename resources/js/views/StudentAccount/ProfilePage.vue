@@ -5,13 +5,14 @@
     <nav class="bg-white border-b border-gray-200 sticky top-0 z-10">
       <div class="max-w-5xl mx-auto px-4 flex items-center justify-between h-14">
         <div class="flex items-center gap-2.5">
-          <!-- <div class="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center">
-            <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M12 14l9-5-9-5-9 5 9 5zm0 7l-9-5 9-5 9 5-9 5z"/>
-            </svg>
-          </div> -->
-          <span class="font-bold text-gray-800 text-sm">SplitPay</span>
+          <!-- Logo de l'institution si disponible -->
+          <img 
+            v-if="institutionLogo" 
+            :src="institutionLogo" 
+            :alt="institutionName"
+            class="h-8 w-auto object-contain"
+          />
+          <span v-else class="font-bold text-gray-800 text-sm">{{ institutionName || 'SplitPay' }}</span>
           <span class="text-gray-300 text-sm">|</span>
           <span class="text-sm text-gray-500">Espace Étudiant</span>
         </div>
@@ -193,6 +194,15 @@ const initials = computed(() => {
 });
 
 const currency = computed(() => student.value?.currency ?? 'XOF');
+
+const institutionName = computed(() => {
+  return student.value?.annexe?.institution?.name ?? 'SplitPay'
+});
+
+const institutionLogo = computed(() => {
+  const logo = student.value?.annexe?.institution?.logo
+  return logo ? `/storage/${logo}` : null
+});
 
 const goLogin = () => {
   studentAccountService.removeToken();

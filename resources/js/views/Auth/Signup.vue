@@ -184,6 +184,19 @@
                     />
                   </div>
 
+                  <!-- Institution Logo -->
+                  <div>
+                    <label for="logo" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Logo de l'établissement (optionnel)</label>
+                    <input
+                      @change="handleLogoUpload"
+                      type="file"
+                      id="logo"
+                      accept="image/*"
+                      class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 dark:text-white file:mr-4 file:py-1 file:px-4 file:rounded file:border-0 file:text-sm file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100"
+                    />
+                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">PNG, JPG ou JPEG (Max 2MB)</p>
+                  </div>
+
                   <!-- Annexe Name -->
                   <div>
                     <label for="annexe" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Annexe Name<span class="text-error-500">*</span></label>
@@ -196,9 +209,33 @@
                     />
                   </div>
 
+                  <!-- Annexe Contact Details -->
+                  <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                    <div>
+                      <label for="annexe_email" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Email de contact<span class="text-error-500">*</span></label>
+                      <input
+                        v-model="annexeEmail"
+                        type="email"
+                        id="annexe_email"
+                        placeholder="contact@annexe.com"
+                        class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 px-4 text-sm text-white placeholder:text-gray-400 dark:placeholder:text-white/60"
+                      />
+                    </div>
+                    <div>
+                      <label for="annexe_phone" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Téléphone<span class="text-error-500">*</span></label>
+                      <input
+                        v-model="annexePhone"
+                        type="tel"
+                        id="annexe_phone"
+                        placeholder="+242 XX XXX XXXX"
+                        class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 px-4 text-sm text-white placeholder:text-gray-400 dark:placeholder:text-white/60"
+                      />
+                    </div>
+                  </div>
+
                   <!-- Navigation -->
                   <div class="flex gap-3">
-                    <button type="button" @click="prevStep" class="flex-1 px-4 py-3 text-sm font-medium text-gray-700 rounded-lg border border-gray-300 hover:bg-gray-50">Back</button>
+                    <button type="button" @click="prevStep" class="flex-1 px-4 py-3 text-sm font-medium text-gray-700 rounded-lg border border-gray-300 hover:bg-gray-50">Retour</button>
                     <button type="submit" :disabled="loading" class="flex-1 px-4 py-3 text-sm font-medium text-white rounded-lg bg-brand-500 hover:bg-brand-600 disabled:opacity-50">
                       <span v-if="!loading">Finish & Register</span>
                       <span v-else>Registering...</span>
@@ -256,7 +293,10 @@ const agreeToTerms = ref(false)
 // institution/annexe (step 2)
 const institutionName = ref('')
 const institutionEmail = ref('')
+const institutionLogo = ref(null) // File object
 const annexeName = ref('Main Campus')
+const annexeEmail = ref('')
+const annexePhone = ref('')
 
 // control
 const step = ref(1)
@@ -268,6 +308,26 @@ const auth = useAuthStore()
 
 const togglePasswordVisibility = () => {
   showPassword.value = !showPassword.value
+}
+
+const handleLogoUpload = (event) => {
+  const file = event.target.files?.[0]
+  if (file) {
+    // Valider la taille (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      error.value = 'Le logo ne doit pas dépasser 2MB'
+      event.target.value = ''
+      return
+    }
+    // Valider le type
+    if (!['image/png', 'image/jpeg', 'image/jpg'].includes(file.type)) {
+      error.value = 'Format invalide. Utilisez PNG, JPG ou JPEG'
+      event.target.value = ''
+      return
+    }
+    institutionLogo.value = file
+    error.value = null
+  }
 }
 
 // minimal client validation for step1 before moving to step2
@@ -301,21 +361,40 @@ const prevStep = () => {
 
 const handleSubmit = async () => {
   error.value = null
+  
+  // Validation des champs requis de l'annexe
+  if (!annexeEmail.value || !annexePhone.value) {
+    error.value = 'Les coordonnées de l\'annexe (email et téléphone) sont obligatoires'
+    return
+  }
+  
   loading.value = true
 
-  // prepare payload combining owner + institution/annexe
-  const payload = {
-    institution_name: institutionName.value || `${firstName.value}'s Institution`,
-    institution_email: institutionEmail.value || null,
-    institution_phone: '',
-    annexe_name: annexeName.value || 'Main Campus',
-    owner_name: `${firstName.value} ${lastName.value}`.trim(),
-    owner_email: email.value,
-    owner_password: password.value,
+  // Utiliser FormData pour supporter l'upload de logo
+  const formData = new FormData()
+  
+  formData.append('institution_name', institutionName.value || `${firstName.value}'s Institution`)
+  formData.append('institution_email', institutionEmail.value || '')
+  formData.append('institution_phone', '')
+  formData.append('annexe_name', annexeName.value || 'Main Campus')
+  formData.append('owner_name', `${firstName.value} ${lastName.value}`.trim())
+  formData.append('owner_email', email.value)
+  formData.append('owner_password', password.value)
+  
+  // Ajouter les détails de l'annexe comme JSON
+  const annexeDetails = {
+    email: annexeEmail.value,
+    phone: annexePhone.value,
+  }
+  formData.append('annexe_details', JSON.stringify(annexeDetails))
+  
+  // Ajouter le logo si fourni
+  if (institutionLogo.value) {
+    formData.append('logo', institutionLogo.value)
   }
 
   try {
-    await auth.register(payload)
+    await auth.register(formData)
     // redirect to signin or dashboard
     router.push('/signin')
   } catch (e) {

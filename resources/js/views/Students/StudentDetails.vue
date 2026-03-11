@@ -1,8 +1,10 @@
 <template>
   <AdminLayout>
-    <PageBreadcrumb :pageTitle="`Student: ${form.first_name || '...'} ${form.last_name || ''}`" />
+    <PageBreadcrumb 
+      :pageTitle="`Student: ${form.first_name || '...'} ${form.last_name || ''}`" 
+    />
     <div class="space-y-5 sm:space-y-6">
-      <ComponentCard title="Student details">
+      <ComponentCard title="Détails de l'étudiant">
         <!-- Avatar header -->
         <div class="flex items-center gap-4 mb-6 pb-5 border-b border-gray-100">
           <div class="relative shrink-0">
@@ -24,20 +26,20 @@
           <div>
             <p class="font-semibold text-gray-900">{{ form.first_name || '—' }} {{ form.last_name }}</p>
             <p class="text-sm text-gray-500">{{ student?.matricule ?? '' }}</p>
-            <p v-if="editMode" class="text-xs text-gray-400 mt-0.5">Click the camera icon to change photo</p>
-            <p v-else-if="avatarPreview || student?.avatar_url" class="text-xs text-gray-400 mt-0.5">Click photo to enlarge</p>
+            <p v-if="editMode" class="text-xs text-gray-400 mt-0.5">Cliquez sur l'icône caméra pour modifier la photo</p>
+            <p v-else-if="avatarPreview || student?.avatar_url" class="text-xs text-gray-400 mt-0.5">Cliquez sur la photo pour agrandir</p>
           </div>
         </div>
 
         <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">First name</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Prénom</label>
             <template v-if="!editMode"><p class="mt-1 text-gray-900">{{ form.first_name || '—' }}</p></template>
             <template v-else><input v-model="form.first_name" class="mt-1 block w-full rounded-md border px-3 py-2 text-white bg-gray-800" /></template>
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Last name</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Nom</label>
             <template v-if="!editMode"><p class="mt-1 text-gray-900">{{ form.last_name || '—' }}</p></template>
             <template v-else><input v-model="form.last_name" class="mt-1 block w-full rounded-md border px-3 py-2 text-white bg-gray-800" /></template>
           </div>
@@ -49,7 +51,7 @@
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Phone</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Téléphone</label>
             <template v-if="!editMode"><p class="mt-1 text-gray-900">{{ form.phone || '—' }}</p></template>
             <template v-else><input v-model="form.phone" class="mt-1 block w-full rounded-md border px-3 py-2 text-white bg-gray-800" /></template>
           </div>
@@ -79,26 +81,26 @@
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Study Level</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Niveau d'étude</label>
             <template v-if="!editMode">
               <p class="mt-1 text-gray-900">{{ student?.current_enrollment?.level_fee?.study_level?.label ?? '—' }}</p>
             </template>
             <template v-else>
               <select v-model="form.study_level_id" class="mt-1 block w-full rounded-md border px-3 py-2 text-white bg-gray-800">
-                <option :value="null">Select study level</option>
+                <option :value="null">Sélectionner un niveau</option>
                 <option v-for="level in studyLevels" :key="level.id" :value="level.id">{{ level.label }}</option>
               </select>
             </template>
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Specialization</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Spécialisation</label>
             <template v-if="!editMode">
               <p class="mt-1 text-gray-900">{{ student?.specialization?.label ?? student?.specialization?.code ?? '—' }}</p>
             </template>
             <template v-else>
               <select v-model="form.specialization_id" class="mt-1 block w-full rounded-md border px-3 py-2 text-white bg-gray-800">
-                <option :value="null">Select specialization</option>
+                <option :value="null">Sélectionner une spécialisation</option>
                 <option v-for="spec in specializations" :key="spec.id" :value="spec.id">{{ spec.label }}</option>
               </select>
             </template>
@@ -106,7 +108,7 @@
 
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Annexe</label>
-            <p class="mt-1 text-gray-900">{{ student?.annexe?.name ?? 'No annexe' }}</p>
+            <p class="mt-1 text-gray-900">{{ student?.annexe?.name ?? 'Aucune annexe' }}</p>
           </div>
         </div>
 
@@ -133,7 +135,7 @@
             </div>
 
             <div class="mt-4">
-              <button @click="createPaymentLink" class="px-4 py-2 bg-brand-500 text-white rounded">Create payment link</button>
+              <button @click="createPaymentLink" class="px-4 py-2 bg-brand-500 text-white rounded">Créer un lien de paiement</button>
               <div v-if="paymentLink" class="mt-2">
                 <a :href="paymentLink" target="_blank" class="text-indigo-600 underline">{{ paymentLink }}</a>
               </div>
@@ -151,12 +153,12 @@
         </div> -->
 
         <div class="mt-6 flex gap-3">
-            <button v-if="!editMode" @click="enterEdit" class="px-4 py-2 bg-brand-500 text-white rounded">Edit</button>
-            <button v-else @click="save" :disabled="saving" class="px-4 py-2 bg-brand-500 text-white rounded">Save</button>
-            <button v-if="editMode" @click="cancelEdit" class="px-4 py-2 border rounded">Cancel</button>
+            <button v-if="!editMode" @click="enterEdit" class="px-4 py-2 bg-brand-500 text-white rounded">Modifier</button>
+            <button v-else @click="save" :disabled="saving" class="px-4 py-2 bg-brand-500 text-white rounded">Enregistrer</button>
+            <button v-if="editMode" @click="cancelEdit" class="px-4 py-2 border rounded">Annuler</button>
             <button @click="toggleActiveStatus" class="px-3 py-2 border rounded">
               <!-- afficher action selon le status courant -->
-              {{ student?.status === 'active' ? 'Suspend' : 'Activate' }}
+              {{ student?.status === 'active' ? 'Suspendre' : 'Activer' }}
             </button>
             <router-link :to="`/admin/students/${id}/finance`" class="px-3 py-2 bg-indigo-600 text-white rounded">Finance</router-link>
         </div>
@@ -184,11 +186,14 @@ import ImageViewerModal from '@/components/shared/ImageViewerModal.vue';
 import studentService from '@/services/studentService';
 import studyLevelService from '@/services/studyLevelService';
 import specializationService from '@/services/specializationService';
+import reminderService from '@/services/reminderService';
 import { useSchoolYear } from '@/composables/useSchoolYear';
+import { usePermissions } from '@/composables/usePermissions';
 
 const route = useRoute();
 const router = useRouter();
 const id = route.params.id;
+const { hasPermission } = usePermissions();
 
 const student = ref(null);
 const studyLevels = ref([]);
@@ -376,8 +381,40 @@ const createPaymentLink = async () => {
   }
 };
 
+// Date formatting helpers
+const formatDate = (dateString) => {
+  if (!dateString) return '-';
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('fr-FR', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric'
+    });
+  } catch {
+    return dateString;
+  }
+};
+
+const formatTime = (dateString) => {
+  if (!dateString) return '';
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('fr-FR', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  } catch {
+    return '';
+  }
+};
+
 onMounted(async () => {
-  await Promise.all([load(), loadStudyLevels(), loadSpecializations()]);
+  await Promise.all([
+    load(), 
+    loadStudyLevels(), 
+    loadSpecializations()
+  ]);
 });
 </script>
 

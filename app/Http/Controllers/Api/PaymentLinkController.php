@@ -137,7 +137,8 @@ class PaymentLinkController extends Controller
 	public function sendByEmail(Request $request, $id)
 	{
 		$request->validate([
-			'email' => 'sometimes|email'
+			'email' => 'sometimes|email',
+			'message_type' => 'sometimes|in:initial,reminder,urgent,final'
 		]);
 
 		try {
@@ -148,11 +149,22 @@ class PaymentLinkController extends Controller
 				return response()->json(['message' => 'No target email available'], 422);
 			}
 
-			// envoyer le mail
-			Mail::to($target)->send(new PaymentLinkMail($link));
+			// envoyer le mail avec le type de message
+			$messageType = $request->input('message_type', 'initial');
+			Mail::to($target)->send(new PaymentLinkMail($link, $messageType));
 
 			// marquer sent_at si besoin
 			try { $link->markAsSent(); } catch (\Throwable $e) { /* non bloquant */ }
+
+			// Tracker l'envoi manuel sur les installments actifs
+			if (in_array($messageType, ['reminder', 'urgent', 'final'])) {
+				$link->activeInstallments()->each(function ($installment) {
+					$installment->update([
+						'last_reminder_sent_at' => now(),
+						'reminder_count' => $installment->reminder_count + 1,
+					]);
+				});
+			}
 
 			return response()->json(['message' => 'Payment link sent', 'email' => $target], 200);
 		} catch (\Throwable $e) {
@@ -195,12 +207,12 @@ class PaymentLinkController extends Controller
         'type'        => 'sometimes|string', 
         'due_date'    => 'nullable|date',
         'expire_at'   => 'nullable|date',
-        'status' => 'sometimes|in:pending,paid,expired,cancelled'
+        'status' => 'sometimes|in:active,used,expired'  // Fixed: match database enum
     ]);
 
     $paymentLink->update($validated);
 
-    return response()->json($paymentLink);
+    return response()->json($paymentLink->fresh());
 }
 
 

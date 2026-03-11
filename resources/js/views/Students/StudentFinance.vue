@@ -1,6 +1,8 @@
 <template>
   <AdminLayout>
-    <PageBreadcrumb :pageTitle="`Finance — ${student?.first_name || ''} ${student?.last_name || ''}`" />
+    <PageBreadcrumb 
+      :pageTitle="`Finance — ${student?.first_name || ''} ${student?.last_name || ''}`" 
+    />
     <div class="space-y-4">
       <!-- Student mini-header -->
       <div v-if="student" class="flex items-center gap-3 bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-3">
@@ -10,31 +12,31 @@
           <p class="text-xs text-gray-500">{{ student.matricule }}</p>
         </div>
       </div>
-      <ComponentCard title="Financial Summary">
+      <ComponentCard title="Résumé financier">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <div class="text-sm text-gray-500">Tuition Amount</div>
+            <div class="text-sm text-gray-500">Montant de la scolarité</div>
             <div class="text-lg font-semibold">{{ finance.tuition_amount ?? '-' }}</div>
           </div>
           <div>
-            <div class="text-sm text-gray-500">Paid</div>
+            <div class="text-sm text-gray-500">Payé</div>
             <div class="text-lg font-semibold">{{ finance.amount_paid ?? '-' }}</div>
           </div>
           <div>
-            <div class="text-sm text-gray-500">Due</div>
+            <div class="text-sm text-gray-500">Restant dû</div>
             <div class="text-lg font-semibold">{{ finance.amount_due ?? '-' }}</div>
           </div>
           <div>
-            <div class="text-sm text-gray-500">Last payment</div>
+            <div class="text-sm text-gray-500">Dernier paiement</div>
             <div class="text-lg font-semibold">{{ finance.last_payment_date ?? '-' }}</div>
           </div>
         </div>
         <div class="mt-4 flex items-center gap-3">
-          <button @click="openCreateModal" class="px-4 py-2 bg-brand-500 text-white rounded">Create payment link</button>
+          <button @click="openCreateModal" class="px-4 py-2 bg-brand-500 text-white rounded">Créer un lien de paiement</button>
           <div v-if="createdLinkUrl" class="flex items-center gap-3">
             <a :href="createdLinkUrl" target="_blank" class="text-indigo-600 underline break-all">{{ createdLinkUrl }}</a>
-            <button @click="copyLink" class="px-3 py-1 border rounded">Copy</button>
-            <button @click="openMailClient" class="px-3 py-1 border rounded">Send Email</button>
+            <button @click="copyLink" class="px-3 py-1 border rounded">Copier</button>
+            <button @click="openMailClient" class="px-3 py-1 border rounded">Envoyer par email</button>
           </div>
         </div>
       </ComponentCard>
@@ -136,20 +138,20 @@ const onLinkCreated = (linkObj) => {
 
 const copyLink = async () => {
   if (!createdLinkUrl.value) return;
-  try { await navigator.clipboard.writeText(createdLinkUrl.value); alert('Link copied'); }
-  catch { alert('Copy failed'); }
+  try { await navigator.clipboard.writeText(createdLinkUrl.value); alert('Lien copié'); }
+  catch { alert('Échec de la copie'); }
 };
 
 const openMailClient = async () => {
-  if (!createdLinkId.value) return alert('No created link to send');
+  if (!createdLinkId.value) return alert('Aucun lien créé à envoyer');
   try {
     const email = student.value?.email ?? null;
-    if (!email) return alert('Student has no email');
+    if (!email) return alert('L\'étudiant n\'a pas d\'email');
     await paymentLinkService.sendEmail(createdLinkId.value, { email });
-    alert('Payment link sent to ' + email);
+    alert('Lien de paiement envoyé à ' + email);
   } catch (e) {
     console.error('Send email failed', e);
-    alert(e.response?.data?.message || e.message || 'Send failed');
+    alert(e.response?.data?.message || e.message || 'Échec de l\'envoi');
   }
 };
 

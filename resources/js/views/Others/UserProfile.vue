@@ -1,6 +1,6 @@
 <template>
   <AdminLayout>
-    <PageBreadcrumb pageTitle="My profile" />
+    <PageBreadcrumb pageTitle="Mon profil" />
     <div class=" space-y-6">
       <ProfileCard />
       <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">

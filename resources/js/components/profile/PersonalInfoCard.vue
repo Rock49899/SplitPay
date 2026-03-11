@@ -3,21 +3,21 @@
     <div class="p-5 mb-6 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-6">
       <div class="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <h4 class="text-lg font-semibold text-gray-800 dark:text-white/90 lg:mb-6">Personal Information</h4>
+          <h4 class="text-lg font-semibold text-gray-800 dark:text-white/90 lg:mb-6">Informations personnelles</h4>
 
           <div class="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-7 2xl:gap-x-32">
             <div>
-              <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">Name</p>
+              <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">Nom</p>
               <p class="text-sm font-medium text-gray-800 dark:text-white/90">{{ form.name || '—' }}</p>
             </div>
 
             <div>
-              <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">Email address</p>
+              <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">Adresse email</p>
               <p class="text-sm font-medium text-gray-800 dark:text-white/90">{{ form.email || '—' }}</p>
             </div>
 
             <div>
-              <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">Phone</p>
+              <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">Téléphone</p>
               <p class="text-sm font-medium text-gray-800 dark:text-white/90">{{ form.phone || '—' }}</p>
             </div>
 
@@ -27,7 +27,7 @@
             </div>
 
             <div>
-              <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">Role</p>
+              <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">Rôle</p>
               <p class="text-sm font-medium text-gray-800 dark:text-white/90">{{ roleLabel || '—' }}</p>
             </div>
 
@@ -38,7 +38,7 @@
           </div>
         </div>
 
-        <button class="edit-button" @click="isProfileInfoModal = true">Edit</button>
+        <button class="edit-button" @click="isProfileInfoModal = true">Modifier</button>
       </div>
     </div>
 
@@ -49,8 +49,8 @@
           <button @click="isProfileInfoModal = false" class="absolute right-5 top-5 ...">✕</button>
 
           <div class="px-2 pr-14">
-            <h4 class="mb-2 text-2xl font-semibold text-gray-800 dark:text-white/90">Edit Personal Information</h4>
-            <p class="mb-6 text-sm text-gray-500 dark:text-gray-400 lg:mb-7">Update your details.</p>
+            <h4 class="mb-2 text-2xl font-semibold text-gray-800 dark:text-white/90">Modifier les informations personnelles</h4>
+            <p class="mb-6 text-sm text-gray-500 dark:text-gray-400 lg:mb-7">Mettez à jour vos informations.</p>
           </div>
 
           <form @submit.prevent="saveProfile" class="flex flex-col">
@@ -73,21 +73,21 @@
                       <input type="file" class="sr-only" accept="image/jpeg,image/jpg,image/png,image/webp" @change="onAvatarChange" />
                     </label>
                   </div>
-                  <p class="text-xs text-gray-400 dark:text-gray-500">Hover the photo and click to change</p>
+                  <p class="text-xs text-gray-400 dark:text-gray-500">Survolez la photo et cliquez pour la modifier</p>
                 </div>
 
                 <div class="col-span-2">
-                  <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Name</label>
+                  <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Nom</label>
                   <input type="text" v-model="form.name" class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 dark:text-white dark:bg-gray-800 dark:border-gray-700" />
                 </div>
 
                 <div>
-                  <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Email Address</label>
+                  <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Adresse email</label>
                   <input type="email" v-model="form.email" class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 dark:text-white dark:bg-gray-800 dark:border-gray-700" />
                 </div>
 
                 <div>
-                  <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Phone</label>
+                  <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Téléphone</label>
                   <input type="text" v-model="form.phone" class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 dark:text-white dark:bg-gray-800 dark:border-gray-700" />
                 </div>
 
@@ -99,8 +99,8 @@
             </div>
 
             <div class="flex items-center gap-3 px-2 mt-6 lg:justify-end">
-              <button @click.prevent="isProfileInfoModal = false" type="button" class="flex w-full justify-center rounded-lg border px-4 py-2.5 text-sm sm:w-auto">Close</button>
-              <button type="submit" class="flex w-full justify-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm text-white sm:w-auto">Save Changes</button>
+              <button @click.prevent="isProfileInfoModal = false" type="button" class="flex w-full justify-center rounded-lg border px-4 py-2.5 text-sm sm:w-auto">Fermer</button>
+              <button type="submit" class="flex w-full justify-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm text-white sm:w-auto">Enregistrer</button>
             </div>
           </form>
         </div>
@@ -164,9 +164,25 @@ const load = async () => {
     form.bio = u.bio ?? ''
     form.avatar_url = u.avatar_url ?? u.avatar ?? ''
     form.annexe_id = u.annexe_id ?? u.annexe?.id ?? null
-    roleLabel.value = u.role?.name ?? u.role_name ?? u.title ?? u.role ?? ''
-    const ann = annexeStore.items?.find(a => String(a.id) === String(form.annexe_id))
-    annexeName.value = ann?.name ?? (u.annexe?.name ?? '')
+    
+    // Récupérer le rôle principal (premier rôle ou rôle avec is_principal)
+    if (u.roles && Array.isArray(u.roles) && u.roles.length > 0) {
+      // Si le rôle a une propriété 'label', l'utiliser
+      roleLabel.value = u.roles[0].label ?? u.roles[0].code ?? u.roles[0]
+    } else {
+      roleLabel.value = u.role?.label ?? u.role?.name ?? u.role_name ?? u.title ?? u.role ?? ''
+    }
+    
+    // Récupérer l'annexe principale
+    if (u.annexes && Array.isArray(u.annexes) && u.annexes.length > 0) {
+      // Chercher l'annexe principale ou prendre la première
+      const principalAnnexe = u.annexes.find(a => a.is_principal) ?? u.annexes[0]
+      annexeName.value = principalAnnexe.name ?? ''
+      form.annexe_id = principalAnnexe.id
+    } else {
+      const ann = annexeStore.items?.find(a => String(a.id) === String(form.annexe_id))
+      annexeName.value = ann?.name ?? (u.annexe?.name ?? '')
+    }
   } catch (e) {
     console.error('Failed to load personal info', e)
   }

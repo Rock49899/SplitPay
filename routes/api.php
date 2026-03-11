@@ -26,6 +26,10 @@ Route::post('test', function () {
 
 Route::get('ping', fn () => response('pong'));
 
+Route::get('check-institution', function () {
+    $exists = \App\Models\Institution::count() > 0;
+    return response()->json(['exists' => $exists]);
+});
 
 Route::post('register', [\App\Http\Controllers\Api\RegistrationController::class, 'register']);
 
@@ -36,9 +40,10 @@ Route::post('students/me-by-token', [\App\Http\Controllers\Api\StudentAuthContro
 Route::match(['post','get'], 'admin/login', [\App\Http\Controllers\Api\AuthController::class, 'login']);
 
 //sanctum
-Route::middleware('auth:sanctum')->prefix('admin')->group(function () {
+Route::middleware(['auth:sanctum', 'active.annexe'])->prefix('admin')->group(function () {
     Route::match(['get','post'], 'logout', [\App\Http\Controllers\Api\AuthController::class, 'logout']);
     Route::get('me', [\App\Http\Controllers\Api\AuthController::class, 'me']);
+    Route::get('me/annexe/{annexeId}', [\App\Http\Controllers\Api\AuthController::class, 'meForAnnexe']);
     Route::match(['put','patch','post'], 'me', [UserController::class, 'updateMe']);
 
     // Users management
@@ -55,6 +60,13 @@ Route::middleware('auth:sanctum')->prefix('admin')->group(function () {
     // Students management
     Route::get('students', [StudentController::class, 'index'])->middleware('permission:student.view');
     Route::post('students', [StudentController::class, 'store'])->middleware('permission:student.create');
+    
+    // Students Import/Export (MUST BE BEFORE {id} routes)
+    Route::get('students/import/template', [\App\Http\Controllers\Api\StudentImportController::class, 'downloadTemplate'])->middleware('permission:student.create');
+    Route::post('students/import/preview', [\App\Http\Controllers\Api\StudentImportController::class, 'preview'])->middleware('permission:student.create');
+    Route::post('students/import', [\App\Http\Controllers\Api\StudentImportController::class, 'import'])->middleware('permission:student.create');
+    Route::get('students/export', [\App\Http\Controllers\Api\StudentImportController::class, 'export'])->middleware('permission:student.view');
+    
     Route::get('students/{id}', [StudentController::class, 'show'])->middleware('permission:student.view');
     Route::match(['put', 'patch'], 'students/{id}', [StudentController::class, 'update'])->middleware('permission:student.edit');
     Route::delete('students/{id}', [StudentController::class, 'destroy'])->middleware('permission:student.delete');
@@ -115,7 +127,8 @@ Route::middleware('auth:sanctum')->prefix('admin')->group(function () {
     Route::get('payment-links', [PaymentLinkController::class, 'index'])->middleware('permission:link.view');
     Route::post('payment-links', [PaymentLinkController::class, 'store'])->middleware('permission:link.create');
     Route::get('payment-links/{id}', [PaymentLinkController::class, 'show'])->middleware('permission:link.view');
-    Route::match(['put', 'patch'], 'payment-links/{id}', [PaymentLinkController::class, 'update'])->middleware('permission:link.cancel');
+    Route::get('students/{studentId}/communication-history', [PaymentLinkController::class, 'getCommunicationHistory'])->middleware('permission:student.view');
+    Route::match(['put', 'patch'], 'payment-links/{id}', [PaymentLinkController::class, 'update'])->middleware('permission:link.view');
     Route::delete('payment-links/{id}', [PaymentLinkController::class, 'destroy'])->middleware('permission:link.cancel');
 
     // Rapport / KPIs
@@ -124,6 +137,26 @@ Route::middleware('auth:sanctum')->prefix('admin')->group(function () {
     // Enrollments (historique + ajustement montant scolarité)
     Route::get('enrollments', [\App\Http\Controllers\Api\EnrollmentController::class, 'index'])->middleware('permission:student.view');
     Route::match(['put', 'patch'], 'enrollments/{enrollment}', [\App\Http\Controllers\Api\EnrollmentController::class, 'update'])->middleware('permission:student.edit');
+
+    // Notifications
+    Route::get('notifications/unread-count', [\App\Http\Controllers\Api\NotificationController::class, 'unreadCount'])->middleware('permission:notification.view');
+    Route::post('notifications/mark-all-as-read', [\App\Http\Controllers\Api\NotificationController::class, 'markAllAsRead'])->middleware('permission:notification.manage');
+    Route::delete('notifications/clear-read', [\App\Http\Controllers\Api\NotificationController::class, 'clearRead'])->middleware('permission:notification.manage');
+    Route::patch('notifications/{notification}/mark-as-read', [\App\Http\Controllers\Api\NotificationController::class, 'markAsRead'])->middleware('permission:notification.manage');
+    Route::get('notifications', [\App\Http\Controllers\Api\NotificationController::class, 'index'])->middleware('permission:notification.view');
+    Route::get('notifications/{notification}', [\App\Http\Controllers\Api\NotificationController::class, 'show'])->middleware('permission:notification.view');
+    Route::delete('notifications/{notification}', [\App\Http\Controllers\Api\NotificationController::class, 'destroy'])->middleware('permission:notification.manage');
+
+    // Reminders (Rappels automatiques)
+    Route::get('reminders/{reminder}/preview', [\App\Http\Controllers\Api\ReminderController::class, 'preview'])->middleware('permission:reminder.view');
+    Route::post('reminders/{reminder}/send-now', [\App\Http\Controllers\Api\ReminderController::class, 'sendNow'])->middleware('permission:reminder.edit');
+    Route::patch('reminders/{reminder}/activate', [\App\Http\Controllers\Api\ReminderController::class, 'activate'])->middleware('permission:reminder.edit');
+    Route::patch('reminders/{reminder}/deactivate', [\App\Http\Controllers\Api\ReminderController::class, 'deactivate'])->middleware('permission:reminder.edit');
+    Route::get('reminders', [\App\Http\Controllers\Api\ReminderController::class, 'index'])->middleware('permission:reminder.view');
+    Route::post('reminders', [\App\Http\Controllers\Api\ReminderController::class, 'store'])->middleware('permission:reminder.create');
+    Route::get('reminders/{reminder}', [\App\Http\Controllers\Api\ReminderController::class, 'show'])->middleware('permission:reminder.view');
+    Route::match(['put', 'patch'], 'reminders/{reminder}', [\App\Http\Controllers\Api\ReminderController::class, 'update'])->middleware('permission:reminder.edit');
+    Route::delete('reminders/{reminder}', [\App\Http\Controllers\Api\ReminderController::class, 'destroy'])->middleware('permission:reminder.delete');
 
     // Dashboard
     Route::prefix('dashboard')->middleware('permission:dashboard.view')->group(function () {

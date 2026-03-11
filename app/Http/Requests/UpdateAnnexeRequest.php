@@ -17,7 +17,7 @@ class UpdateAnnexeRequest extends FormRequest
             'name'           => 'sometimes|required|string|max:255',
             'address'        => 'sometimes|nullable|string|max:1000',
             'city'           => 'sometimes|nullable|string|max:255',
-            'annexe_details' => 'sometimes|nullable|string',
+            'annexe_details' => 'sometimes|nullable|array', // Accepter un objet JSON
             'is_active'      => 'sometimes|boolean',
         ];
     }

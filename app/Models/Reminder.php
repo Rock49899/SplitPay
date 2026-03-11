@@ -13,6 +13,13 @@ class Reminder extends Model
     use HasFactory, HasUuids;
 
     /**
+     * Nombre maximum de rappels par installment
+     *
+     * @var int
+     */
+    const MAX_REMINDERS_PER_INSTALLMENT = 3;
+
+    /**
      * Indicates if the model's ID is auto-incrementing.
      *
      * @var bool
@@ -116,6 +123,7 @@ class Reminder extends Model
         ->where('status', 'active')
         ->whereDate('due_date', $targetDate->toDateString())
         ->whereRaw('amount_paid < amount')
+        ->where('reminder_count', '<', self::MAX_REMINDERS_PER_INSTALLMENT)
         ->get();
     }
 

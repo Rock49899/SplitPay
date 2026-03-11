@@ -26,6 +26,15 @@ export function usePermissions() {
   // Sauvegarder les permissions
   const setPermissions = (permissions) => {
     userPermissions.value = permissions;
+    
+    // Mettre à jour le localStorage pour persister les permissions
+    if (currentUser.value) {
+      const updatedUser = {
+        ...currentUser.value,
+        permissions: permissions
+      };
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+    }
   };
 
   const setUser = (user) => {
@@ -34,6 +43,12 @@ export function usePermissions() {
       userPermissions.value = user.permissions || [];
       userRoles.value = user.roles || [];
       localStorage.setItem('user', JSON.stringify(user));
+      
+      console.log('[usePermissions] User updated:', {
+        name: user.name,
+        permissions: user.permissions?.length || 0,
+        roles: user.roles?.map(r => r.label || r.code) || []
+      });
     }
   };
 
@@ -58,6 +73,12 @@ export function usePermissions() {
   // Vérifier si l'utilisateur a un rôle spécifique
   const hasRole = (roleCode) => {
     return userRoles.value.some(role => role.code === roleCode);
+  };
+
+  // Vérifier si l'utilisateur a au moins un des rôles
+  const hasAnyRole = (roleCodes) => {
+    if (!roleCodes || roleCodes.length === 0) return true;
+    return roleCodes.some(roleCode => hasRole(roleCode));
   };
 
   // Alias pour hasPermission
@@ -99,6 +120,7 @@ export function usePermissions() {
     hasAnyPermission,
     hasAllPermissions,
     hasRole,
+    hasAnyRole,
     can,
     setPermissions,
     setUser,

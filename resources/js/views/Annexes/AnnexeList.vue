@@ -5,7 +5,7 @@
     <div class="">
       <div class="flex items-center justify-between mb-4">
         <div class="flex items-center gap-3">
-          <button v-if="isSuperAdminInstitution" @click="showCreate = true" class="px-4 py-2 bg-brand-500 text-white rounded">Create Annexe</button>
+          <button v-if="isSuperAdminInstitution" @click="showCreate = true" class="px-4 py-2 bg-brand-500 text-white rounded">Créer une annexe</button>
         </div>
       </div>
 
@@ -15,12 +15,12 @@
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Address</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">City</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Details</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Manager</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nom</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Adresse</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ville</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Détails</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Statut</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Responsable</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
             </tr>
           </thead>
@@ -55,13 +55,13 @@
                     class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium"
                     :class="a.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'"
                   >
-                    {{ a.is_active ? 'Active' : 'Inactive' }}
+                    {{ a.is_active ? 'Actif' : 'Inactif' }}
                   </span>
                 </template>
                 <template v-else>
                   <select v-model="editForm.status" class="w-full rounded border px-2 py-1">
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
+                    <option value="active">Actif</option>
+                    <option value="inactive">Inactif</option>
                   </select>
                 </template>
               </td>
@@ -75,7 +75,7 @@
                 </template>
                 <template v-else>
                   <select v-model="editForm.manager_id" class="w-full rounded border px-2 py-1">
-                    <option value="">-- none --</option>
+                    <option value="">-- aucun --</option>
                     <option v-for="u in usersForSelect" :key="u.id" :value="u.id">{{ u.name ?? u.email }}</option>
                   </select>
                 </template>
@@ -83,18 +83,18 @@
 
               <td class="px-6 py-4 whitespace-nowrap text-sm text-right">
                 <template v-if="editingId !== a.id">
-                  <button @click="startEdit(a)" class="text-indigo-600 mr-3">Edit</button>
-                  <button @click="remove(a.id)" class="text-red-500">Delete</button>
+                  <button @click="startEdit(a)" class="text-indigo-600 mr-3">Modifier</button>
+                  <button @click="remove(a.id)" class="text-red-500">Supprimer</button>
                 </template>
                 <template v-else>
-                  <button @click="saveEdit(a.id)" class="text-green-600 mr-3">Save</button>
-                  <button @click="cancelEdit" class="text-gray-500">Cancel</button>
+                  <button @click="saveEdit(a.id)" class="text-green-600 mr-3">Enregistrer</button>
+                  <button @click="cancelEdit" class="text-gray-500">Annuler</button>
                 </template>
               </td>
             </tr>
 
             <tr v-if="!annexes.length">
-              <td colspan="7" class="px-6 py-4 text-center text-sm text-gray-500">No annexes</td>
+              <td colspan="7" class="px-6 py-4 text-center text-sm text-gray-500">Aucune annexe</td>
             </tr>
           </tbody>
         </table>
@@ -204,17 +204,17 @@ const saveEdit = async (id) => {
     editingId.value = null;
   } catch (e) {
     console.error('Failed updating annexe', e);
-    alert('Update failed');
+    alert('Échec de la mise à jour');
   }
 };
 
 const remove = async (id) => {
-  if (!confirm('Delete this annexe?')) return;
+  if (!confirm('Supprimer cette annexe ?')) return;
   try {
     await annexeStore.deleteAnnexe(id);
   } catch (e) {
     console.error('Delete annexe failed', e);
-    alert('Delete failed');
+    alert('Échec de la suppression');
   }
 };
 
