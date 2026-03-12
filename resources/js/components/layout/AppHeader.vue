@@ -75,9 +75,24 @@
         class="items-center justify-between w-full gap-4 px-5 py-4 shadow-theme-md lg:flex lg:justify-end lg:px-0 lg:shadow-none"
       >
         <div class="flex items-center gap-2 2xsm:gap-3">
+          <!-- Sélecteur d'année scolaire global -->
+          <div class="hidden sm:flex items-center gap-1.5">
+            <input
+              list="school-year-list"
+              :value="activeYearStore.activeYear"
+              @change="onYearChange"
+              @keydown.enter="onYearChange"
+              placeholder="Ex: 2025-2026"
+              class="w-28 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-2 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 focus:outline-none focus:border-brand-500"
+            />
+            <datalist id="school-year-list">
+              <option v-for="y in activeYearStore.availableYears" :key="y" :value="y" />
+            </datalist>
+          </div>
           <ThemeToggler />
           <NotificationMenu />
         </div>
+        <AnnexeSwitcher />
         <UserMenu />
       </div>
     </div>
@@ -85,15 +100,32 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useSidebar } from '@/composables/useSidebar'
+import { useActiveYearStore } from '@/stores/useActiveYearStore'
 import ThemeToggler from '../common/ThemeToggler.vue'
 import SearchBar from './header/SearchBar.vue'
 import HeaderLogo from './header/HeaderLogo.vue'
 import NotificationMenu from './header/NotificationMenu.vue'
+import AnnexeSwitcher from './header/AnnexeSwitcher.vue'
 import UserMenu from './header/UserMenu.vue'
 
 const { toggleSidebar, toggleMobileSidebar, isMobileOpen } = useSidebar()
+const activeYearStore = useActiveYearStore()
+onMounted(() => activeYearStore.loadAvailableYears())
+
+function onYearChange(e) {
+  const val = e.target.value?.trim()
+  // Accepte le format YYYY-YYYY (ex: 2025-2026)
+  if (!val || !/^\d{4}-\d{4}$/.test(val)) return
+  const [a, b] = val.split('-').map(Number)
+  if (b !== a + 1) return // ex: 2025-2026 ✓, 2025-2030 ✗
+  activeYearStore.setActiveYear(val)
+  // S'assurer que l'année saisie apparaît dans les suggestions
+  if (!activeYearStore.availableYears.includes(val)) {
+    activeYearStore.availableYears.unshift(val)
+  }
+}
 
 const handleToggle = () => {
   if (window.innerWidth >= 1024) {

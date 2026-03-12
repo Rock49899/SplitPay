@@ -42,8 +42,10 @@ class PaymentLink extends Model
      */
     protected $fillable = [
         'student_id',
+        'type',
         'token',
         'amount',
+        'currency',
         'description',
         'due_date',
         'status',
@@ -57,31 +59,50 @@ class PaymentLink extends Model
      *
      * @return array<string, string>
      */
-    protected function casts(): array
+
+    protected $casts = [
+        'amount' => 'decimal:2',
+        'due_date' => 'date',
+        'sent_at' => 'datetime',
+        'expire_at' => 'datetime',
+    ];
+    /**
+     * Relation paiement(s) directs pour ce lien
+     */
+    public function payments(): HasMany
     {
-        return [
-            'amount' => 'decimal:2',
-            'due_date' => 'date',
-            'sent_at' => 'datetime',
-            'expire_at' => 'datetime',
-        ];
+        return $this->hasMany(Payment::class, 'payment_link_id');
     }
 
     /**
-     * L'étudiant associé à ce lien
+     * L'étudiant associé (ancien schéma direct)
      */
     public function student(): BelongsTo
     {
-        return $this->belongsTo(Student::class);
+        return $this->belongsTo(\App\Models\Student::class);
     }
 
-    /**
-     * L'utilisateur qui a créé ce lien
-     */
-    public function creator(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'created_by');
+    //un lien pour plusieurs paiements
+//     public function payments(): HasMany
+//    {
+//     return $this->hasMany(Payment::class, 'payment_link_id');
+//    }
+
+   // si les paiements liés au lien sont totalement payés
+   public function isFullyPaid(): bool
+   {
+    return $this->installments()
+        ->whereRaw('amount_paid < amount')
+        ->count() === 0;
+   }
+
+   //recalculer automatiquement le statut du lien selon les paiements associés
+   public function refreshStatus(): void
+   {
+    if ($this->isFullyPaid()) {
+        $this->update(['status' => 'used']);
     }
+   }
 
     /**
      * Toutes les échéances de ce lien
@@ -179,10 +200,16 @@ class PaymentLink extends Model
     /**
      * Calculer le montant total payé via ce lien
      */
-    public function totalPaid(): float
-    {
-        return $this->installments()->sum('amount_paid');
-    }
+   public function totalPaid(): float
+   { 
+    return $this->installments()
+        ->with('payments')
+        ->get()
+        ->flatMap->payments
+        ->where('status', 'success')
+        ->sum('amount');
+   }
+
 
     /**
      * Calculer le montant restant à payer
@@ -231,17 +258,33 @@ class PaymentLink extends Model
     protected static function booted()
     {
         static::addGlobalScope('annexe', function (Builder $query) {
-            if (auth()->check() && !auth()->user()->isSuperAdminInstitution()) {
-                $annexeIds = auth()->user()->getAccessibleAnnexeIds();
-                if (!empty($annexeIds)) {
-                    $query->whereHas('student', function ($q) use ($annexeIds) {
-                        $q->whereIn('annexe_id', $annexeIds);
-                    });
-                } else {
-                    $query->whereRaw('1 = 0');
-                }
+
+            $user = auth()->user();
+
+            if (!$user) {
+                return;
+            }
+
+            if (method_exists($user, 'isSuperAdminInstitution') 
+                && $user->isSuperAdminInstitution()) {
+                return;
+            }
+
+            if (!method_exists($user, 'getAccessibleAnnexeIds')) {
+                return;
+            }
+
+            $annexeIds = $user->getAccessibleAnnexeIds();
+
+            if (!empty($annexeIds)) {
+                $query->whereHas('student', function ($q) use ($annexeIds) {
+                    $q->whereIn('annexe_id', $annexeIds);
+                });
+            } else {
+                $query->whereRaw('1 = 0');
             }
         });
     }
+
 }
 

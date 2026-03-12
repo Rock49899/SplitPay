@@ -19,7 +19,6 @@ return new class extends Migration
             $table->string('last_name', 100);
             $table->string('email', 150);
             $table->string('phone', 20)->nullable();
-            $table->string('class', 100)->nullable();
             $table->string('school_year', 20);
             $table->decimal('tuition_amount', 10, 2);
             $table->decimal('amount_paid', 10, 2)->default(0);

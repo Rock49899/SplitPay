@@ -8,43 +8,105 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      name: 'Ecommerce',
-      component: () => import('../views/Ecommerce.vue'),
-      meta: {
-        title: 'eCommerce Dashboard',
-      },
-    },
-    {
-      path: '/calendar',
-      name: 'Calendar',
-      component: () => import('../views/Others/Calendar.vue'),
-      meta: {
-        title: 'Calendar',
-      },
+      name: 'Dashboard',
+      component: () => import('../views/Dashboard.vue'),
+      meta: { title: 'Dashboard', requiresAuth: true },
     },
     {
       path: '/profile',
       name: 'Profile',
-      component: () => import('../views/Others/UserProfile.vue'),
-      meta: {
-        title: 'Profile',
-      },
+      component: () => import('../views/Others/UserProfile.vue').catch(() => import('../views/Placeholders/PlaceholderPage.vue')),
+      meta: { title: 'Profile', requiresAuth: true },
     },
     {
-      path: '/form-elements',
-      name: 'Form Elements',
-      component: () => import('../views/Forms/FormElements.vue'),
-      meta: {
-        title: 'Form Elements',
-      },
+      path: '/admin/users',
+      name: 'Users',
+      component: () => import('../views/Users/Userlist.vue'),
+      meta: { title: 'Users', requiresAuth: true },
     },
     {
-      path: '/basic-tables',
-      name: 'Basic Tables',
-      component: () => import('../views/Tables/BasicTables.vue'),
-      meta: {
-        title: 'Basic Tables',
-      },
+      path: '/admin/users/:id',
+      name: 'User Details',
+      component: () => import('../views/Users/Userdetails.vue'),
+      meta: { title: 'User details', requiresAuth: true },
+    },
+    {
+      path: '/admin/students',
+      name: 'Students',
+      component: () => import('../views/Students/StudentList.vue').catch(() => import('../views/Placeholders/PlaceholderPage.vue')),
+      meta: { title: 'Students', requiresAuth: true },
+    },
+    {
+      path: '/admin/students/:id',
+      name: 'StudentDetails',
+      component: () => import('../views/Students/StudentDetails.vue').catch(() => import('../views/Placeholders/PlaceholderPage.vue')),
+      meta: { title: 'Student details', requiresAuth: true },
+    },
+    {
+      path: '/admin/students/:id/finance',
+      name: 'StudentFinance',
+      component: () => import('../views/Students/StudentFinance.vue').catch(() => import('../views/Placeholders/PlaceholderPage.vue')),
+      meta: { title: 'Student finance', requiresAuth: true },
+    },
+    {
+      path: '/admin/annexes',
+      name: 'Annexes',
+      component: () => import('../views/Annexes/AnnexeList.vue').catch(() => import('../views/Placeholders/PlaceholderPage.vue')),
+      meta: { title: 'Annexes', requiresAuth: true },
+    },
+    {
+      path: '/admin/study-levels',
+      name: 'StudyLevels',
+      component: () => import('../views/Academic/StudyLevelList.vue'),
+      meta: { title: 'Study Levels', requiresAuth: true },
+    },
+    {
+      path: '/admin/specializations',
+      name: 'Specializations',
+      component: () => import('../views/Academic/SpecializationList.vue').catch(() => import('../views/Placeholders/PlaceholderPage.vue')),
+      meta: { title: 'Specializations', requiresAuth: true },
+    },
+    {
+      path: '/admin/school-year/close',
+      name: 'SchoolYearClose',
+      component: () => import('../views/Academic/SchoolYearClose.vue').catch(() => import('../views/Placeholders/PlaceholderPage.vue')),
+      meta: { title: 'Clôture d\'année scolaire', requiresAuth: true },
+    },
+    {
+      path: '/finances',
+      name: 'Finances',
+      component: () => import('../views/Finance/FinanceDashboard.vue').catch(() => import('../views/Placeholders/PlaceholderPage.vue')),
+      meta: { title: 'Finances', requiresAuth: true },
+    },
+    {
+      path: '/settings',
+      name: 'Settings',
+      component: () => import('../views/Settings/Settings.vue').catch(() => import('../views/Placeholders/PlaceholderPage.vue')),
+      meta: { title: 'Settings', requiresAuth: true },
+    },
+    {
+      path: '/admin/annexe/:id/settings',
+      name: 'AnnexeSettings',
+      component: () => import('../views/Settings/AnnexeSettings.vue').catch(() => import('../views/Placeholders/PlaceholderPage.vue')),
+      meta: { title: 'Paramètres Annexe', requiresAuth: true },
+    },
+    {
+      path: '/admin/notifications',
+      name: 'NotificationList',
+      component: () => import('../views/Notifications/NotificationList.vue').catch(() => import('../views/Placeholders/PlaceholderPage.vue')),
+      meta: { title: 'Notifications', requiresAuth: true },
+    },
+    {
+      path: '/admin/reminders',
+      name: 'ReminderList',
+      component: () => import('../views/Settings/ReminderList.vue').catch(() => import('../views/Placeholders/PlaceholderPage.vue')),
+      meta: { title: 'Rappels Automatiques', requiresAuth: true },
+    },
+    {
+      path: '/charts',
+      name: 'Charts',
+      component: () => import('../views/Chart/LineChart/LineChart.vue'),
+      meta: { title: 'Charts' },
     },
     {
       path: '/line-chart',
@@ -55,56 +117,6 @@ const router = createRouter({
       path: '/bar-chart',
       name: 'Bar Chart',
       component: () => import('../views/Chart/BarChart/BarChart.vue'),
-    },
-    {
-      path: '/alerts',
-      name: 'Alerts',
-      component: () => import('../views/UiElements/Alerts.vue'),
-      meta: {
-        title: 'Alerts',
-      },
-    },
-    {
-      path: '/avatars',
-      name: 'Avatars',
-      component: () => import('../views/UiElements/Avatars.vue'),
-      meta: {
-        title: 'Avatars',
-      },
-    },
-    {
-      path: '/badge',
-      name: 'Badge',
-      component: () => import('../views/UiElements/Badges.vue'),
-      meta: {
-        title: 'Badge',
-      },
-    },
-
-    {
-      path: '/buttons',
-      name: 'Buttons',
-      component: () => import('../views/UiElements/Buttons.vue'),
-      meta: {
-        title: 'Buttons',
-      },
-    },
-
-    {
-      path: '/images',
-      name: 'Images',
-      component: () => import('../views/UiElements/Images.vue'),
-      meta: {
-        title: 'Images',
-      },
-    },
-    {
-      path: '/videos',
-      name: 'Videos',
-      component: () => import('../views/UiElements/Videos.vue'),
-      meta: {
-        title: 'Videos',
-      },
     },
     {
       path: '/blank',
@@ -140,12 +152,84 @@ const router = createRouter({
         title: 'Signup',
       },
     },
+    {
+      path: '/payment/:token',
+      name: 'PaymentLink',
+      component: () => import('../views/public/PaymentLinkPage.vue'),
+      props: true
+    },
+
+    //espace étudiant 
+    {
+      path: '/student/login',
+      name: 'StudentLogin',
+      component: () => import('../views/StudentAccount/LoginPage.vue'),
+      meta: { title: 'Connexion Étudiant', studentPublic: true },
+    },
+    {
+      path: '/student/profile',
+      name: 'StudentProfile',
+      component: () => import('../views/StudentAccount/ProfilePage.vue'),
+      meta: { title: 'Mon Espace Étudiant', requiresStudentAuth: true },
+    },
   ],
 })
 
 export default router
 
-router.beforeEach((to, from, next) => {
-  document.title = `Vue.js ${to.meta.title} | TailAdmin - Vue.js Tailwind CSS Dashboard Template`
-  next()
+// Helper function to get role-based dashboard route
+function getRoleDashboard(user) {
+  if (!user) return { name: 'Dashboard' };
+  
+  switch(user.role) {
+    case 'super_admin':
+    case 'gestionnaire':
+    case 'comptable':
+      return { name: 'Dashboard' };
+    default:
+      return { name: 'Dashboard' };
+  }
+}
+
+router.beforeEach(async (to, from, next) => {
+  document.title = `Vue.js ${to.meta.title ?? ''} | SplitPay`;
+
+  const token = localStorage.getItem('api_token');
+  const userStr = localStorage.getItem('user');
+  const user = userStr ? JSON.parse(userStr) : null;
+
+  // Redirect to dashboard if already authenticated and trying to access signin/signup
+  if ((to.name === 'Signin' || to.name === 'Signup') && token) {
+    return next(getRoleDashboard(user));
+  }
+
+  // Hide signup if institution already exists
+  if (to.name === 'Signup') {
+    try {
+      const response = await fetch('/api/check-institution');
+      const data = await response.json();
+      if (data.exists) {
+        return next({ name: 'Signin' });
+      }
+    } catch (error) {
+      console.error('Failed to check institution existence:', error);
+    }
+  }
+
+  // Protection espace admin
+  if (to.meta.requiresAuth) {
+    if (!token) {
+      return next({ name: 'Signin', query: { redirect: to.fullPath } });
+    }
+  }
+
+  // Protection espace étudiant
+  if (to.meta.requiresStudentAuth) {
+    const studentToken = localStorage.getItem('student_token');
+    if (!studentToken) {
+      return next({ name: 'StudentLogin' });
+    }
+  }
+
+  next();
 })

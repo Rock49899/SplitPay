@@ -1,0 +1,73 @@
+import { defineStore } from 'pinia';
+import studentService from '@/services/studentService';
+
+export const useStudentStore = defineStore('students', {
+  state: () => ({
+    items: [],
+    meta: {},
+    loading: false,
+    error: null,
+    query: '',
+    page: 1,
+  }),
+  actions: {
+    async fetchStudents(params = {}) {
+      this.loading = true;
+      this.error = null;
+      try {
+        // use "search" query param to match backend
+        const p = { page: this.page, search: this.query, ...params };
+        const res = await studentService.index(p);
+        const responseData = res.data.data ?? res.data;
+        this.items = Array.isArray(responseData) ? responseData : [];
+        this.meta = res.data.meta ?? {
+          current_page: res.data.current_page,
+          last_page: res.data.last_page,
+          per_page: res.data.per_page,
+          total: res.data.total,
+          from: res.data.from,
+          to: res.data.to,
+        };
+        return res;
+      } catch (e) {
+        this.error = e.response?.data || e.message;
+        this.items = [];
+        throw e;
+      } finally {
+        this.loading = false;
+      }
+    },
+    async createStudent(payload) {
+      this.loading = true;
+      try {
+        const res = await studentService.store(payload);
+        await this.fetchStudents();
+        return res;
+      } finally {
+        this.loading = false;
+      }
+    },
+    async updateStudent(id, payload) {
+      this.loading = true;
+      try {
+        const res = await studentService.update(id, payload);
+        await this.fetchStudents();
+        return res;
+      } finally {
+        this.loading = false;
+      }
+    },
+    async deleteStudent(id) {
+      this.loading = true;
+      try {
+        const res = await studentService.destroy(id);
+        await this.fetchStudents();
+        return res;
+      } finally {
+        this.loading = false;
+      }
+    },
+    setPage(n) { this.page = n; },
+    setQuery(q) { this.query = q; },
+  },
+});

@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\Payment;
 
 class Annexe extends Model
 {
@@ -41,6 +42,8 @@ class Annexe extends Model
         'is_active',
     ];
 
+    protected $appends = ['status'];
+
     /**
      * Get the attributes that should be cast.
      *
@@ -52,6 +55,38 @@ class Annexe extends Model
             'annexe_details' => 'array',
             'is_active' => 'boolean',
         ];
+    }
+
+    /**
+     * Accesseur pour récupérer l'email depuis annexe_details
+     */
+    public function getEmailAttribute(): ?string
+    {
+        return $this->annexe_details['email'] ?? null;
+    }
+
+    /**
+     * Accesseur pour récupérer le téléphone depuis annexe_details
+     */
+    public function getPhoneAttribute(): ?string
+    {
+        return $this->annexe_details['phone'] ?? null;
+    }
+
+    /**
+     * Accesseur pour récupérer le fax depuis annexe_details
+     */
+    public function getFaxAttribute(): ?string
+    {
+        return $this->annexe_details['fax'] ?? null;
+    }
+
+    /**
+     * Accesseur pour récupérer le site web depuis annexe_details
+     */
+    public function getWebsiteAttribute(): ?string
+    {
+        return $this->annexe_details['website'] ?? null;
     }
 
     /**
@@ -126,6 +161,11 @@ class Annexe extends Model
     public function isActive(): bool
     {
         return $this->is_active;
+    }
+
+    public function getStatusAttribute()
+    {
+    return $this->is_active ? 'active' : 'inactive';
     }
 
     /**

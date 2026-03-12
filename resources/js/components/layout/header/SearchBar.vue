@@ -1,8 +1,8 @@
 <template>
   <div class="hidden lg:block">
-    <form>
+    <form @submit.prevent>
       <div class="relative">
-        <button class="absolute -translate-y-1/2 left-4 top-1/2">
+        <button class="absolute -translate-y-1/2 left-4 top-1/2" type="button" aria-hidden="true">
           <svg
             class="fill-gray-500 dark:fill-gray-400"
             width="20"
@@ -19,14 +19,23 @@
             />
           </svg>
         </button>
+
         <input
+          ref="inputEl"
+          v-model="searchTerm"
+          @input="onInput"
+          @keydown.enter.prevent="onEnter"
           type="text"
-          placeholder="Search or type command..."
+          placeholder="Rechercher ou saisir une commande..."
           class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-200 bg-transparent py-2.5 pl-12 pr-14 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-900 dark:bg-white/[0.03] dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800 xl:w-[430px]"
+          aria-label="Rechercher"
         />
 
         <button
           class="absolute right-2.5 top-1/2 inline-flex -translate-y-1/2 items-center gap-0.5 rounded-lg border border-gray-200 bg-gray-50 px-[7px] py-[4.5px] text-xs -tracking-[0.2px] text-gray-500 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-400"
+          type="button"
+          @click="focusInput"
+          title="Focus search (⌘K)"
         >
           <span> ⌘ </span>
           <span> K </span>
@@ -35,3 +44,70 @@
     </form>
   </div>
 </template>
+
+<script setup>
+import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+
+const router = useRouter()
+const route = useRoute()
+
+const inputEl = ref(null)
+const searchTerm = ref(route.query.search ?? '')
+
+let debounceTimer = null
+const DEBOUNCE_MS = 300
+
+const doReplace = (val) => {
+  const q = { ...route.query }
+  if (val && String(val).length) q.search = val
+  else delete q.search
+  router.replace({ path: route.path, query: q }).catch(() => {})
+}
+
+const onInput = () => {
+  clearTimeout(debounceTimer)
+  debounceTimer = setTimeout(() => doReplace(searchTerm.value), DEBOUNCE_MS)
+}
+
+const onEnter = () => {
+  const q = { ...route.query }
+  if (searchTerm.value && String(searchTerm.value).length) q.search = searchTerm.value
+  else delete q.search
+  router.push({ path: route.path, query: q }).catch(() => {})
+}
+
+const focusInput = () => {
+  inputEl.value?.focus()
+}
+
+// sync when route changes (back/forward)
+watch(
+  () => route.query.search,
+  (v) => {
+    const newVal = v ?? ''
+    if (newVal !== searchTerm.value) searchTerm.value = newVal
+  }
+)
+
+// Cmd/Ctrl+K to focus
+const onKey = (e) => {
+  if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
+    e.preventDefault()
+    focusInput()
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', onKey)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onKey)
+  clearTimeout(debounceTimer)
+})
+</script>
+
+<style scoped>
+/* minimal */
+</style>

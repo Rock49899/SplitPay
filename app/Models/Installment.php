@@ -47,6 +47,8 @@ class Installment extends Model
         'amount_paid',
         'status',
         'created_by',
+        'last_reminder_sent_at',
+        'reminder_count',
     ];
 
     /**
@@ -60,6 +62,7 @@ class Installment extends Model
             'amount' => 'decimal:2',
             'amount_paid' => 'decimal:2',
             'due_date' => 'date',
+            'last_reminder_sent_at' => 'datetime',
         ];
     }
 
@@ -159,14 +162,17 @@ class Installment extends Model
      * Enregistrer un paiement pour cette échéance
      */
     public function recordPayment(float $amount): void
-    {
-        $this->increment('amount_paid', $amount);
-        
-        // Si entièrement payé, marquer comme utilisé
-        if ($this->fresh()->isFullyPaid()) {
-            $this->markAsUsed();
-        }
+   {
+    $this->increment('amount_paid', $amount);
+
+    if ($this->fresh()->isFullyPaid()) {
+        $this->markAsUsed();
     }
+
+    // vérifier si le lien complet est soldé
+    $this->paymentLink->refreshStatus();
+    }
+
 
     /**
      * Scope pour échéances actives

@@ -6,13 +6,16 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable, HasUuids;
+    use HasFactory, HasApiTokens, Notifiable, HasUuids;
 
     /**
      * Indicates if the model's ID is auto-incrementing.
@@ -37,6 +40,7 @@ class User extends Authenticatable
         'annexe_id',
         'name',
         'email',
+        'avatar',
         'password',
         'phone',
         'is_active',
@@ -68,6 +72,23 @@ class User extends Authenticatable
     }
 
     /**
+     * Attributs ajoutés au JSON sérialisé
+     */
+    protected $appends = ['avatar_url'];
+
+    /**
+     * Accessor : avatar_url — URL publique de l'avatar ou null
+     */
+    public function getAvatarUrlAttribute(): ?string
+    {
+        $path = $this->attributes['avatar'] ?? null;
+        if (!$path) return null;
+        
+        // Retourner une URL relative au lieu d'absolue pour éviter les problèmes de domaine
+        return '/storage/' . $path;
+    }
+
+    /**
      * Annexe principale de l'utilisateur
      */
     public function annexe(): BelongsTo
@@ -80,18 +101,46 @@ class User extends Authenticatable
      */
     public function annexes(): BelongsToMany
     {
-        return $this->belongsToMany(Annexe::class, 'user_annexes')
-            ->withPivot(['role_id', 'is_principal', 'assigned_by', 'assigned_at', 'end_at']);
-    }
+    return $this->belongsToMany(
+        Annexe::class,
+        'user_annexes',
+        'user_id',
+        'annexe_id'
+    )->withPivot([
+        'role_id',
+        'is_principal',
+        'assigned_by',
+        'assigned_at',
+        'end_at'
+    ]);
+   }
+
 
     /**
      * Tous les rôles de l'utilisateur (via user_annexes)
      */
     public function roles(): BelongsToMany
+   {
+    return $this->belongsToMany(
+        Role::class,
+        'user_annexes',
+        'user_id',   
+        'role_id'    
+    )->withPivot([
+        'annexe_id',
+        'is_principal',
+        'assigned_by',
+        'assigned_at',
+        'end_at'
+    ]);
+    }
+
+    /**
+     * Toutes les lignes user_annexes de cet utilisateur avec leurs relations
+     */
+    public function user_annexes(): HasMany
     {
-        return $this->belongsToMany(Role::class, 'user_annexes')
-            ->withPivot(['annexe_id', 'is_principal', 'assigned_by', 'assigned_at', 'end_at'])
-            ->withTimestamps();
+        return $this->hasMany(UserAnnexe::class, 'user_id');
     }
 
     /**
@@ -134,20 +183,27 @@ class User extends Authenticatable
     /**
      * Assigner l'utilisateur à une annexe 
      */
-    public function assignToAnnexe(string $annexeId, string $roleId, bool $isPrincipal = false): void
-    {
-        $this->annexes()->attach($annexeId, [
-            'role_id' => $roleId,
-            'is_principal' => $isPrincipal,
-            'assigned_by' => auth()->id(),
-            'assigned_at' => now(),
-        ]);
 
-        // Si c'est l'annexe principale, mettre à jour users.annexe_id
-        if ($isPrincipal) {
-            $this->update(['annexe_id' => $annexeId]);
-        }
+    public function assignToAnnexe(
+    string $annexeId,
+    string $roleId,
+    bool $isPrincipal = false,
+    ?string $assignedBy = null
+): void {
+    $this->annexes()->syncWithoutDetaching([
+        $annexeId => [
+            'role_id'      => $roleId,
+            'is_principal' => $isPrincipal,
+            'assigned_by'  => $assignedBy,
+            'assigned_at'  => now(),
+        ]
+    ]);
+
+    if ($isPrincipal) {
+        $this->update(['annexe_id' => $annexeId]);
     }
+}
+
 
     /**
      * Retirer l'accès d'un utilisateur à une annexe 
