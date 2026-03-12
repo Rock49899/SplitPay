@@ -14,7 +14,6 @@ class WebhookController extends Controller
     public function handle(WebhookRequest $request)
     {
         $payload = $request->validated();
-        // simple processing: log and update payment by reference if present
         Log::info('Webhook received', $payload);
 
         $data = $payload['data'] ?? [];

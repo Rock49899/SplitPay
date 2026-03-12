@@ -20,6 +20,17 @@ class UpdateUserRequest extends FormRequest
             'password' => 'sometimes|nullable|string|min:8',
             'annexe_id' => 'nullable|uuid|exists:annexes,id',
             'is_active' => 'sometimes|boolean',
+            'avatar' => 'sometimes|nullable|file|image|mimes:jpeg,jpg,png,webp|max:2048',
+        ];
+    }
+    
+    public function messages()
+    {
+        return [
+            'avatar.file' => 'L\'avatar doit être un fichier.',
+            'avatar.image' => 'L\'avatar doit être une image.',
+            'avatar.mimes' => 'L\'avatar doit être au format: jpeg, jpg, png ou webp.',
+            'avatar.max' => 'L\'avatar ne doit pas dépasser 2 Mo.',
         ];
     }
 }

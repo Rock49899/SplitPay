@@ -3,9 +3,10 @@
     :class="[
       'fixed mt-16 flex flex-col lg:mt-0 top-0 px-5 left-0 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 h-screen transition-all duration-300 ease-in-out z-99999 border-r border-gray-200',
       {
-        'lg:w-[290px]': isExpanded || isMobileOpen || isHovered,
+        // small screens: allow full width when mobile menu open, keep 290px on sm+
+        'sm:lg:w-[290px] lg:w-[290px]': isExpanded || isMobileOpen || isHovered,
         'lg:w-[90px]': !isExpanded && !isHovered,
-        'translate-x-0 w-[290px]': isMobileOpen,
+        'translate-x-0 w-full sm:w-[290px]': isMobileOpen,
         '-translate-x-full': !isMobileOpen,
         'lg:translate-x-0': true,
       },
@@ -19,30 +20,31 @@
         !isExpanded && !isHovered ? 'lg:justify-center' : 'justify-start',
       ]"
     >
-      <router-link to="/">
+      <router-link to="/" class="flex items-center">
+        <!-- Logo de l'institution si disponible -->
         <img
-          v-if="isExpanded || isHovered || isMobileOpen"
-          class="dark:hidden"
-          src="/images/logo/logo.svg"
+          v-if="institutionLogo && (isExpanded || isHovered || isMobileOpen)"
+          :src="institutionLogo"
           alt="Logo"
-          width="150"
-          height="40"
+          class="h-12 w-auto object-contain max-w-full"
         />
-        <img
-          v-if="isExpanded || isHovered || isMobileOpen"
-          class="hidden dark:block"
-          src="/images/logo/logo-dark.svg"
-          alt="Logo"
-          width="150"
-          height="40"
-        />
-        <img
+        <!-- Texte par défaut si pas de logo -->
+        <span
+          v-else-if="isExpanded || isHovered || isMobileOpen"
+          class="text-xl sm:text-2xl lg:text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white overflow-hidden truncate max-w-full"
+        >
+          {{ institutionName || 'SplitPay' }}
+        </span>
+        <!-- badge compact quand sidebar réduite -->
+        <span
           v-else
-          src="/images/logo/logo-icon.svg"
-          alt="Logo"
-          width="32"
-          height="32"
-        />
+          class="inline-flex items-center justify-center h-8 w-8 rounded bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-bold overflow-hidden"
+          aria-hidden="true"
+        >
+          <!-- Mini logo ou initiales -->
+          <img v-if="institutionLogo" :src="institutionLogo" alt="Logo" class="h-full w-full object-contain" />
+          <span v-else>{{ institutionName?.[0] || 'SP' }}</span>
+        </span>
       </router-link>
     </div>
     <div
@@ -206,16 +208,19 @@
           </div>
         </div>
       </nav>
-      <SidebarWidget v-if="isExpanded || isHovered || isMobileOpen" />
+      <!-- <SidebarWidget v-if="isExpanded || isHovered || isMobileOpen" /> -->
     </div>
   </aside>
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useRoute } from "vue-router";
+import { usePermissions } from "@/composables/usePermissions";
+import api from "@/services/api";
 
 import {
+  AnnexeIcon,
   GridIcon,
   CalenderIcon,
   UserCircleIcon,
@@ -229,92 +234,167 @@ import {
   TableIcon,
   ListIcon,
   PlugInIcon,
+  BellIcon,
 } from "../../icons";
-import SidebarWidget from "./SidebarWidget.vue";
+// import SidebarWidget from "./SidebarWidget.vue";
 import BoxCubeIcon from "@/icons/BoxCubeIcon.vue";
 import { useSidebar } from "@/composables/useSidebar";
 
 const route = useRoute();
+const { hasPermission, isGestionnaire, isComptable, user } = usePermissions();
 
 const { isExpanded, isMobileOpen, isHovered, openSubmenu } = useSidebar();
 
-const menuGroups = [
+// Variables pour le logo et le nom de l'institution
+const institutionLogo = ref(null)
+const institutionName = ref('')
+
+// Charger les informations de l'institution
+const fetchInstitutionInfo = async () => {
+  try {
+    // Récupérer l'utilisateur actuel
+    const meResponse = await api.get('/admin/me').catch(() => api.get('/me'))
+    const currentUser = meResponse.data?.user ?? meResponse.data
+    
+    if (currentUser?.annexe_id) {
+      // Récupérer l'annexe
+      const annexeResponse = await api.get(`/admin/annexes/${currentUser.annexe_id}`)
+      const annexe = annexeResponse.data?.annexe ?? annexeResponse.data
+      
+      if (annexe?.institution_id) {
+        // Récupérer l'institution
+        const institutionResponse = await api.get(`/admin/institutions/${annexe.institution_id}`)
+        const institution = institutionResponse.data?.institution ?? institutionResponse.data
+        
+        institutionName.value = institution.name ?? ''
+        if (institution.logo) {
+          institutionLogo.value = `/storage/${institution.logo}`
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error fetching institution info:', error)
+  }
+}
+
+onMounted(() => {
+  fetchInstitutionInfo()
+})
+
+const baseMenuGroups = [
   {
     title: "Menu",
     items: [
       {
         icon: GridIcon,
-        name: "Dashboard",
-        subItems: [{ name: "Ecommerce", path: "/", pro: false }],
-      },
-      {
-        icon: CalenderIcon,
-        name: "Calendar",
-        path: "/calendar",
+        name: "Tableau de bord",
+        path: "/",
+        requiredPermission: "dashboard.view"
       },
       {
         icon: UserCircleIcon,
-        name: "User Profile",
+        name: "Profil utilisateur",
         path: "/profile",
+        // No permission required
       },
 
       {
-        name: "Forms",
+        icon: UserCircleIcon,
+        name: "Utilisateurs",
+        path: "/admin/users",
+        requiredPermission: "user.view"
+      },
+      {
         icon: ListIcon,
-        subItems: [
-          { name: "Form Elements", path: "/form-elements", pro: false },
-        ],
+        name: "Étudiants",
+        path: "/admin/students",
+        requiredPermission: "student.view"
       },
       {
-        name: "Tables",
-        icon: TableIcon,
-        subItems: [{ name: "Basic Tables", path: "/basic-tables", pro: false }],
+        icon: AnnexeIcon,
+        name: "Annexes",
+        path: "/admin/annexes",
+        requiredPermission: "annexe.view",
+        hideForRoles: ['gestionnaire', 'comptable'] // Cache pour ces rôles même s'ils ont la permission
       },
       {
-        name: "Pages",
-        icon: PageIcon,
+        icon: DocsIcon,
+        name: "Académique",
+        requiredPermission: "student.view",
         subItems: [
-          { name: "Black Page", path: "/blank", pro: false },
-          { name: "404 Page", path: "/error-404", pro: false },
+          { name: "Niveaux d'étude", path: "/admin/study-levels", requiredPermission: "student.view", pro: false },
+          { name: "Spécialisations", path: "/admin/specializations", requiredPermission: "student.view", pro: false },
+          { name: "Clôture de l'année", path: "/admin/school-year/close", requiredPermission: "student.edit", pro: false },
+          // { name: "Classes", path: "/admin/classes", requiredPermission: "student.view", pro: false },
         ],
       },
-    ],
-  },
-  {
-    title: "Others",
-    items: [
       {
         icon: PieChartIcon,
-        name: "Charts",
-        subItems: [
-          { name: "Line Chart", path: "/line-chart", pro: false },
-          { name: "Bar Chart", path: "/bar-chart", pro: false },
-        ],
+        name: "Paiements",
+        path: "/finances",
+        requiredPermission: "payment.view"
       },
       {
-        icon: BoxCubeIcon,
-        name: "Ui Elements",
-        subItems: [
-          { name: "Alerts", path: "/alerts", pro: false },
-          { name: "Avatars", path: "/avatars", pro: false },
-          { name: "Badge", path: "/badge", pro: false },
-          { name: "Buttons", path: "/buttons", pro: false },
-          { name: "Images", path: "/images", pro: false },
-          { name: "Videos", path: "/videos", pro: false },
-        ],
+        icon: BellIcon,
+        name: "Notifications",
+        path: "/admin/notifications",
+        requiredPermission: "notification.view"
+      },
+      {
+        icon: CalenderIcon,
+        name: "Rappels",
+        path: "/admin/reminders",
+        requiredPermission: "reminder.view"
       },
       {
         icon: PlugInIcon,
-        name: "Authentication",
-        subItems: [
-          { name: "Signin", path: "/signin", pro: false },
-          { name: "Signup", path: "/signup", pro: false },
-        ],
+        name: "Paramètres",
+        path: "/settings",
+        // No permission required
       },
-      // ... Add other menu items here
+
     ],
   },
+  
 ];
+
+// Filter menu items based on permissions
+const menuGroups = computed(() => {
+  return baseMenuGroups.map(group => ({
+    ...group,
+    items: group.items.filter(item => {
+      // Check if item should be hidden for specific roles
+      if (item.hideForRoles) {
+        if ((item.hideForRoles.includes('gestionnaire') && isGestionnaire.value) ||
+            (item.hideForRoles.includes('comptable') && isComptable.value)) {
+          return false;
+        }
+      }
+      
+      // No permission required - always show
+      if (!item.requiredPermission) return true;
+      
+      // Check if user has required permission
+      if (!hasPermission(item.requiredPermission)) return false;
+      
+      // If item has subitems, filter them too
+      if (item.subItems) {
+        const filteredSubItems = item.subItems.filter(subItem => 
+          !subItem.requiredPermission || hasPermission(subItem.requiredPermission)
+        );
+        
+        // Hide parent if no subitems remain
+        if (filteredSubItems.length === 0) return false;
+        
+        // Update subitems with filtered list
+        item.subItems = filteredSubItems;
+      }
+      
+      return true;
+    })
+  }))
+  .filter(group => group.items.length > 0); // Remove empty groups
+});
 
 const isActive = (path) => route.path === path;
 
@@ -324,7 +404,7 @@ const toggleSubmenu = (groupIndex, itemIndex) => {
 };
 
 const isAnySubmenuRouteActive = computed(() => {
-  return menuGroups.some((group) =>
+  return menuGroups.value.some((group) =>
     group.items.some(
       (item) =>
         item.subItems && item.subItems.some((subItem) => isActive(subItem.path))
@@ -337,7 +417,7 @@ const isSubmenuOpen = (groupIndex, itemIndex) => {
   return (
     openSubmenu.value === key ||
     (isAnySubmenuRouteActive.value &&
-      menuGroups[groupIndex].items[itemIndex].subItems?.some((subItem) =>
+      menuGroups.value[groupIndex].items[itemIndex].subItems?.some((subItem) =>
         isActive(subItem.path)
       ))
   );

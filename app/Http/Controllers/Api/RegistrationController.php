@@ -21,19 +21,35 @@ class RegistrationController extends Controller
     {
         $data = $request->validated();
 
-        $result = DB::transaction(function () use ($data) {
+        $result = DB::transaction(function () use ($data, $request) {
+            // Gérer l'upload du logo si fourni
+            $logoPath = null;
+            if ($request->hasFile('logo')) {
+                $logoPath = $request->file('logo')->store('logos', 'public');
+            }
+            
             // Create institution
             $institution = Institution::create([
                 'name' => $data['institution_name'],
                 'email' => $data['institution_email'] ?? null,
                 'phone' => $data['institution_phone'] ?? null,
+                'logo' => $logoPath,
                 'is_active' => true,
             ]);
 
+            // Décoder annexe_details si fourni
+            $annexeDetails = null;
+            if (isset($data['annexe_details'])) {
+                $annexeDetails = is_string($data['annexe_details']) 
+                    ? json_decode($data['annexe_details'], true) 
+                    : $data['annexe_details'];
+            }
+            
             // annexe principale
             $annexe = Annexe::create([
                 'institution_id' => $institution->id,
                 'name' => $data['annexe_name'] ?? ($institution->name . ' - Principal'),
+                'annexe_details' => $annexeDetails,
                 'is_active' => true,
             ]);
 
@@ -48,6 +64,7 @@ class RegistrationController extends Controller
                 'annexe_id' => $annexe->id,
             ]);
 
+            
             // Assign super admin institution role if exists
             $role = Role::where('code', 'super_admin_institution')->first();
             if ($role) {
@@ -67,7 +84,7 @@ class RegistrationController extends Controller
                 'id' => $result['annexe']->id,
                 'name' => $result['annexe']->name,
             ],
-            'owner' => [
+            'user' => [
                 'id' => $result['user']->id,
                 'name' => $result['user']->name,
                 'email' => $result['user']->email,

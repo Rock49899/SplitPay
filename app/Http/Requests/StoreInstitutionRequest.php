@@ -17,7 +17,10 @@ class StoreInstitutionRequest extends FormRequest
             'institution_name' => ['required', 'string', 'max:255'],
             'institution_email' => ['nullable', 'email', 'max:255'],
             'institution_phone' => ['nullable', 'string', 'max:30'],
+            'logo' => ['nullable', 'image', 'mimes:jpeg,jpg,png', 'max:2048'], // max 2MB
+            
             'annexe_name' => ['nullable', 'string', 'max:255'],
+            'annexe_details' => ['nullable', 'string'], // JSON string
 
             'owner_name' => ['required', 'string', 'max:255'],
             'owner_email' => ['required', 'email', 'max:255', 'unique:users,email'],

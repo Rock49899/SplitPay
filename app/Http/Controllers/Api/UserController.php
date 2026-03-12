@@ -3,48 +3,134 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Traits\FiltersByAnnexe;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use App\Models\User;
 use App\Models\Role;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Database\QueryException;
 
 class UserController extends Controller
 {
+    use FiltersByAnnexe;
+    
     public function __construct()
     {
-        // protéger ces routes : requiert authentification API (Sanctum)
+        // protéger ces routes : requiert authentification via Sanctum
         $this->middleware('auth:sanctum');
-        // NOTE: appliquer une policy/middleware pour restreindre ces actions aux rôles appropriés
-        // Ex: only users with 'super_admin_institution' or 'gestionnaire' can accéder ici.
+        // NOTE: appliquer une policy/middleware pour restreindre l'accès selon les rôles (ex: super_admin, gestionnaire)
     }
 
     public function index(Request $request)
     {
         $perPage = (int) $request->get('per_page', 15);
+
         $query = User::query();
 
-        if ($q = $request->get('q')) {
-            $query->where(function($qr) use ($q) {
-                $qr->where('name','like',"%{$q}%")
-                   ->orWhere('email','like',"%{$q}%")
-                   ->orWhere('phone','like',"%{$q}%");
-            });
+        // IMPORTANT: Filtrer par annexe de l'utilisateur via la relation annexes
+        if (!$this->isSuperAdminInstitution()) {
+            $annexeIds = $this->getUserAnnexeIds();
+            if (empty($annexeIds)) {
+                return response()->json(['data' => [], 'total' => 0], 200);
+            }
+            $query->whereHas('annexes', fn ($q) => $q->whereIn('annexes.id', $annexeIds));
+            
+            // (l'admin principal ne doit pas apparaître dans la liste des admins annexe)
+            $query->where('scope', '!=', 'institution');
         }
 
-        return response()->json($query->orderBy('name')->paginate($perPage));
-    }
+        try {
+            // read raw search and ignore empty strings
+            $raw = $request->get('search') ?? $request->get('q');
+            $search = (is_string($raw) && strlen(trim($raw))) ? trim($raw) : null;
 
-    public function show($id)
-    {
-        $user = User::with(['roles','annexes'])->findOrFail($id);
-        return response()->json($user, 200);
+            if ($search) {
+                $searchable = ['name','email','phone'];
+                $available = array_filter($searchable, function ($col) {
+                    return Schema::hasColumn('users', $col);
+                });
+                $available = array_values($available);
+
+                $userModel = new User();
+                $hasAnnexeRel = method_exists($userModel, 'annexe') || method_exists($userModel, 'annexes');
+
+                if (count($available) || $hasAnnexeRel) {
+                    $query->where(function ($q) use ($available, $search, $hasAnnexeRel) {
+                        foreach ($available as $col) {
+                            $q->orWhere($col, 'like', "%{$search}%");
+                        }
+                        // relation search only if relation exists on the model
+                        if ($hasAnnexeRel) {
+                            // try singular 'annexe' relation first, fallback to 'annexes'
+                            if (method_exists(new User(), 'annexe')) {
+                                $q->orWhereHas('annexe', function ($qa) use ($search) {
+                                    $qa->where('name', 'like', "%{$search}%");
+                                });
+                            } elseif (method_exists(new User(), 'annexes')) {
+                                $q->orWhereHas('annexes', function ($qa) use ($search) {
+                                    $qa->where('name', 'like', "%{$search}%");
+                                });
+                            }
+                        }
+                    });
+                }
+            }
+
+            // optional filters (annexe_id etc.)
+            if ($annexeId = $request->get('annexe_id')) {
+                $query->where('annexe_id', $annexeId);
+            }
+
+            // eager-load relations with nested relations for proper display
+            $query = $query->with([
+                'annexe',  // Primary annexe
+                'user_annexes.role',  // All user_annexes with their role
+                'user_annexes.annexe',  // All user_annexes with their annexe
+            ]);
+
+            if (Schema::hasColumn('users', 'name')) {
+                $orderBy = 'name';
+            } elseif (Schema::hasColumn('users', 'created_at')) {
+                $orderBy = 'created_at';
+            } else {
+                $orderBy = 'id';
+            }
+
+            $users = $query->orderBy($orderBy)->paginate($perPage);
+
+            return response()->json($users, 200);
+        } catch (\Throwable $e) {
+            \Log::error('UserController@index failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'request' => $request->all(),
+            ]);
+            return response()->json(['message' => 'Failed to fetch users.'], 500);
+        }
     }
+    
+   public function show($id)
+  {
+    $user = User::with([
+        'annexe',
+        'user_annexes.role',
+        'user_annexes.annexe',
+    ])->findOrFail($id);
+
+    return response()->json($user);
+  }
 
     public function store(StoreUserRequest $request)
     {
         $v = $request->validated();
+
+        if ($request->hasFile('avatar')) {
+            $v['avatar'] = $request->file('avatar')->store('avatars', 'public');
+        }
 
         $user = User::create(array_merge($v, [
             'id' => (string) Str::uuid(),
@@ -59,6 +145,13 @@ class UserController extends Controller
             }
         }
 
+        // Recharger les relations pour le frontend
+        $user->load([
+            'annexe',
+            'user_annexes.role',
+            'user_annexes.annexe',
+        ]);
+
         return response()->json(['message'=>'User created','user'=>$user], 201);
     }
 
@@ -66,6 +159,13 @@ class UserController extends Controller
     {
         $user = User::findOrFail($id);
         $v = $request->validated();
+
+        if ($request->hasFile('avatar')) {
+            if ($user->avatar) {
+                Storage::disk('public')->delete($user->avatar);
+            }
+            $v['avatar'] = $request->file('avatar')->store('avatars', 'public');
+        }
 
         if (!empty($v['password'])) {
             $v['password'] = \Hash::make($v['password']);
@@ -95,28 +195,91 @@ class UserController extends Controller
 
         $user = User::findOrFail($id);
 
-        // Authorize using UserPolicy::assignRole
+        // Autoriser via la policy UserPolicy::assignRole (vérifie que l'appelant a le droit)
         $this->authorize('assignRole', [$user, $data['annexe_id']]);
 
         $user->assignToAnnexe($data['annexe_id'], $data['role_id'], $data['is_primary'] ?? false);
 
-        return response()->json(['message'=>'Role assigned'], 200);
+        // Recharger les relations pour retourner l'utilisateur à jour
+        $user->load([
+            'annexe',
+            'user_annexes.role',
+            'user_annexes.annexe',
+        ]);
+
+        return response()->json(['message'=>'Role assigned', 'user'=>$user], 200);
     }
 
     public function removeRole(Request $request, $id)
     {
         $data = $request->validate([
             'annexe_id' => 'required|uuid|exists:annexes,id',
-            'role_id'   => 'required|uuid|exists:roles,id',
         ]);
 
         $user = User::findOrFail($id);
 
-        // Authorize using UserPolicy::removeRole
+        // Autoriser via la policy UserPolicy::removeRole
         $this->authorize('removeRole', [$user, $data['annexe_id']]);
 
-        $user->removeFromAnnexe($data['annexe_id'], $data['role_id']);
+        $user->removeFromAnnexe($data['annexe_id']);
 
-        return response()->json(['message'=>'Role removed'], 200);
+        // Recharger les relations pour retourner l'utilisateur à jour
+        $user->load([
+            'annexe',
+            'user_annexes.role',
+            'user_annexes.annexe',
+        ]);
+
+        return response()->json(['message'=>'Role removed', 'user'=>$user], 200);
+    }
+
+    // Retourne l'utilisateur actuellement authentifié
+    public function me(Request $request)
+    {
+        $user = $request->user();
+        // charger relations courantes si besoin
+        $user->loadMissing(['roles','annexes','annexe']);
+        return response()->json(['user' => $user], 200);
+    }
+
+    // Met à jour l'utilisateur connecté (supporte PUT/PATCH/POST pour compatibilité frontend)
+    public function updateMe(Request $request)
+    {
+        $user = $request->user();
+        // validation minimale (adapter selon vos règles)
+        $v = $request->validate([
+            'name' => 'sometimes|string|max:255',
+            'email' => 'sometimes|email|max:255|unique:users,email,'.$user->id,
+            'phone' => 'sometimes|nullable|string|max:50',
+            'bio' => 'sometimes|nullable|string|max:2000',
+            'password' => 'sometimes|nullable|string|min:6|confirmed',
+            'city' => 'sometimes|nullable|string|max:255',
+            'state' => 'sometimes|nullable|string|max:255',
+            'avatar' => 'nullable|image|mimes:jpeg,jpg,png,webp|max:2048',
+        ]);
+
+        // gérer l'avatar si fourni
+        if ($request->hasFile('avatar')) {
+            if ($user->avatar) {
+                Storage::disk('public')->delete($user->avatar);
+            }
+            $user->avatar = $request->file('avatar')->store('avatars', 'public');
+        }
+
+        // gérer le mot de passe si fourni
+        if (!empty($v['password'])) {
+            $user->password = \Hash::make($v['password']);
+            unset($v['password']);
+            unset($v['password_confirmation']);
+        }
+
+        // mettre à jour les champs autorisés
+        $updatable = array_intersect_key($v, array_flip(['name','email','phone','bio','city','state']));
+        $user->fill($updatable);
+        $user->save();
+
+        // recharger relations si nécessaire et renvoyer
+        $user->loadMissing(['roles','annexes','annexe']);
+        return response()->json(['message' => 'Profile updated', 'user' => $user], 200);
     }
 }

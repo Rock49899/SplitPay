@@ -90,6 +90,20 @@ class PermissionSeeder extends Seeder
                 'module' => 'payment_links',
             ],
 
+            // Notifications
+            [
+                'code' => 'notification.view',
+                'label' => 'Voir les notifications',
+                'description' => 'Peut consulter les notifications du système',
+                'module' => 'notifications',
+            ],
+            [
+                'code' => 'notification.manage',
+                'label' => 'Gérer les notifications',
+                'description' => 'Peut marquer comme lu ou supprimer des notifications',
+                'module' => 'notifications',
+            ],
+
             // rappels automatiques
             [
                 'code' => 'reminder.view',
@@ -201,12 +215,15 @@ class PermissionSeeder extends Seeder
             ],
         ];
 
-        // Créer chaque permission dans la base de données
+        // Créer ou mettre à jour chaque permission dans la base de données
         foreach ($permissions as $permissionData) {
-            Permission::create($permissionData);
+            Permission::updateOrCreate(
+                ['code' => $permissionData['code']],
+                $permissionData
+            );
         }
 
         // Message de confirmation
-        $this->command->info(count($permissions) . ' permissions créées avec succès !');
+        $this->command->info(count($permissions) . ' permissions créées/mises à jour avec succès !');
     }
 }

@@ -33,7 +33,7 @@ class InstallmentController extends Controller
             'payment_link_id' => $v['payment_link_id'],
             'due_date' => $v['due_date'],
             'amount' => $v['amount'],
-            'is_paid' => false,
+            'status' => 'active'
         ]);
         return response()->json(['message'=>'Installment created','installment'=>$inst], 201);
     }
@@ -47,7 +47,7 @@ class InstallmentController extends Controller
     public function update(Request $request, $id)
     {
         $inst = Installment::findOrFail($id);
-        $inst->update($request->only(['due_date','amount','is_paid']));
+        $inst->update($request->only(['due_date','amount','status']));
         return response()->json(['message'=>'Installment updated','installment'=>$inst], 200);
     }
 

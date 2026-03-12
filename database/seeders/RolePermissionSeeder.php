@@ -48,10 +48,15 @@ class RolePermissionSeeder extends Seeder
             'link.send',
             'link.cancel',
             
+            'notification.view',
+            'notification.manage',
+            
             'reminder.view',
             'reminder.create',
             'reminder.edit',
             'reminder.delete',
+            
+            'annexe.view',  // Besoin de voir les annexes pour filtrer les données
             
             'dashboard.view',
             'dashboard.statistics',
@@ -69,6 +74,11 @@ class RolePermissionSeeder extends Seeder
             'payment.statistics',
             
             'link.view',
+            
+            'notification.view',
+            'notification.manage',
+            
+            'annexe.view',  // Besoin de voir les annexes pour filtrer les données
             
             'dashboard.view',
             'dashboard.statistics',

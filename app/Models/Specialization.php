@@ -1,0 +1,26 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\LevelFee;
+
+class Specialization extends Model
+{
+    protected $fillable = [
+        'code',
+        'label',
+        'description',
+    ];
+
+    public function students(): HasMany
+    {
+        return $this->hasMany(Student::class, 'specialization_id');
+    }
+
+    public function levelFees(): HasMany
+    {
+        return $this->hasMany(LevelFee::class);
+    }
+}

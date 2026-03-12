@@ -12,11 +12,22 @@ return [
     | as required, but they're a perfect start for most applications.
     |
     */
-
     'defaults' => [
-        'guard' => env('AUTH_GUARD', 'web'),
-        'passwords' => env('AUTH_PASSWORD_BROKER', 'users'),
+    'guard' => 'api',
+],
+
+'guards' => [
+    'api' => [
+        'driver' => 'sanctum',
+        'provider' => 'users',
     ],
+],
+
+
+    // 'defaults' => [
+    //     'guard' => env('AUTH_GUARD', 'web'),
+    //     'passwords' => env('AUTH_PASSWORD_BROKER', 'users'),
+    // ],
 
     /*
     |--------------------------------------------------------------------------
@@ -34,13 +45,13 @@ return [
     | Supported: "session"
     |
     */
+//     'guards' => [
+//     'api' => [
+//         'driver' => 'sanctum',
+//         'provider' => 'users',
+//     ],
+// ],
 
-    'guards' => [
-        'web' => [
-            'driver' => 'session',
-            'provider' => 'users',
-        ],
-    ],
 
     /*
     |--------------------------------------------------------------------------

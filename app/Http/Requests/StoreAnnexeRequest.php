@@ -14,8 +14,13 @@ class StoreAnnexeRequest extends FormRequest
     public function rules()
     {
         return [
-            'institution_id' => 'required|uuid|exists:institutions,id',
+            // institution_id peut être omis : le serveur mettra la valeur par défaut
+            'institution_id' => 'sometimes|nullable|uuid|exists:institutions,id',
             'name'           => 'required|string|max:255',
+            'address'        => 'sometimes|nullable|string|max:1000',
+            'city'           => 'sometimes|nullable|string|max:255',
+            // Accepter un objet JSON (array) pour les détails structurés
+            'annexe_details' => 'sometimes|nullable|array',
             'is_active'      => 'sometimes|boolean',
         ];
     }

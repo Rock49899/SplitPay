@@ -14,8 +14,10 @@ class UpdateAnnexeRequest extends FormRequest
     public function rules()
     {
         return [
-            'institution_id' => 'required|uuid|exists:institutions,id',
-            'name'           => 'required|string|max:255',
+            'name'           => 'sometimes|required|string|max:255',
+            'address'        => 'sometimes|nullable|string|max:1000',
+            'city'           => 'sometimes|nullable|string|max:255',
+            'annexe_details' => 'sometimes|nullable|array', // Accepter un objet JSON
             'is_active'      => 'sometimes|boolean',
         ];
     }
