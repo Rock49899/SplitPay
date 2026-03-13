@@ -4,15 +4,15 @@
     
     <div class="space-y-6">
       <!-- Loading State -->
-      <div v-if="loading" class="p-5 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-6">
+      <div v-if="loading" class="p-5 border border-slate-200 bg-white rounded-2xl dark:bg-slate-800 dark:border-slate-700 lg:p-6">
         <div class="animate-pulse">
-          <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-4"></div>
-          <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+          <div class="h-4 bg-slate-200 dark:bg-slate-700 rounded w-3/4 mb-4"></div>
+          <div class="h-4 bg-slate-200 dark:bg-slate-700 rounded w-1/2"></div>
         </div>
       </div>
 
       <!-- Informations générales Card -->
-      <div v-else class="p-5 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-6">
+      <div v-else class="p-5 border border-slate-200 bg-white rounded-2xl dark:bg-slate-800 dark:border-slate-700 lg:p-6">
         <div class="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <h4 class="text-lg font-semibold text-gray-800 dark:text-white/90 lg:mb-6">Informations générales</h4>
@@ -40,7 +40,7 @@
       </div>
 
       <!-- Coordonnées de contact Card -->
-      <div v-if="!loading" class="p-5 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-6">
+      <div v-if="!loading" class="p-5 border border-slate-200 bg-white rounded-2xl dark:bg-slate-800 dark:border-slate-700 lg:p-6">
         <div class="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <h4 class="text-lg font-semibold text-gray-800 dark:text-white/90 lg:mb-6">Coordonnées de contact</h4>
@@ -76,7 +76,7 @@
     <!-- Modal Informations générales -->
     <Modal v-if="isGeneralInfoModal" @close="isGeneralInfoModal = false">
       <template #body>
-        <div class="no-scrollbar relative w-full max-w-[700px] overflow-y-auto rounded-3xl bg-white p-4 dark:bg-gray-900 lg:p-11 max-h-[80vh]">
+        <div class="no-scrollbar relative w-full max-w-[700px] overflow-y-auto rounded-3xl bg-white p-4 dark:bg-slate-800 border border-transparent dark:border-slate-700 lg:p-11 max-h-[80vh]">
           <button @click="isGeneralInfoModal = false" class="absolute right-5 top-5 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">✕</button>
 
           <div class="px-2 pr-14">
@@ -93,7 +93,7 @@
                     type="text" 
                     v-model="form.name" 
                     required
-                    class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 dark:text-white dark:bg-gray-800 dark:border-gray-700" 
+                    class="h-11 w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 dark:text-white dark:bg-slate-700 dark:border-slate-600" 
                   />
                 </div>
 
@@ -102,7 +102,7 @@
                   <input 
                     type="text" 
                     v-model="form.city" 
-                    class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 dark:text-white dark:bg-gray-800 dark:border-gray-700" 
+                    class="h-11 w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 dark:text-white dark:bg-slate-700 dark:border-slate-600" 
                   />
                 </div>
 
@@ -111,14 +111,14 @@
                   <textarea 
                     v-model="form.address" 
                     rows="3"
-                    class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 dark:text-white dark:bg-gray-800 dark:border-gray-700"
+                    class="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 dark:text-white dark:bg-slate-700 dark:border-slate-600"
                   ></textarea>
                 </div>
               </div>
             </div>
 
             <div class="flex items-center gap-3 px-2 mt-6 lg:justify-end">
-              <button @click.prevent="isGeneralInfoModal = false" type="button" class="flex w-full justify-center rounded-lg border border-gray-300 dark:border-gray-700 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 sm:w-auto hover:bg-gray-50 dark:hover:bg-gray-800">Fermer</button>
+              <button @click.prevent="isGeneralInfoModal = false" type="button" class="flex w-full justify-center rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 sm:w-auto hover:bg-slate-50 dark:hover:bg-slate-600">Fermer</button>
               <button type="submit" :disabled="submitting" class="flex w-full justify-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm text-white sm:w-auto hover:bg-brand-600 disabled:opacity-50">
                 <span v-if="!submitting">Enregistrer</span>
                 <span v-else>Enregistrement...</span>
@@ -132,7 +132,7 @@
     <!-- Modal Coordonnées de contact -->
     <Modal v-if="isContactInfoModal" @close="isContactInfoModal = false">
       <template #body>
-        <div class="no-scrollbar relative w-full max-w-[700px] overflow-y-auto rounded-3xl bg-white p-4 dark:bg-gray-900 lg:p-11 max-h-[80vh]">
+        <div class="no-scrollbar relative w-full max-w-[700px] overflow-y-auto rounded-3xl bg-white p-4 dark:bg-slate-800 border border-transparent dark:border-slate-700 lg:p-11 max-h-[80vh]">
           <button @click="isContactInfoModal = false" class="absolute right-5 top-5 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">✕</button>
 
           <div class="px-2 pr-14">
@@ -149,7 +149,7 @@
                     type="email" 
                     v-model="form.email" 
                     required
-                    class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 dark:text-white dark:bg-gray-800 dark:border-gray-700" 
+                    class="h-11 w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 dark:text-white dark:bg-slate-700 dark:border-slate-600" 
                   />
                 </div>
 
@@ -159,7 +159,7 @@
                     type="tel" 
                     v-model="form.phone" 
                     required
-                    class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 dark:text-white dark:bg-gray-800 dark:border-gray-700" 
+                    class="h-11 w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 dark:text-white dark:bg-slate-700 dark:border-slate-600" 
                   />
                 </div>
 
@@ -168,7 +168,7 @@
                   <input 
                     type="tel" 
                     v-model="form.fax" 
-                    class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 dark:text-white dark:bg-gray-800 dark:border-gray-700" 
+                    class="h-11 w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 dark:text-white dark:bg-slate-700 dark:border-slate-600" 
                   />
                 </div>
 
@@ -177,7 +177,7 @@
                   <input 
                     type="url" 
                     v-model="form.website" 
-                    class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 dark:text-white dark:bg-gray-800 dark:border-gray-700" 
+                    class="h-11 w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 dark:text-white dark:bg-slate-700 dark:border-slate-600" 
                     placeholder="https://www.exemple.com"
                   />
                 </div>
@@ -185,7 +185,7 @@
             </div>
 
             <div class="flex items-center gap-3 px-2 mt-6 lg:justify-end">
-              <button @click.prevent="isContactInfoModal = false" type="button" class="flex w-full justify-center rounded-lg border border-gray-300 dark:border-gray-700 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 sm:w-auto hover:bg-gray-50 dark:hover:bg-gray-800">Fermer</button>
+              <button @click.prevent="isContactInfoModal = false" type="button" class="flex w-full justify-center rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 sm:w-auto hover:bg-slate-50 dark:hover:bg-slate-600">Fermer</button>
               <button type="submit" :disabled="submitting" class="flex w-full justify-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm text-white sm:w-auto hover:bg-brand-600 disabled:opacity-50">
                 <span v-if="!submitting">Enregistrer</span>
                 <span v-else>Enregistrement...</span>

@@ -38,6 +38,8 @@ Route::post('students/verify-otp', [\App\Http\Controllers\Api\StudentAuthControl
 Route::post('students/me-by-token', [\App\Http\Controllers\Api\StudentAuthController::class, 'meByToken']);
 
 Route::match(['post','get'], 'admin/login', [\App\Http\Controllers\Api\AuthController::class, 'login']);
+Route::post('admin/request-otp', [\App\Http\Controllers\Api\AuthController::class, 'requestOtp']);
+Route::post('admin/verify-otp', [\App\Http\Controllers\Api\AuthController::class, 'verifyOtp']);
 
 //sanctum
 Route::middleware(['auth:sanctum', 'active.annexe', 'active.school_year', 'school_year.lock'])->prefix('admin')->group(function () {

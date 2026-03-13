@@ -81,12 +81,12 @@
               <span class="font-medium text-gray-700">{{ studentName }}</span>
             </div>
             <div>
-              <span class="text-gray-400 block text-xs">Scolarité totale</span>
-              <span class="font-medium text-gray-700">{{ fmt(link.student?.tuition_amount, link.currency) }}</span>
+              <span class="text-gray-400 block text-xs">Montant du lien</span>
+              <span class="font-medium text-gray-700">{{ fmt(link.amount, link.currency) }}</span>
             </div>
             <div>
-              <span class="text-gray-400 block text-xs">Montant payé</span>
-              <span class="font-medium text-green-600">{{ fmt(link.student?.amount_paid, link.currency) }}</span>
+              <span class="text-gray-400 block text-xs">Montant payé (ce lien)</span>
+              <span class="font-medium text-green-600">{{ fmt(paidOnLink, link.currency) }}</span>
             </div>
           </div>
           <!-- Restant dû mis en avant -->
@@ -345,20 +345,36 @@ const form = ref({
   payer_last_name:   '',
 });
 
+const successfulPaymentsForLink = computed(() => {
+  if (!link.value) return [];
+
+  const byId = new Map();
+
+  (link.value.payments ?? []).forEach((p) => {
+    if (p?.status === 'success') {
+      byId.set(p.id ?? `${p.reference}-${p.amount}-${p.paid_at}`, p);
+    }
+  });
+
+  (link.value.installments ?? []).forEach((inst) => {
+    (inst?.payments ?? []).forEach((p) => {
+      if (p?.status === 'success') {
+        byId.set(p.id ?? `${p.reference}-${p.amount}-${p.paid_at}`, p);
+      }
+    });
+  });
+
+  return Array.from(byId.values());
+});
+
+const paidOnLink = computed(() => {
+  return successfulPaymentsForLink.value.reduce((sum, p) => sum + Number(p?.amount ?? 0), 0);
+});
+
 const remaining = computed(() => {
   if (!link.value) return 0;
   const total = Number(link.value.amount ?? 0);
-  let paid = 0;
-  //  compter QUE les paiements confirmés (status = 'success')
-  (link.value.installments ?? []).forEach(i => {
-    (i.payments ?? []).filter(p => p.status === 'success').forEach(p => {
-      paid += Number(p.amount ?? 0);
-    });
-  });
-  (link.value.payments ?? []).filter(p => p.status === 'success').forEach(p => {
-    paid += Number(p.amount ?? 0);
-  });
-  return Math.max(0, total - paid);
+  return Math.max(0, total - paidOnLink.value);
 });
 
 const studentName = computed(() => {

@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div class="p-5 mb-6 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-6">
+    <div class="p-5 mb-6 border border-slate-200 rounded-2xl bg-white dark:bg-slate-800 dark:border-slate-700 lg:p-6">
       <div class="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
         <div class="flex flex-col items-center w-full gap-6 xl:flex-row">
           <div class="relative w-20 h-20 group">
@@ -42,7 +42,7 @@
 
     <Modal v-if="isProfileInfoModal" @close="isProfileInfoModal = false">
       <template #body>
-        <div class="no-scrollbar relative w-full max-w-[700px] overflow-y-auto rounded-3xl bg-white p-4 dark:bg-gray-900 lg:p-11 max-h-[80vh]">
+        <div class="no-scrollbar relative w-full max-w-[700px] overflow-y-auto rounded-3xl bg-white p-4 dark:bg-slate-800 border border-transparent dark:border-slate-700 lg:p-11 max-h-[80vh]">
           <button @click="isProfileInfoModal = false" class="absolute right-5 top-5 z-999 flex h-11 w-11 items-center justify-center rounded-full bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600 dark:bg-gray-700 dark:bg-white/[0.05] dark:text-gray-400 dark:hover:bg-white/[0.07] dark:hover:text-gray-300">
             <svg
               class="fill-current"
@@ -91,33 +91,33 @@
 
                 <div class="col-span-2">
                   <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Nom</label>
-                  <input type="text" v-model="form.name" class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 dark:text-white dark:bg-gray-800 dark:border-gray-700" />
+                  <input type="text" v-model="form.name" class="h-11 w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 dark:text-white dark:bg-slate-700 dark:border-slate-600" />
                 </div>
 
                 <div>
                   <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Email</label>
-                  <input type="email" v-model="form.email" class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 dark:text-white dark:bg-gray-800 dark:border-gray-700" />
+                  <input type="email" v-model="form.email" class="h-11 w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 dark:text-white dark:bg-slate-700 dark:border-slate-600" />
                 </div>
 
                 <div>
                   <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Téléphone</label>
-                  <input type="text" v-model="form.phone" class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 dark:text-white dark:bg-gray-800 dark:border-gray-700" />
+                  <input type="text" v-model="form.phone" class="h-11 w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 dark:text-white dark:bg-slate-700 dark:border-slate-600" />
                 </div>
 
                 <div class="lg:col-span-2">
                   <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Bio</label>
-                  <input type="text" v-model="form.bio" class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 dark:text-white dark:bg-gray-800 dark:border-gray-700" />
+                  <input type="text" v-model="form.bio" class="h-11 w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 dark:text-white dark:bg-slate-700 dark:border-slate-600" />
                 </div>
 
                 <div class="col-span-2">
                   <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Rôle</label>
-                  <p class="h-11 flex items-center px-4 rounded-lg border border-gray-300 bg-gray-50 text-sm text-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700">{{ roleLabel }}</p>
+                  <p class="h-11 flex items-center px-4 rounded-lg border border-slate-300 bg-slate-50 text-sm text-slate-700 dark:bg-slate-700 dark:text-slate-200 dark:border-slate-600">{{ roleLabel }}</p>
                 </div>
               </div>
             </div>
 
             <div class="flex items-center gap-3 px-2 mt-6 lg:justify-end">
-              <button @click.prevent="isProfileInfoModal = false" type="button" class="flex w-full justify-center rounded-lg border px-4 py-2.5 text-sm sm:w-auto">Fermer</button>
+              <button @click.prevent="isProfileInfoModal = false" type="button" class="flex w-full justify-center rounded-lg border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-200 px-4 py-2.5 text-sm sm:w-auto">Fermer</button>
               <button type="submit" class="flex w-full justify-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm text-white sm:w-auto">Enregistrer</button>
             </div>
           </form>

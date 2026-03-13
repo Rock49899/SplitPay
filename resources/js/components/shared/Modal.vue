@@ -7,13 +7,13 @@
     <div class="relative z-50 w-full max-w-3xl mx-4">
       <slot name="body">
         <!-- Default wrapper with padding and scroll -->
-        <div class="bg-white dark:bg-gray-900 rounded-lg shadow-xl overflow-hidden">
+        <div class="bg-white dark:bg-slate-800 border border-transparent dark:border-slate-700 rounded-lg shadow-xl overflow-hidden">
           <div class="p-6 max-h-[90vh] overflow-y-auto">
             <slot />
           </div>
           
           <!-- Footer slot if provided -->
-          <div v-if="$slots.footer" class="border-t border-gray-200 dark:border-gray-700 p-4">
+          <div v-if="$slots.footer" class="border-t border-slate-200 dark:border-slate-700 p-4">
             <slot name="footer"></slot>
           </div>
         </div>

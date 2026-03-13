@@ -1,7 +1,7 @@
 <template>
   <Modal v-if="isOpen" @close="close">
     <template #body>
-      <div class="w-full max-w-3xl bg-white dark:bg-gray-900 rounded-3xl p-8">
+      <div class="w-full max-w-3xl bg-white dark:bg-slate-800 border border-transparent dark:border-slate-700 rounded-3xl p-8">
         <!-- Header -->
         <div class="flex items-center justify-between mb-6">
           <div>
@@ -12,7 +12,7 @@
               Importer plusieurs étudiants via un fichier Excel
             </p>
           </div>
-          <button @click="close" class="text-gray-400 hover:text-gray-600">
+          <button @click="close" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
             <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -32,7 +32,7 @@
                   'flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium',
                   currentStep >= index + 1
                     ? 'bg-brand-600 text-white'
-                    : 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
+                    : 'bg-gray-200 text-gray-600 dark:bg-slate-700 dark:text-slate-300'
                 ]"
               >
                 {{ index + 1 }}
@@ -41,7 +41,7 @@
                 v-if="index < steps.length - 1"
                 :class="[
                   'mx-2 h-0.5 w-12',
-                  currentStep > index + 1 ? 'bg-brand-600' : 'bg-gray-200 dark:bg-gray-700'
+                  currentStep > index + 1 ? 'bg-brand-600' : 'bg-gray-200 dark:bg-slate-700'
                 ]"
               ></span>
             </div>
@@ -108,7 +108,7 @@
               </p>
               <button
                 @click="$refs.fileInput.click()"
-                class="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+                class="px-4 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 text-slate-700 dark:text-slate-100 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-600 transition"
               >
                 Parcourir les fichiers
               </button>
@@ -137,10 +137,10 @@
           </div>
 
           <div class="flex justify-between pt-4">
-            <button
-              @click="currentStep--"
-              class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-            >
+              <button
+                @click="currentStep--"
+                class="px-4 py-2 rounded-lg border border-slate-300 bg-white text-slate-600 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600"
+              >
               ← Retour
             </button>
             <button
@@ -197,10 +197,10 @@
           </div>
 
           <div class="flex justify-between pt-4">
-            <button
-              @click="currentStep = 2; preview = null"
-              class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-            >
+              <button
+                @click="currentStep = 2; preview = null"
+                class="px-4 py-2 rounded-lg border border-slate-300 bg-white text-slate-600 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600"
+              >
               ← Retour
             </button>
             <button

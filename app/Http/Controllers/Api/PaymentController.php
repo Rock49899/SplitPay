@@ -8,6 +8,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use App\Models\Enrollment;
+use App\Models\Installment;
 use App\Models\Payment;
 use App\Models\PaymentLink;
 use App\Models\Student;
@@ -22,6 +24,114 @@ class PaymentController extends Controller
     public function __construct(PayPlusService $payplusService)
     {
         $this->payplusService = $payplusService;
+    }
+
+    /**
+     * Recalcule les montants dérivés après changement de statut d'un paiement.
+     * - installment.amount_paid (échéance)
+     * - payment_link.status
+     * - enrollment.amount_paid (global scolarité annuelle)
+     */
+    private function syncDerivedAmounts(Payment $payment): void
+    {
+        $this->syncInstallmentAmountPaid($payment);
+        $this->syncPaymentLinkStatus($payment);
+        $this->syncEnrollmentAmountPaidForTuitionYear($payment);
+    }
+
+    private function resolveInstallmentForPayment(Payment $payment): ?Installment
+    {
+        if ($payment->installment_id) {
+            return $payment->installment;
+        }
+
+        return $payment->paymentLink?->installments()->first();
+    }
+
+    private function syncInstallmentAmountPaid(Payment $payment): void
+    {
+        $installment = $this->resolveInstallmentForPayment($payment);
+        if (!$installment) {
+            return;
+        }
+
+        $paid = (float) Payment::query()
+            ->where('installment_id', $installment->id)
+            ->where('status', 'success')
+            ->sum('amount');
+
+        $installment->update([
+            'amount_paid' => $paid,
+            'status' => $paid >= (float) $installment->amount ? 'used' : 'active',
+        ]);
+    }
+
+    private function syncPaymentLinkStatus(Payment $payment): void
+    {
+        $link = $payment->paymentLink;
+        if (!$link) {
+            return;
+        }
+
+        if ($link->installments()->exists()) {
+            $link->refreshStatus();
+            return;
+        }
+
+        $paid = (float) Payment::query()
+            ->where('payment_link_id', $link->id)
+            ->where('status', 'success')
+            ->sum('amount');
+
+        $link->update([
+            'status' => $paid >= (float) $link->amount ? 'used' : 'active',
+        ]);
+    }
+
+    /**
+     * Met à jour enrollment.amount_paid à partir de TOUS les paiements success
+     * de TOUS les payment links type tuition du même étudiant et de la même année.
+     */
+    private function syncEnrollmentAmountPaidForTuitionYear(Payment $payment): void
+    {
+        $studentId = $payment->student_id;
+        $link = $payment->paymentLink;
+
+        if (!$studentId || !$link || $link->type !== 'tuition' || empty($link->school_year)) {
+            return;
+        }
+
+        $schoolYear = $link->school_year;
+
+        $totalTuitionPaidForYear = (float) Payment::query()
+            ->where('student_id', $studentId)
+            ->where('status', 'success')
+            ->whereHas('paymentLink', function ($q) use ($schoolYear) {
+                $q->where('type', 'tuition')
+                  ->where('school_year', $schoolYear);
+            })
+            ->sum('amount');
+
+        $enrollment = Enrollment::query()
+            ->where('student_id', $studentId)
+            ->where('school_year', $schoolYear)
+            ->first();
+
+        if (!$enrollment) {
+            return;
+        }
+
+        $updates = [
+            'amount_paid' => $totalTuitionPaidForYear,
+        ];
+
+        if ($enrollment->status !== 'abandoned') {
+            $updates['status'] = $totalTuitionPaidForYear >= (float) $enrollment->tuition_amount
+                ? 'completed'
+                : 'active';
+        }
+
+        $enrollment->update($updates);
     }
 
     /**
@@ -116,38 +226,9 @@ class PaymentController extends Controller
                 ]),
             ]);
 
-            // If forcing to success from a non-success state: increment amount_paid
-            if ($v['status'] === 'success' && $oldStatus !== 'success') {
-                $payment->student?->increment('amount_paid', $payment->amount);
-                if ($payment->installment_id) {
-                    $inst = $payment->installment;
-                    if ($inst) {
-                        $inst->increment('amount_paid', $payment->amount);
-                        if ($inst->amount_paid >= $inst->amount) {
-                            $inst->update(['status' => 'paid']);
-                        }
-                    }
-                }
-                $link = $payment->paymentLink;
-                if ($link && $payment->amount >= $link->amount) {
-                    $link->update(['status' => 'used']);
-                }
-            }
-
-            // If reverting from success: decrement
-            if ($oldStatus === 'success' && $v['status'] !== 'success') {
-                $payment->student?->decrement('amount_paid', $payment->amount);
-                if ($payment->installment_id) {
-                    $inst = $payment->installment;
-                    if ($inst) {
-                        $inst->decrement('amount_paid', $payment->amount);
-                        $inst->update(['status' => 'active']);
-                    }
-                }
-                $link = $payment->paymentLink;
-                if ($link) {
-                    $link->update(['status' => 'active']);
-                }
+            // Recalculer les agrégats si le statut a changé
+            if ($oldStatus !== $v['status']) {
+                $this->syncDerivedAmounts($payment);
             }
         });
 
@@ -339,30 +420,7 @@ class PaymentController extends Controller
                         'metadata' => array_merge((array)($payment->metadata ?? []), ['verified_via' => 'polling']),
                     ]);
 
-                    // Mettre à jour student.amount_paid
-                    $student = $payment->student;
-                    if ($student) {
-                        $student->increment('amount_paid', $payment->amount);
-                    }
-
-                    // Mettre à jour installment.amount_paid
-                    if ($payment->installment_id) {
-                        $inst = $payment->installment;
-                    } else {
-                        $inst = $payment->paymentLink?->installments()->first();
-                    }
-                    if ($inst) {
-                        $inst->increment('amount_paid', $payment->amount);
-                        if ($inst->amount_paid >= $inst->amount) {
-                            $inst->update(['status' => 'paid']);
-                        }
-                    }
-
-                    // Marquer lien utilisé si besoin
-                    $link = $payment->paymentLink;
-                    if ($link && $payment->amount >= $link->amount) {
-                        $link->update(['status' => 'used']);
-                    }
+                    $this->syncDerivedAmounts($payment);
 
                     // CRÉER NOTIFICATION DE SUCCÈS
                     \App\Models\Notification::paymentReceived($payment);
@@ -404,6 +462,9 @@ class PaymentController extends Controller
             $response = $this->payplusService->verify($token);
 
             DB::transaction(function () use ($payment, $response) {
+                if ($payment->status === 'success') {
+                    return;
+                }
                 
                 if (isset($response->status) && $response->status === 'completed') {
                     
@@ -414,40 +475,7 @@ class PaymentController extends Controller
                         'metadata' => (array) $response,
                     ]);
 
-                    // Mettre à jour le solde de l'étudiant
-                    $student = $payment->student;
-                    if ($student) {
-                        $student->increment('amount_paid', $payment->amount);
-                    }
-
-                    // Mettre à jour installment.amount_paid
-                    if ($payment->installment_id) {
-                        $installment = $payment->installment;
-                        if ($installment) {
-                            $installment->increment('amount_paid', $payment->amount);
-                            if ($installment->amount_paid >= $installment->amount) {
-                                $installment->update(['status' => 'paid']);
-                            }
-                        }
-                    } else {
-                        // Pas d'installment direct, chercher via payment_link
-                        $link = $payment->paymentLink;
-                        if ($link) {
-                            $inst = $link->installments()->first();
-                            if ($inst) {
-                                $inst->increment('amount_paid', $payment->amount);
-                                if ($inst->amount_paid >= $inst->amount) {
-                                    $inst->update(['status' => 'paid']);
-                                }
-                            }
-                        }
-                    }
-
-                    // Marquer le lien comme utilisé si montant complet
-                    $link = $payment->paymentLink;
-                    if ($link && $payment->amount >= $link->amount) {
-                        $link->update(['status' => 'used']);
-                    }
+                    $this->syncDerivedAmounts($payment);
 
                     Log::info('Payment completed successfully', [
                         'payment_id' => $payment->id,
@@ -514,6 +542,9 @@ class PaymentController extends Controller
             }
 
             DB::transaction(function () use ($payment, $responseCode, $request) {
+                if ($payment->status === 'success' && $responseCode == '00') {
+                    return;
+                }
                 
                 if ($responseCode == '00') {
                     
@@ -524,39 +555,7 @@ class PaymentController extends Controller
                         'metadata' => $request->all(),
                     ]);
 
-                    // Mettre à jour solde étudiant
-                    $student = $payment->student;
-                    if ($student) {
-                        $student->increment('amount_paid', $payment->amount);
-                    }
-
-                    // Mettre à jour installment.amount_paid
-                    if ($payment->installment_id) {
-                        $installment = $payment->installment;
-                        if ($installment) {
-                            $installment->increment('amount_paid', $payment->amount);
-                            if ($installment->amount_paid >= $installment->amount) {
-                                $installment->update(['status' => 'paid']);
-                            }
-                        }
-                    } else {
-                        $pLink = $payment->paymentLink;
-                        if ($pLink) {
-                            $inst = $pLink->installments()->first();
-                            if ($inst) {
-                                $inst->increment('amount_paid', $payment->amount);
-                                if ($inst->amount_paid >= $inst->amount) {
-                                    $inst->update(['status' => 'paid']);
-                                }
-                            }
-                        }
-                    }
-
-                    // Marquer lien utilisé
-                    $link = $payment->paymentLink;
-                    if ($link && $payment->amount >= $link->amount) {
-                        $link->update(['status' => 'used']);
-                    }
+                    $this->syncDerivedAmounts($payment);
 
                     // CRÉER NOTIFICATION DE SUCCÈS
                     \App\Models\Notification::paymentReceived($payment);

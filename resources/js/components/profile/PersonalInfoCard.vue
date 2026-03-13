@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div class="p-5 mb-6 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-6">
+    <div class="p-5 mb-6 border border-slate-200 rounded-2xl bg-white dark:bg-slate-800 dark:border-slate-700 lg:p-6">
       <div class="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <h4 class="text-lg font-semibold text-gray-800 dark:text-white/90 lg:mb-6">Informations personnelles</h4>
@@ -44,7 +44,7 @@
 
     <Modal v-if="isProfileInfoModal" @close="isProfileInfoModal = false">
       <template #body>
-        <div class="no-scrollbar relative w-full max-w-[700px] overflow-y-auto rounded-3xl bg-white p-4 dark:bg-gray-900 lg:p-11 max-h-[80vh]">
+        <div class="no-scrollbar relative w-full max-w-[700px] overflow-y-auto rounded-3xl bg-white p-4 dark:bg-slate-800 border border-transparent dark:border-slate-700 lg:p-11 max-h-[80vh]">
           <!-- close btn -->
           <button @click="isProfileInfoModal = false" class="absolute right-5 top-5 ...">✕</button>
 
@@ -78,28 +78,28 @@
 
                 <div class="col-span-2">
                   <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Nom</label>
-                  <input type="text" v-model="form.name" class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 dark:text-white dark:bg-gray-800 dark:border-gray-700" />
+                  <input type="text" v-model="form.name" class="h-11 w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 dark:text-white dark:bg-slate-700 dark:border-slate-600" />
                 </div>
 
                 <div>
                   <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Adresse email</label>
-                  <input type="email" v-model="form.email" class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 dark:text-white dark:bg-gray-800 dark:border-gray-700" />
+                  <input type="email" v-model="form.email" class="h-11 w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 dark:text-white dark:bg-slate-700 dark:border-slate-600" />
                 </div>
 
                 <div>
                   <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Téléphone</label>
-                  <input type="text" v-model="form.phone" class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 dark:text-white dark:bg-gray-800 dark:border-gray-700" />
+                  <input type="text" v-model="form.phone" class="h-11 w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 dark:text-white dark:bg-slate-700 dark:border-slate-600" />
                 </div>
 
                 <div class="lg:col-span-2">
                   <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Bio</label>
-                  <input type="text" v-model="form.bio" class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 dark:text-white dark:bg-gray-800 dark:border-gray-700" />
+                  <input type="text" v-model="form.bio" class="h-11 w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 dark:text-white dark:bg-slate-700 dark:border-slate-600" />
                 </div>
               </div>
             </div>
 
             <div class="flex items-center gap-3 px-2 mt-6 lg:justify-end">
-              <button @click.prevent="isProfileInfoModal = false" type="button" class="flex w-full justify-center rounded-lg border px-4 py-2.5 text-sm sm:w-auto">Fermer</button>
+              <button @click.prevent="isProfileInfoModal = false" type="button" class="flex w-full justify-center rounded-lg border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-200 px-4 py-2.5 text-sm sm:w-auto">Fermer</button>
               <button type="submit" class="flex w-full justify-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm text-white sm:w-auto">Enregistrer</button>
             </div>
           </form>

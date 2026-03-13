@@ -2,31 +2,31 @@
   <AdminLayout>
     <PageBreadcrumb :pageTitle="currentPageTitle" />
     <div class="flex justify-start mb-4">
-      <button @click="showCreateModal = true" class="px-4 py-2 bg-brand-500 text-white rounded">Créer un utilisateur</button>
+      <button @click="showCreateModal = true" class="px-4 py-2 bg-brand-500 text-white rounded hover:bg-brand-600">Créer un utilisateur</button>
     </div>
     <CreateUser v-if="showCreateModal" :roles="roles" :annexes="annexes" @created="onCreated" @close="showCreateModal = false" />
     <div class="space-y-5 sm:space-y-6">
       <ComponentCard v-for="(usersInAnnexe, annexeName) in groupedByAnnexe" :key="annexeName" :title="`${annexeName}`">
         <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
+          <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+            <thead class="bg-slate-50 dark:bg-slate-700">
               <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nom</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Annexes</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rôle(s)</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
-                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Nom</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Email</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Annexes</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Rôle(s)</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Statut</th>
+                <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
+            <tbody class="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
               <tr 
                 v-for="user in (usersInAnnexe || [])" 
                 :key="user.id"
                 @click="router.push(`/admin/users/${user.id}`)"
-                class="cursor-pointer hover:bg-gray-50 transition-colors"
+                class="cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
               >
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">
                   <div class="flex items-center gap-2.5">
                     <AvatarDisplay 
                       :src="user.avatar_url" 
@@ -38,11 +38,11 @@
                     <span>{{ user.name }}</span>
                   </div>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ user.email }}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-300">{{ user.email }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-300">
                   {{ annexeNames(user) || '-' }}
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-300">
                   {{ roleNames(user) || '-' }}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm">
@@ -51,12 +51,12 @@
                   </span>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
-                  <router-link @click.stop :to="`/admin/users/${user.id}`" class="text-brand-500 hover:underline mr-3">Voir</router-link>
+                  <router-link @click.stop :to="`/admin/users/${user.id}`" class="text-brand-500 dark:text-brand-300 hover:underline mr-3">Voir</router-link>
                   <button @click.stop="remove(user.id)" class="text-red-500 hover:underline">Supprimer</button>
                 </td>
               </tr>
               <tr v-if="!usersInAnnexe || usersInAnnexe.length === 0">
-                <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">Aucun utilisateur</td>
+                <td colspan="6" class="px-6 py-4 text-center text-sm text-slate-500 dark:text-slate-300">Aucun utilisateur</td>
               </tr>
             </tbody>
           </table>
@@ -67,9 +67,9 @@
       <div class="flex items-center justify-between">
         <div></div>
         <div class="flex items-center gap-2">
-          <button @click="prevPage" :disabled="users.page <= 1" class="px-3 py-1 border rounded">Précédent</button>
-          <span>Page {{ users.page }}</span>
-          <button @click="nextPage" :disabled="users.meta && users.page >= users.meta.last_page" class="px-3 py-1 border rounded">Suivant</button>
+          <button @click="prevPage" :disabled="users.page <= 1" class="px-3 py-1 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-100 rounded disabled:opacity-50">Précédent</button>
+          <span class="text-slate-700 dark:text-slate-200">Page {{ users.page }}</span>
+          <button @click="nextPage" :disabled="users.meta && users.page >= users.meta.last_page" class="px-3 py-1 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-100 rounded disabled:opacity-50">Suivant</button>
         </div>
       </div>
     </div>
