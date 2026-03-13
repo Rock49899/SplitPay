@@ -219,7 +219,7 @@ class PaymentLinkController extends Controller
         ->where('status', 'active')
         ->firstOrFail();
 
-    return response()->json($link->load(['student', 'installments.payments', 'payments']), 200);
+    return response()->json($link->load(['student.annexe.institution', 'installments.payments', 'payments']), 200);
     }
 
 

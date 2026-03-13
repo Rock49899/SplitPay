@@ -92,6 +92,12 @@ const router = createRouter({
       meta: { title: 'Paramètres Annexe', requiresAuth: true },
     },
     {
+      path: '/admin/institution/settings',
+      name: 'InstitutionSettings',
+      component: () => import('../views/Settings/InstitutionSettings.vue').catch(() => import('../views/Placeholders/PlaceholderPage.vue')),
+      meta: { title: 'Paramètres Institution', requiresAuth: true },
+    },
+    {
       path: '/admin/notifications',
       name: 'NotificationList',
       component: () => import('../views/Notifications/NotificationList.vue').catch(() => import('../views/Placeholders/PlaceholderPage.vue')),

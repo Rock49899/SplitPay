@@ -103,8 +103,7 @@ class Annexe extends Model
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'user_annexes')
-            ->withPivot(['role_id', 'is_principal', 'assigned_by', 'assigned_at', 'end_at'])
-            ->withTimestamps();
+            ->withPivot(['role_id', 'is_principal', 'assigned_by', 'assigned_at', 'end_at']);
     }
 
     /**

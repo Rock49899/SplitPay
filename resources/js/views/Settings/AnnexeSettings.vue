@@ -200,15 +200,31 @@
 
 <script setup>
 import { ref, reactive, onMounted, computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import Modal from '@/components/profile/Modal.vue'
 import api from '@/services/api'
 import Swal from 'sweetalert2'
+import { usePermissions } from '@/composables/usePermissions'
 
 const route = useRoute()
+const router = useRouter()
+const { hasRole, currentUser } = usePermissions()
 const annexeId = computed(() => route.params.id)
+
+const principalAnnexeId = computed(() => {
+  const annexes = currentUser.value?.annexes || []
+  return annexes.find((a) => a.is_principal)?.id || annexes[0]?.id || null
+})
+
+const allowedAnnexeId = computed(() => {
+  if (hasRole('super_admin_institution')) return principalAnnexeId.value
+  if (hasRole('super_admin_annexe') || hasRole('admin_annexe')) {
+    return currentUser.value?.annexe_id || principalAnnexeId.value
+  }
+  return annexeId.value
+})
 
 const loading = ref(true)
 const submitting = ref(false)
@@ -380,6 +396,11 @@ const saveContactInfo = async () => {
 }
 
 onMounted(() => {
+  if (allowedAnnexeId.value && annexeId.value !== allowedAnnexeId.value) {
+    router.replace(`/admin/annexe/${allowedAnnexeId.value}/settings`)
+    return
+  }
+
   fetchAnnexe()
 })
 </script>

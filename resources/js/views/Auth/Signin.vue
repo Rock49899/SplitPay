@@ -284,7 +284,13 @@
             <common-grid-shape />
             <div class="flex flex-col items-center max-w-xs">
               <router-link to="/" class="block mb-4">
-                <span class="text-8xl font-extrabold tracking-tight text-white dark:text-white">SplitPay</span>
+                <img
+                  v-if="brandLogoUrl"
+                  :src="brandLogoUrl"
+                  :alt="brandName"
+                  class="h-20 w-auto max-w-[320px] object-contain"
+                />
+                <span v-else class="text-5xl font-extrabold tracking-tight text-white dark:text-white">{{ displayName }}</span>
               </router-link>
             </div>
           </div>
@@ -295,12 +301,13 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import CommonGridShape from '@/components/common/CommonGridShape.vue'
 import FullScreenLayout from '@/components/layout/FullScreenLayout.vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/useAuthStore'
 import authService from '@/services/authService'
+import { useInstitutionBrand } from '@/composables/useInstitutionBrand'
 
 const email = ref('')
 const password = ref('')
@@ -317,6 +324,7 @@ const otpNotice = ref('')
 const auth = useAuthStore()
 const router = useRouter()
 const route = useRoute()
+const { brandName, brandLogoUrl, displayName, loadBrand } = useInstitutionBrand()
 
 const togglePasswordVisibility = () => {
   showPassword.value = !showPassword.value
@@ -382,4 +390,8 @@ const verifyOtp = async () => {
     loading.value = false
   }
 }
+
+onMounted(() => {
+  loadBrand(true)
+})
 </script>

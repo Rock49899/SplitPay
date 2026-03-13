@@ -38,20 +38,25 @@ class OverduePaymentMail extends Mailable
      */
     public function content(): Content
     {
-        $remaining = $this->installment->amount - $this->installment->amount_paid;
-        $annexe = $this->student->annexe;
+        $remaining    = $this->installment->amount - $this->installment->amount_paid;
+        $annexe       = $this->student->annexe;
+        $institution  = $annexe?->institution;
 
         return new Content(
             view: 'emails.overdue-payment',
             with: [
-                'studentName' => $this->student->full_name,
-                'matricule' => $this->student->matricule,
-                'amount' => number_format($remaining, 0, ',', ' ') . ' FCFA',
-                'dueDate' => $this->installment->due_date->format('d/m/Y'),
-                'daysOverdue' => $this->daysOverdue,
-                'annexeName' => $annexe->name,
-                'annexePhone' => $annexe->phone ?? '',
-                'annexeEmail' => $annexe->email ?? '',
+                'studentName'     => $this->student->full_name,
+                'matricule'       => $this->student->matricule,
+                'amount'          => number_format($remaining, 0, ',', ' ') . ' FCFA',
+                'dueDate'         => $this->installment->due_date->format('d/m/Y'),
+                'daysOverdue'     => $this->daysOverdue,
+                'annexeName'      => $annexe->name,
+                'annexePhone'     => $annexe->phone ?? '',
+                'annexeEmail'     => $annexe->email ?? '',
+                'institutionName' => $institution?->name ?? '',
+                'institutionLogo' => ($institution && $institution->logo)
+                                         ? asset('storage/' . $institution->logo)
+                                         : null,
             ],
         );
     }

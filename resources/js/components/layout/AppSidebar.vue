@@ -214,7 +214,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useRoute } from "vue-router";
 import { usePermissions } from "@/composables/usePermissions";
 import api from "@/services/api";
@@ -267,9 +267,7 @@ const fetchInstitutionInfo = async () => {
         const institution = institutionResponse.data?.institution ?? institutionResponse.data
         
         institutionName.value = institution.name ?? ''
-        if (institution.logo) {
-          institutionLogo.value = `/storage/${institution.logo}`
-        }
+        institutionLogo.value = institution.logo ? `/storage/${institution.logo}` : null
       }
     }
   } catch (error) {
@@ -277,8 +275,17 @@ const fetchInstitutionInfo = async () => {
   }
 }
 
+const handleBrandUpdated = () => {
+  fetchInstitutionInfo()
+}
+
 onMounted(() => {
   fetchInstitutionInfo()
+  window.addEventListener('institution-brand-updated', handleBrandUpdated)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('institution-brand-updated', handleBrandUpdated)
 })
 
 const baseMenuGroups = [

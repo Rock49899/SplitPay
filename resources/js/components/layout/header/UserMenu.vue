@@ -83,27 +83,49 @@ const router = useRouter()
 const dropdownOpen = ref(false)
 const dropdownRef = ref(null)
 const showImageModal = ref(false)
-const { setUser, clearPermissions, hasAnyRole } = usePermissions()
+const { setUser, clearPermissions } = usePermissions()
 const { initializeContext, resetContext } = useAnnexeContext()
 
 // données de l'utilisateur connecté
-const user = ref({ name: '', email: '', avatar_url: '', scope: '', annexe_id: null })
+const user = ref({ name: '', email: '', avatar_url: '', scope: '', annexe_id: null, roles: [], annexes: [] })
+
+const roleCodes = computed(() => (user.value.roles || []).map(role => role?.code).filter(Boolean))
+
+const hasRoleCode = (code) => roleCodes.value.includes(code)
+
+const principalAnnexeId = computed(() => {
+  const principal = (user.value.annexes || []).find((annexe) => annexe?.is_principal)
+  return principal?.id || user.value.annexe_id || null
+})
 
 // éléments du menu (calculés dynamiquement selon le rôle)
 const menuItems = computed(() => {
   const items = [
     { href: '/profile', icon: UserCircleIcon, text: 'Modifier le profil' },
   ]
-  
-  // Ajouter "Paramètres annexe" uniquement pour les admins avec annexe_id valide
-  if (user.value.annexe_id && hasAnyRole(['super_admin_institution', 'super_admin_annexe', 'admin_annexe'])) {
-    items.push({ 
-      href: `/admin/annexe/${user.value.annexe_id}/settings`, 
-      icon: SettingsIcon, 
-      text: 'Paramètres annexe' 
+
+  if (hasRoleCode('super_admin_institution')) {
+    items.push({
+      href: '/admin/institution/settings',
+      icon: InfoCircleIcon,
+      text: 'Paramètres institution',
+    })
+
+    if (principalAnnexeId.value) {
+      items.push({
+        href: `/admin/annexe/${principalAnnexeId.value}/settings`,
+        icon: SettingsIcon,
+        text: 'Paramètres annexe principale',
+      })
+    }
+  } else if (principalAnnexeId.value && (hasRoleCode('super_admin_annexe') || hasRoleCode('admin_annexe'))) {
+    items.push({
+      href: `/admin/annexe/${principalAnnexeId.value}/settings`,
+      icon: SettingsIcon,
+      text: 'Paramètres annexe',
     })
   }
-  
+
   return items
 })
 
@@ -135,20 +157,12 @@ const fetchCurrentUser = async () => {
         user.value.email = payload.email ?? ''
         user.value.avatar_url = payload.avatar_url ?? payload.avatar ?? ''
         user.value.scope = payload.scope ?? ''
-        user.value.annexe_id = payload.annexe_id ?? null
-        
-        // Si super admin institution sans annexe_id, récupérer l'annexe principale
-        if (!user.value.annexe_id && payload.scope === 'institution') {
-          try {
-            const annexesRes = await api.get('/admin/annexes?per_page=1')
-            const annexes = annexesRes.data?.data ?? annexesRes.data
-            if (annexes && annexes.length > 0) {
-              user.value.annexe_id = annexes[0].id
-            }
-          } catch (err) {
-            console.warn('[UserMenu] Failed to fetch principal annexe:', err)
-          }
-        }
+        user.value.roles = payload.roles ?? []
+        user.value.annexes = payload.annexes ?? []
+        user.value.annexe_id = payload.annexe_id
+          ?? (payload.annexes ?? []).find((annexe) => annexe?.is_principal)?.id
+          ?? (payload.annexes ?? [])[0]?.id
+          ?? null
         
         // Initialiser le contexte multi-annexe AVANT setUser
         // pour que les bonnes permissions soient appliquées

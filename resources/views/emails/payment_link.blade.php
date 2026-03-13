@@ -29,6 +29,16 @@
             font-size: 22px;
             font-weight: normal;
         }
+        .header .logo {
+            max-width: 160px;
+            max-height: 65px;
+            margin: 0 auto 15px;
+            display: block;
+            object-fit: contain;
+            background: rgba(255,255,255,0.15);
+            border-radius: 6px;
+            padding: 6px 10px;
+        }
         .content {
             padding: 30px 25px;
         }
@@ -159,7 +169,13 @@
     
     <div class="container">
         <div class="header">
+            @if(!empty($institutionLogo))
+                <img src="{{ $institutionLogo }}" alt="{{ $institutionName ?? '' }}" class="logo">
+            @endif
             <h1>{{ $title }}</h1>
+            @if(!empty($institutionName))
+                <p style="margin: 6px 0 0; font-size: 13px; opacity: 0.85;">{{ $institutionName }}</p>
+            @endif
         </div>
 
         <div class="content">
@@ -251,18 +267,28 @@
         </div>
 
         <div class="footer">
+            {{-- Branding institution + annexe --}}
+            @if(!empty($institutionLogo) || !empty($institutionName) || !empty($annexeName))
+            <div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #e5e7eb;">
+                @if(!empty($institutionLogo))
+                    <img src="{{ $institutionLogo }}" alt="{{ $institutionName ?? '' }}" style="max-height: 55px; max-width: 170px; object-fit: contain; display: block; margin: 0 auto 8px;">
+                @endif
+                @if(!empty($institutionName))
+                    <div style="font-weight: 700; font-size: 15px; color: #111827;">{{ $institutionName }}</div>
+                @endif
+                @if(!empty($annexeName))
+                    <div style="font-size: 13px; color: #6b7280; margin-top: 3px;">{{ $annexeName }}</div>
+                @endif
+            </div>
+            @endif
+            {{-- Coordonnées annexe --}}
             @if(isset($link->student->annexe))
-                <strong>{{ $link->student->annexe->name ?? config('app.name') }}</strong>
-                <div style="margin-top: 10px;">
-                    @if(isset($link->student->annexe->phone) && $link->student->annexe->phone)
-                        <div>Tél: {{ $link->student->annexe->phone }}</div>
-                    @endif
-                    @if(isset($link->student->annexe->email) && $link->student->annexe->email)
-                        <div>Email: {{ $link->student->annexe->email }}</div>
-                    @endif
-                </div>
-            @else
-                <strong>{{ config('app.name') }}</strong>
+                @if(isset($link->student->annexe->phone) && $link->student->annexe->phone)
+                    <div style="margin-bottom: 4px;">Tél : {{ $link->student->annexe->phone }}</div>
+                @endif
+                @if(isset($link->student->annexe->email) && $link->student->annexe->email)
+                    <div>Email : {{ $link->student->annexe->email }}</div>
+                @endif
             @endif
             <p style="margin-top: 15px; font-size: 12px; color: #9ca3af;">
                 Message automatique - Pour toute question, contactez-nous via les coordonnées ci-dessus.

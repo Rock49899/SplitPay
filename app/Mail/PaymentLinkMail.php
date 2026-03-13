@@ -23,7 +23,12 @@ class PaymentLinkMail extends Mailable
     public function build()
     {
         $url = url('/payment/' . ($this->link->token ?? ''));
-        
+
+        // Eager-load institution for branding
+        $this->link->loadMissing(['student.annexe.institution']);
+        $annexe      = $this->link->student->annexe      ?? null;
+        $institution = $annexe?->institution              ?? null;
+
         // Adapter le sujet selon le type de message
         $subject = match($this->messageType) {
             'reminder' => '🔔 Rappel : Paiement en attente',
@@ -31,13 +36,18 @@ class PaymentLinkMail extends Mailable
             'final' => '⏰ DERNIER RAPPEL : Paiement requis',
             default => '💳 Lien de paiement'
         };
-        
+
         return $this->subject($subject)
                     ->view('emails.payment_link')
                     ->with([
-                        'link' => $this->link,
-                        'url' => $url,
-                        'messageType' => $this->messageType,
+                        'link'            => $this->link,
+                        'url'             => $url,
+                        'messageType'     => $this->messageType,
+                        'institutionName' => $institution?->name ?? '',
+                        'institutionLogo' => ($institution && $institution->logo)
+                                                ? asset('storage/' . $institution->logo)
+                                                : null,
+                        'annexeName'      => $annexe?->name ?? '',
                     ]);
     }
 }

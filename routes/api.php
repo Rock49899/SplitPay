@@ -27,8 +27,24 @@ Route::post('test', function () {
 Route::get('ping', fn () => response('pong'));
 
 Route::get('check-institution', function () {
-    $exists = \App\Models\Institution::count() > 0;
-    return response()->json(['exists' => $exists]);
+    $institution = \App\Models\Institution::query()->orderBy('created_at')->first();
+
+    if (! $institution) {
+        return response()->json([
+            'exists' => false,
+            'institution' => null,
+        ]);
+    }
+
+    return response()->json([
+        'exists' => true,
+        'institution' => [
+            'id' => $institution->id,
+            'name' => $institution->name,
+            'logo' => $institution->logo,
+            'logo_url' => $institution->logo ? asset('storage/' . $institution->logo) : null,
+        ],
+    ]);
 });
 
 Route::post('register', [\App\Http\Controllers\Api\RegistrationController::class, 'register']);
@@ -76,9 +92,9 @@ Route::middleware(['auth:sanctum', 'active.annexe', 'active.school_year', 'schoo
     Route::post('students/{id}/payment-link', [StudentController::class, 'createPaymentLink'])->middleware('permission:link.create');
 
     // Institutions management
-    Route::get('institutions', [\App\Http\Controllers\Api\InstitutionController::class, 'index'])->middleware('permission:institution.view');
-    Route::get('institutions/{id}', [\App\Http\Controllers\Api\InstitutionController::class, 'show'])->middleware('permission:institution.view');
-    Route::match(['put', 'patch'], 'institutions/{id}', [\App\Http\Controllers\Api\InstitutionController::class, 'update'])->middleware('permission:institution.edit');
+    Route::get('institutions', [\App\Http\Controllers\Api\InstitutionController::class, 'index'])->middleware('permission:annexe.view');
+    Route::get('institutions/{id}', [\App\Http\Controllers\Api\InstitutionController::class, 'show'])->middleware('permission:annexe.view');
+    Route::match(['put', 'patch'], 'institutions/{id}', [\App\Http\Controllers\Api\InstitutionController::class, 'update'])->middleware('permission:annexe.edit');
     Route::get('institutions/{id}/annexes', [\App\Http\Controllers\Api\InstitutionController::class, 'annexes'])->middleware('permission:annexe.view');
 
     // Annexes management
