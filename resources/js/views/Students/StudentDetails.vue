@@ -176,7 +176,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import AdminLayout from '@/components/layout/AdminLayout.vue';
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue';
@@ -189,11 +189,13 @@ import specializationService from '@/services/specializationService';
 import reminderService from '@/services/reminderService';
 import { useSchoolYear } from '@/composables/useSchoolYear';
 import { usePermissions } from '@/composables/usePermissions';
+import { useActiveYearStore } from '@/stores/useActiveYearStore';
 
 const route = useRoute();
 const router = useRouter();
 const id = route.params.id;
 const { hasPermission } = usePermissions();
+const activeYearStore = useActiveYearStore();
 
 const student = ref(null);
 const studyLevels = ref([]);
@@ -415,6 +417,10 @@ onMounted(async () => {
     loadStudyLevels(), 
     loadSpecializations()
   ]);
+});
+
+watch(() => activeYearStore.activeYear, () => {
+  load();
 });
 </script>
 

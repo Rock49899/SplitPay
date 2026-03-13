@@ -84,6 +84,20 @@ class DashboardController extends Controller
     public function kpis(Request $request)
     {
         $schoolYear  = $request->get('school_year', $this->currentSchoolYear());
+
+        if ($request->attributes->get('school_year_available') === false) {
+            return response()->json([
+                'school_year'     => $schoolYear,
+                'total_collected' => 0,
+                'total_pending'   => 0,
+                'total_unpaid'    => 0,
+                'total_tuition'   => 0,
+                'students_count'  => 0,
+                'annexes_count'   => 0,
+                'recovery_rate'   => 0,
+            ]);
+        }
+
         [$from, $to] = $this->schoolYearRange($schoolYear);
 
         // ── Enrollment sums for the academic year ─────────────────────────────
@@ -134,6 +148,18 @@ class DashboardController extends Controller
     public function monthlyCollections(Request $request)
     {
         $schoolYear  = $request->get('school_year', $this->currentSchoolYear());
+
+        if ($request->attributes->get('school_year_available') === false) {
+            return response()->json([
+                'school_year' => $schoolYear,
+                'labels' => [],
+                'series' => [
+                    ['name' => 'Collected', 'data' => []],
+                    ['name' => 'Pending', 'data' => []],
+                ],
+            ]);
+        }
+
         [$from, $to] = $this->schoolYearRange($schoolYear);
 
         // Base query with role scope
@@ -201,6 +227,17 @@ class DashboardController extends Controller
     public function annexeStats(Request $request)
     {
         $schoolYear  = $request->get('school_year', $this->currentSchoolYear());
+
+        if ($request->attributes->get('school_year_available') === false) {
+            return response()->json([
+                'school_year'   => $schoolYear,
+                'labels'        => [],
+                'collected'     => [],
+                'recovery_rate' => [],
+                'unpaid'        => [],
+            ]);
+        }
+
         [$from, $to] = $this->schoolYearRange($schoolYear);
 
         // Determine which annexes to include

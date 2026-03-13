@@ -18,6 +18,13 @@ use App\Mail\PaymentLinkMail;
 class PaymentLinkController extends Controller
 {
     use FiltersByAnnexe;
+
+    private function currentSchoolYear(): string
+    {
+        $now = now();
+        $base = $now->month >= 9 ? $now->year : $now->year - 1;
+        return $base . '-' . ($base + 1);
+    }
     
     public function __construct()
     {
@@ -27,6 +34,16 @@ class PaymentLinkController extends Controller
     // Liste des liens — si student_id est fourni, ne retourner que les liens de cet étudiant
     public function index(Request $request)
     {
+        if ($request->attributes->get('school_year_available') === false) {
+            return response()->json([
+                'data' => [],
+                'current_page' => 1,
+                'last_page' => 1,
+                'per_page' => (int) $request->get('per_page', 15),
+                'total' => 0,
+            ], 200);
+        }
+
         $perPage = (int)$request->get('per_page', 15);
         $query = PaymentLink::query();
 
@@ -44,6 +61,10 @@ class PaymentLinkController extends Controller
                 // direct student_id sur la table payment_links
                 $q->where('student_id', $studentId);
             });
+        }
+
+        if ($schoolYear = $request->get('school_year')) {
+            $query->where('school_year', $schoolYear);
         }
 
         // recherche
@@ -67,6 +88,10 @@ class PaymentLinkController extends Controller
 
     $type = $v['type'] ?? 'tuition';
     $student = Student::findOrFail($v['student_id']);
+    $schoolYear = $v['school_year']
+        ?? $request->input('school_year')
+        ?? $student->currentEnrollment?->school_year
+        ?? $this->currentSchoolYear();
 
     // SECURITE: Vérifier que l'utilisateur a accès à cet étudiant (même annexe)
     if (!$this->userHasAccessToAnnexe($student->annexe_id)) {
@@ -78,8 +103,8 @@ class PaymentLinkController extends Controller
     // si c'est scolarité, on plafonne au restant dû sur l'enrollment actif
     if ($type === 'tuition') {
         $enrollment = $student->enrollments()
-            ->where('status', 'active')
-            ->latest('school_year')
+            ->where('school_year', $schoolYear)
+            ->orderByDesc('school_year')
             ->first();
 
         if ($enrollment) {
@@ -104,6 +129,7 @@ class PaymentLinkController extends Controller
     $link = PaymentLink::create([
         'id' => (string) Str::uuid(),
         'student_id' => $student->id,
+        'school_year' => $schoolYear,
         'type' => $type,
         'token' => PaymentLink::generateUniqueToken(),
         'amount' => $amount,
@@ -232,7 +258,7 @@ class PaymentLinkController extends Controller
             'target'            => 'required|in:all,annexe,specialization',
             'annexe_id'         => 'required_if:target,annexe|nullable|exists:annexes,id',
             'specialization_id' => 'required_if:target,specialization|nullable|exists:specializations,id',
-            'school_year'       => 'nullable|string|max:20',
+            'school_year'       => ['nullable', 'string', 'max:20', 'regex:/^\\d{4}-\\d{4}$/'],
             'amount'      => 'required|numeric|min:1',
             'currency'    => 'nullable|string|max:10',
             'type'        => 'nullable|string|in:tuition,registration,other',
@@ -243,6 +269,9 @@ class PaymentLinkController extends Controller
         ]);
 
         $query = Student::query();
+        $schoolYear = !empty($v['school_year'])
+            ? $v['school_year']
+            : ($request->input('school_year') ?: $this->currentSchoolYear());
 
         if ($v['target'] === 'annexe') {
             $query->where('annexe_id', $v['annexe_id']);
@@ -252,8 +281,8 @@ class PaymentLinkController extends Controller
                 $query->where('annexe_id', $v['annexe_id']);
             }
         }
-        if (!empty($v['school_year'])) {
-            $query->whereHas('enrollments', fn ($q) => $q->where('school_year', $v['school_year']));
+        if (!empty($schoolYear)) {
+            $query->whereHas('enrollments', fn ($q) => $q->where('school_year', $schoolYear));
         }
 
         $students = $query->get();
@@ -266,12 +295,13 @@ class PaymentLinkController extends Controller
         $sent    = 0;
         $errors  = [];
 
-        DB::transaction(function () use ($students, $v, &$created, &$sent, &$errors) {
+        DB::transaction(function () use ($students, $v, $schoolYear, &$created, &$sent, &$errors) {
             foreach ($students as $student) {
                 try {
                     $link = PaymentLink::create([
                         'id'          => (string) Str::uuid(),
                         'student_id'  => $student->id,
+                        'school_year' => $schoolYear,
                         'type'        => $v['type'] ?? 'tuition',
                         'token'       => PaymentLink::generateUniqueToken(),
                         'amount'      => $v['amount'],

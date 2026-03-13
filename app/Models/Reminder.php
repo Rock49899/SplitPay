@@ -113,12 +113,18 @@ class Reminder extends Model
     /**
      * Récupérer les échéances concernées par ce rappel
      */
-    public function getTargetInstallments()
+    public function getTargetInstallments(?string $schoolYear = null)
     {
         $targetDate = now()->addDays($this->days_before);
 
-        return Installment::whereHas('paymentLink.student', function ($query) {
-            $query->where('annexe_id', $this->annexe_id);
+        return Installment::whereHas('paymentLink', function ($query) use ($schoolYear) {
+            $query->whereHas('student', function ($q) {
+                $q->where('annexe_id', $this->annexe_id);
+            });
+
+            if (!empty($schoolYear)) {
+                $query->where('school_year', $schoolYear);
+            }
         })
         ->where('status', 'active')
         ->whereDate('due_date', $targetDate->toDateString())

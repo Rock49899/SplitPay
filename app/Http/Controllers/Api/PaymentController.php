@@ -30,6 +30,16 @@ class PaymentController extends Controller
      */
     public function index(Request $request)
     {
+        if ($request->attributes->get('school_year_available') === false) {
+            return response()->json([
+                'data' => [],
+                'current_page' => 1,
+                'last_page' => 1,
+                'per_page' => (int) $request->input('per_page', 20),
+                'total' => 0,
+            ], 200);
+        }
+
         $query = Payment::with(['student.annexe', 'paymentLink', 'installment'])
             ->orderByDesc('created_at');
 
@@ -59,6 +69,9 @@ class PaymentController extends Controller
         }
         if ($request->filled('annexe_id')) {
             $query->whereHas('student', fn ($q) => $q->where('annexe_id', $request->annexe_id));
+        }
+        if ($request->filled('school_year')) {
+            $query->whereHas('paymentLink', fn ($q) => $q->where('school_year', $request->school_year));
         }
         if ($request->filled('q')) {
             $s = $request->q;
@@ -150,6 +163,10 @@ class PaymentController extends Controller
      */
     public function recent(Request $request)
     {
+        if ($request->attributes->get('school_year_available') === false) {
+            return response()->json(['data' => []], 200);
+        }
+
         $query = Payment::with(['student.annexe', 'paymentLink', 'installment'])
             ->orderByDesc('created_at');
 
@@ -182,6 +199,9 @@ class PaymentController extends Controller
         // Filtre par annexe (pour super_admin_institution)
         if ($request->filled('annexe_id')) {
             $query->whereHas('student', fn ($q) => $q->where('annexe_id', $request->annexe_id));
+        }
+        if ($request->filled('school_year')) {
+            $query->whereHas('paymentLink', fn ($q) => $q->where('school_year', $request->school_year));
         }
 
         $limit    = min((int) $request->get('limit', 5), 20);
@@ -344,7 +364,7 @@ class PaymentController extends Controller
                         $link->update(['status' => 'used']);
                     }
 
-                    // 🔔 CRÉER NOTIFICATION DE SUCCÈS
+                    // CRÉER NOTIFICATION DE SUCCÈS
                     \App\Models\Notification::paymentReceived($payment);
                 });
 
@@ -538,7 +558,7 @@ class PaymentController extends Controller
                         $link->update(['status' => 'used']);
                     }
 
-                    // 🔔 CRÉER NOTIFICATION DE SUCCÈS
+                    // CRÉER NOTIFICATION DE SUCCÈS
                     \App\Models\Notification::paymentReceived($payment);
 
                 } else {
@@ -549,7 +569,7 @@ class PaymentController extends Controller
                         'metadata' => ['error' => $request->input('response_text', 'Échec paiement'), 'response' => $request->all()],
                     ]);
 
-                    // 🔔 CRÉER NOTIFICATION D'ÉCHEC
+                    // CRÉER NOTIFICATION D'ÉCHEC
                     \App\Models\Notification::paymentFailed($payment);
                 }
             });

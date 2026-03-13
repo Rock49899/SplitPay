@@ -60,7 +60,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import AdminLayout from '@/components/layout/AdminLayout.vue';
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue';
@@ -71,9 +71,11 @@ import Modal from '@/components/payment/Modal.vue';
 import PaymentLinkModal from '@/components/payment/PaymentLinkModal.vue';
 import PaymentLinksCard from '@/components/payment/PaymentLinksCard.vue';
 import AvatarDisplay from '@/components/shared/AvatarDisplay.vue';
+import { useActiveYearStore } from '@/stores/useActiveYearStore';
 
 const route = useRoute();
 const id = route.params.id;
+const activeYearStore = useActiveYearStore();
 
 const student = ref(null);
 const currentEnrollmentId = ref(null);
@@ -156,6 +158,11 @@ const openMailClient = async () => {
 };
 
 onMounted(load);
+
+watch(() => activeYearStore.activeYear, () => {
+  load();
+  linksCard.value?.fetchLinks();
+});
 </script>
 
 <style scoped></style>

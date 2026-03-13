@@ -31,7 +31,7 @@ class SendScheduledReminders extends Command
     {
         $isDryRun = $this->option('dry-run');
 
-        $this->info('🔍 Recherche des rappels actifs...');
+        $this->info('Recherche des rappels actifs...');
 
         // Récupérer tous les rappels actifs
         $reminders = Reminder::active()->orderedByDays()->get();

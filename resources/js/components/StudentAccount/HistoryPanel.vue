@@ -83,11 +83,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import studentAccountService from '../../services/studentAccountService';
 
 const props = defineProps({
   currency: { type: String, default: 'XOF' },
+  schoolYear: { type: String, default: null },
 });
 
 const payments    = ref([]);
@@ -115,6 +116,9 @@ const loadPayments = async (page = 1) => {
   loadingPay.value = true;
   try {
     const params = { page, ...filters.value };
+    if (props.schoolYear) {
+      params.school_year = props.schoolYear;
+    }
     Object.keys(params).forEach(k => { if (!params[k]) delete params[k]; });
     const res = await studentAccountService.getPayments(params);
     payments.value    = res.data.data;
@@ -132,6 +136,10 @@ const resetFilters = () => { filters.value = { type: '', from: '', to: '', metho
 const goPage = (p) => { if (p >= 1) loadPayments(p); };
 
 onMounted(() => loadPayments(1));
+
+watch(() => props.schoolYear, () => {
+  loadPayments(1);
+});
 </script>
 
 <style scoped></style>

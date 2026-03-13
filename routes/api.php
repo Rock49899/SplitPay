@@ -40,7 +40,7 @@ Route::post('students/me-by-token', [\App\Http\Controllers\Api\StudentAuthContro
 Route::match(['post','get'], 'admin/login', [\App\Http\Controllers\Api\AuthController::class, 'login']);
 
 //sanctum
-Route::middleware(['auth:sanctum', 'active.annexe'])->prefix('admin')->group(function () {
+Route::middleware(['auth:sanctum', 'active.annexe', 'active.school_year', 'school_year.lock'])->prefix('admin')->group(function () {
     Route::match(['get','post'], 'logout', [\App\Http\Controllers\Api\AuthController::class, 'logout']);
     Route::get('me', [\App\Http\Controllers\Api\AuthController::class, 'me']);
     Route::get('me/annexe/{annexeId}', [\App\Http\Controllers\Api\AuthController::class, 'meForAnnexe']);
@@ -102,6 +102,7 @@ Route::middleware(['auth:sanctum', 'active.annexe'])->prefix('admin')->group(fun
 
     // Années scolaires disponibles
     Route::get('school-years', [\App\Http\Controllers\Api\PromotionController::class, 'schoolYears']);
+    Route::get('school-years/context', [\App\Http\Controllers\Api\PromotionController::class, 'context']);
 
     // Promotions / Clôture d'année scolaire
     Route::get('promotions/preview', [\App\Http\Controllers\Api\PromotionController::class, 'preview'])->middleware('permission:student.edit');
@@ -190,7 +191,8 @@ Route::prefix('payment-links')->group(function () {
 });
 
 // Protégé : profil, liens, paiements
-Route::middleware('student.auth')->prefix('student')->group(function () {
+Route::middleware(['student.auth', 'active.school_year', 'school_year.lock'])->prefix('student')->group(function () {
+    Route::get('school-year/context', [\App\Http\Controllers\Api\PromotionController::class, 'context']);
     Route::get('profile',       [\App\Http\Controllers\Api\StudentProfileController::class, 'show']);
     Route::get('payment-links', [\App\Http\Controllers\Api\StudentProfileController::class, 'paymentLinks']);
     Route::get('payments',      [\App\Http\Controllers\Api\StudentProfileController::class, 'payments']);

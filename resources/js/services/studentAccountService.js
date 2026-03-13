@@ -38,8 +38,8 @@ export default {
     this.removeToken();
   },
 
-  getProfile() {
-    return api.get('student/profile', { headers: this.authHeaders() });
+  getProfile(params = {}) {
+    return api.get('student/profile', { params, headers: this.authHeaders() });
   },
 
   /**

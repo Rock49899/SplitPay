@@ -142,7 +142,8 @@ class ReminderController extends Controller
      */
     public function preview(Reminder $reminder)
     {
-        $installments = $reminder->getTargetInstallments();
+        $schoolYear = request()->get('school_year');
+        $installments = $reminder->getTargetInstallments($schoolYear);
 
         $preview = $installments->map(function ($installment) use ($reminder) {
             $student = $installment->paymentLink->student;
@@ -179,7 +180,8 @@ class ReminderController extends Controller
     public function sendNow(Reminder $reminder)
     {
         // Récupérer tous les installments concernés par ce rappel
-        $installments = $reminder->getTargetInstallments();
+        $schoolYear = request()->get('school_year');
+        $installments = $reminder->getTargetInstallments($schoolYear);
 
         if ($installments->isEmpty()) {
             return response()->json([

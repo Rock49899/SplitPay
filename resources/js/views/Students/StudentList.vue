@@ -286,6 +286,8 @@ const enrichStudents = async () => {
       const annObj = d.annexe ?? annFromStore ?? s.annexe ?? null;
       return {
         ...s,
+        current_enrollment: d.current_enrollment ?? s.current_enrollment ?? null,
+        currentEnrollment: d.currentEnrollment ?? s.currentEnrollment ?? null,
         matricule: s.matricule ?? d.matricule ?? null,
         student_number: s.student_number ?? d.student_number ?? null,
         class_name: s.class_name ?? d.class_name ?? d.class ?? null,
