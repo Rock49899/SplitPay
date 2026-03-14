@@ -1,88 +1,116 @@
-/**
- * Session Timeout and Auto-Logout Middleware
- * 
- * Handles automatic logout when session expires or user is inactive
- */
-
-import axios from 'axios';
+import api, { applyToken } from '@/services/api';
 import router from '@/router';
 
-let inactivityTimer = null;
-let warningTimer = null;
-const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 minutes in milliseconds
-const WARNING_TIME = 2 * 60 * 1000; // 2 minutes before logout
+const TOKEN_KEY = 'api_token';
+const USER_KEY = 'user';
+const LAST_ACTIVITY_KEY = 'session_last_activity_at';
+const STARTED_AT_KEY = 'session_started_at';
+
+const IDLE_TIMEOUT_MS = Number(import.meta.env.VITE_IDLE_TIMEOUT_MINUTES || 30) * 60 * 1000;
+const MAX_SESSION_AGE_MS = Number(import.meta.env.VITE_SESSION_MAX_AGE_MINUTES || 720) * 60 * 1000;
+
+let checkInterval = null;
+let listenersBound = false;
+let interceptorRegistered = false;
+
+const ACTIVITY_EVENTS = ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart', 'click'];
+
+function nowMs() {
+  return Date.now();
+}
+
+function getToken() {
+  return localStorage.getItem(TOKEN_KEY);
+}
+
+function setSessionTimestampsIfMissing() {
+  const now = String(nowMs());
+  if (!localStorage.getItem(STARTED_AT_KEY)) localStorage.setItem(STARTED_AT_KEY, now);
+  if (!localStorage.getItem(LAST_ACTIVITY_KEY)) localStorage.setItem(LAST_ACTIVITY_KEY, now);
+}
+
+function touchActivity() {
+  if (!getToken()) return;
+  localStorage.setItem(LAST_ACTIVITY_KEY, String(nowMs()));
+}
+
+function clearLocalAuthState() {
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(USER_KEY);
+  localStorage.removeItem(LAST_ACTIVITY_KEY);
+  localStorage.removeItem(STARTED_AT_KEY);
+  applyToken(null);
+}
+
+function logout(reason = 'session_expired') {
+  clearLocalAuthState();
+  const currentName = router.currentRoute.value?.name;
+  if (currentName !== 'Signin') {
+    router.push({ name: 'Signin', query: { reason } });
+  }
+}
+
+export function isSessionStillValid() {
+  const token = getToken();
+  if (!token) return false;
+
+  const startedAt = Number(localStorage.getItem(STARTED_AT_KEY) || 0);
+  const lastActivity = Number(localStorage.getItem(LAST_ACTIVITY_KEY) || 0);
+  const now = nowMs();
+
+  if (!startedAt || !lastActivity) return false;
+  if ((now - startedAt) > MAX_SESSION_AGE_MS) return false;
+  if ((now - lastActivity) > IDLE_TIMEOUT_MS) return false;
+
+  return true;
+}
+
+function checkSessionValidity() {
+  const token = getToken();
+  if (!token) return;
+  if (!isSessionStillValid()) logout('session_expired');
+}
+
+function bindActivityListeners() {
+  if (listenersBound) return;
+  ACTIVITY_EVENTS.forEach((event) => document.addEventListener(event, touchActivity, true));
+  listenersBound = true;
+}
+
+function unbindActivityListeners() {
+  if (!listenersBound) return;
+  ACTIVITY_EVENTS.forEach((event) => document.removeEventListener(event, touchActivity, true));
+  listenersBound = false;
+}
 
 export function initSessionTimeout() {
-  // Reset timers on user activity
-  const resetTimers = () => {
-    clearTimeout(inactivityTimer);
-    clearTimeout(warningTimer);
+  if (!getToken()) return;
+  setSessionTimestampsIfMissing();
+  bindActivityListeners();
+  checkSessionValidity();
 
-    // Show warning 2 minutes before logout
-    warningTimer = setTimeout(() => {
-      const shouldContinue = confirm(
-        'Your session will expire in 2 minutes due to inactivity. Would you like to stay logged in?'
-      );
-      
-      if (shouldContinue) {
-        // Ping server to keep session alive
-        axios.get('/api/ping').catch(() => {});
-        resetTimers();
-      } else {
-        // Logout immediately
-        logout();
-      }
-    }, INACTIVITY_TIMEOUT - WARNING_TIME);
-
-    // Auto-logout after full timeout
-    inactivityTimer = setTimeout(() => {
-      logout();
-    }, INACTIVITY_TIMEOUT);
-  };
-
-  // Listen for user activity
-  const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
-  events.forEach(event => {
-    document.addEventListener(event, resetTimers, true);
-  });
-
-  // Start timers
-  resetTimers();
+  if (!checkInterval) {
+    checkInterval = setInterval(checkSessionValidity, 60 * 1000);
+  }
 }
 
 export function clearSessionTimeout() {
-  clearTimeout(inactivityTimer);
-  clearTimeout(warningTimer);
-  
-  const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
-  events.forEach(event => {
-    document.removeEventListener(event, initSessionTimeout, true);
-  });
+  if (checkInterval) {
+    clearInterval(checkInterval);
+    checkInterval = null;
+  }
+  unbindActivityListeners();
 }
 
-function logout() {
-  // Clear local data
-  localStorage.removeItem('token');
-  localStorage.removeItem('user');
-  
-  // Redirect to login
-  router.push({
-    name: 'SignIn',
-    query: { reason: 'session_expired' }
-  });
-  
-  // Show message
-  alert('Your session has expired due to inactivity. Please log in again.');
-}
-
-// Setup axios interceptor for 401 responses
 export function setupAuthInterceptor() {
-  axios.interceptors.response.use(
+  if (interceptorRegistered) return;
+  interceptorRegistered = true;
+
+  api.interceptors.response.use(
     (response) => response,
     (error) => {
-      if (error.response?.status === 401) {
-        // Session expired or unauthorized
-        logout();
+      if (error?.response?.status === 401 && getToken()) {
+        logout('unauthorized');
       }
       return Promise.reject(error);
     }

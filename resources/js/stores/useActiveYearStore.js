@@ -26,9 +26,9 @@ export const useActiveYearStore = defineStore('activeYear', () => {
     try {
       const res          = await schoolYearService.index()
       availableYears.value = res.data.years ?? []
-      // S'assurer que l'année active est dans la liste
-      if (!availableYears.value.includes(activeYear.value)) {
-        availableYears.value = [activeYear.value, ...availableYears.value]
+      // S'assurer que l'année active est valide côté serveur
+      if (availableYears.value.length > 0 && !availableYears.value.includes(activeYear.value)) {
+        setActiveYear(availableYears.value[0])
       }
     } catch {
       // Fallback : générer 6 années autour de l'année courante
@@ -38,6 +38,9 @@ export const useActiveYearStore = defineStore('activeYear', () => {
         const s = base + 1 - i
         return `${s}-${s + 1}`
       })
+      if (!availableYears.value.includes(activeYear.value)) {
+        setActiveYear(availableYears.value[0])
+      }
     } finally {
       loading.value = false
     }

@@ -35,6 +35,16 @@
             font-size: 48px;
             margin-bottom: 10px;
         }
+        .header .logo {
+            max-width: 160px;
+            max-height: 65px;
+            margin: 0 auto 15px;
+            display: block;
+            object-fit: contain;
+            background: rgba(255,255,255,0.15);
+            border-radius: 6px;
+            padding: 6px 10px;
+        }
         .content {
             padding: 30px 20px;
         }
@@ -101,8 +111,14 @@
 <body>
     <div class="container">
         <div class="header">
+            @if(!empty($institutionLogo))
+                <img src="{{ $institutionLogo }}" alt="{{ $institutionName ?? '' }}" class="logo">
+            @endif
             <div class="icon">🚨</div>
             <h1>Retard de Paiement</h1>
+            @if(!empty($institutionName))
+                <p style="margin: 6px 0 0; font-size: 13px; opacity: 0.85;">{{ $institutionName }}</p>
+            @endif
         </div>
 
         <div class="content">
@@ -146,8 +162,21 @@
         </div>
 
         <div class="footer">
+            {{-- Branding institution + annexe --}}
+            @if(!empty($institutionLogo) || !empty($institutionName))
+            <div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #dee2e6;">
+                @if(!empty($institutionLogo))
+                    <img src="{{ $institutionLogo }}" alt="{{ $institutionName ?? '' }}" style="max-height: 55px; max-width: 170px; object-fit: contain; display: block; margin: 0 auto 8px;">
+                @endif
+                @if(!empty($institutionName))
+                    <div style="font-weight: 700; font-size: 15px; color: #111827;">{{ $institutionName }}</div>
+                @endif
+                <div style="font-size: 13px; color: #6b7280; margin-top: 3px;">{{ $annexeName }}</div>
+            </div>
+            @else
             <strong>{{ $annexeName }}</strong>
-            
+            @endif
+
             <div class="footer-contact">
                 @if($annexePhone)
                     <div>📞 {{ $annexePhone }}</div>

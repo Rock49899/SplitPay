@@ -45,10 +45,13 @@
 
 <script setup>
 /* filepath: /home/rock/PIEUVRE/Saas-schooling-project/resources/js/components/payment/PaymentLinksCard.vue */
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import ComponentCard from '@/components/common/ComponentCard.vue';
 import paymentLinkService from '@/services/paymentLinkService';
 import LinkActionModal from '@/components/payment/LinkActionModal.vue';
+import { useActiveYearStore } from '@/stores/useActiveYearStore';
+
+const activeYearStore = useActiveYearStore();
 
 const props = defineProps({
   studentId: { type: String, required: true }
@@ -64,7 +67,10 @@ const activeLink = ref(null);
 const fetchLinks = async () => {
   loading.value = true;
   try {
-    const res = await paymentLinkService.index({ student_id: props.studentId });
+    const res = await paymentLinkService.index({
+      student_id: props.studentId,
+      school_year: activeYearStore.activeYear || undefined,
+    });
     links.value = res.data?.data ?? res.data ?? [];
   } catch (e) {
     console.error('Failed to fetch payment links', e);
@@ -150,6 +156,10 @@ const onChanged = () => {
 };
 
 onMounted(fetchLinks);
+
+watch(() => activeYearStore.activeYear, () => {
+  fetchLinks();
+});
 
 // exposer la méthode fetchLinks pour le parent
 defineExpose({ fetchLinks });

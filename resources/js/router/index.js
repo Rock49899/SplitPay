@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { isSessionStillValid } from '@/middleware/sessionTimeout'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -89,6 +90,12 @@ const router = createRouter({
       name: 'AnnexeSettings',
       component: () => import('../views/Settings/AnnexeSettings.vue').catch(() => import('../views/Placeholders/PlaceholderPage.vue')),
       meta: { title: 'Paramètres Annexe', requiresAuth: true },
+    },
+    {
+      path: '/admin/institution/settings',
+      name: 'InstitutionSettings',
+      component: () => import('../views/Settings/InstitutionSettings.vue').catch(() => import('../views/Placeholders/PlaceholderPage.vue')),
+      meta: { title: 'Paramètres Institution', requiresAuth: true },
     },
     {
       path: '/admin/notifications',
@@ -194,7 +201,14 @@ function getRoleDashboard(user) {
 router.beforeEach(async (to, from, next) => {
   document.title = `Vue.js ${to.meta.title ?? ''} | SplitPay`;
 
-  const token = localStorage.getItem('api_token');
+  let token = localStorage.getItem('api_token');
+  if (token && !isSessionStillValid()) {
+    localStorage.removeItem('api_token');
+    localStorage.removeItem('user');
+    localStorage.removeItem('session_started_at');
+    localStorage.removeItem('session_last_activity_at');
+    token = null;
+  }
   const userStr = localStorage.getItem('user');
   const user = userStr ? JSON.parse(userStr) : null;
 
@@ -226,7 +240,14 @@ router.beforeEach(async (to, from, next) => {
   // Protection espace étudiant
   if (to.meta.requiresStudentAuth) {
     const studentToken = localStorage.getItem('student_token');
-    if (!studentToken) {
+    const studentExpiry = Number(localStorage.getItem('student_token_expires_at') || 0);
+    const studentExpired = studentExpiry && Date.now() > studentExpiry;
+    if (studentExpired) {
+      localStorage.removeItem('student_token');
+      localStorage.removeItem('student_token_expires_at');
+    }
+
+    if (!studentToken || studentExpired) {
       return next({ name: 'StudentLogin' });
     }
   }

@@ -79,15 +79,22 @@
           <div class="hidden sm:flex items-center gap-1.5">
             <input
               list="school-year-list"
-              :value="activeYearStore.activeYear"
-              @change="onYearChange"
-              @keydown.enter="onYearChange"
+              v-model="pendingYear"
+              @keydown.enter.prevent="applyYear"
               placeholder="Ex: 2025-2026"
-              class="w-28 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-2 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 focus:outline-none focus:border-brand-500"
+              class="w-28 rounded-md border bg-white dark:bg-gray-800 px-2 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 focus:outline-none focus:border-brand-500"
+              :class="yearInputError ? 'border-red-300 dark:border-red-700' : 'border-gray-200 dark:border-gray-700'"
             />
             <datalist id="school-year-list">
               <option v-for="y in activeYearStore.availableYears" :key="y" :value="y" />
             </datalist>
+            <button
+              @click="applyYear"
+              class="px-2 py-1.5 rounded-md border border-gray-200 dark:border-gray-700 text-[11px] font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+              title="Appliquer l'année"
+            >
+              Appliquer
+            </button>
           </div>
           <ThemeToggler />
           <NotificationMenu />
@@ -100,7 +107,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useSidebar } from '@/composables/useSidebar'
 import { useActiveYearStore } from '@/stores/useActiveYearStore'
 import ThemeToggler from '../common/ThemeToggler.vue'
@@ -112,18 +119,36 @@ import UserMenu from './header/UserMenu.vue'
 
 const { toggleSidebar, toggleMobileSidebar, isMobileOpen } = useSidebar()
 const activeYearStore = useActiveYearStore()
-onMounted(() => activeYearStore.loadAvailableYears())
+const pendingYear = ref(activeYearStore.activeYear)
+const yearInputError = ref(false)
 
-function onYearChange(e) {
-  const val = e.target.value?.trim()
-  // Accepte le format YYYY-YYYY (ex: 2025-2026)
-  if (!val || !/^\d{4}-\d{4}$/.test(val)) return
+onMounted(async () => {
+  await activeYearStore.loadAvailableYears()
+  pendingYear.value = activeYearStore.activeYear
+})
+
+watch(() => activeYearStore.activeYear, (val) => {
+  pendingYear.value = val
+})
+
+function isValidSchoolYearFormat(val) {
+  if (!val || !/^\d{4}-\d{4}$/.test(val)) return false
   const [a, b] = val.split('-').map(Number)
-  if (b !== a + 1) return // ex: 2025-2026 ✓, 2025-2030 ✗
-  activeYearStore.setActiveYear(val)
-  // S'assurer que l'année saisie apparaît dans les suggestions
-  if (!activeYearStore.availableYears.includes(val)) {
-    activeYearStore.availableYears.unshift(val)
+  return b === a + 1
+}
+
+function applyYear() {
+  const val = (pendingYear.value || '').trim()
+  const inAvailableList = activeYearStore.availableYears.includes(val)
+
+  if (!isValidSchoolYearFormat(val) || !inAvailableList) {
+    yearInputError.value = true
+    return
+  }
+
+  yearInputError.value = false
+  if (val !== activeYearStore.activeYear) {
+    activeYearStore.setActiveYear(val)
   }
 }
 

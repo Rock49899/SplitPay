@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Enrollment;
 use App\Models\LevelFee;
+use App\Models\SchoolYear;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -19,21 +20,49 @@ class PromotionController extends Controller
      */
     public function schoolYears(): JsonResponse
     {
-        $dbYears = Enrollment::distinct()->orderBy('school_year', 'desc')->pluck('school_year')->toArray();
-
-        $now  = now();
-        $base = $now->month >= 9 ? $now->year : $now->year - 1;
-
-        $generated = [];
-        for ($i = -1; $i <= 4; $i++) {
-            $y           = $base - $i;
-            $generated[] = "$y-" . ($y + 1);
-        }
-
-        $years = array_values(array_unique(array_merge($generated, $dbYears)));
-        usort($years, fn ($a, $b) => strcmp($b, $a)); // décroissant
+        $years = SchoolYear::query()
+            ->whereIn('status', ['active', 'closed'])
+            ->orderByDesc('year')
+            ->pluck('year')
+            ->values()
+            ->all();
 
         return response()->json(['years' => $years]);
+    }
+
+    /**
+     * Retourne le contexte d'année réellement appliqué par le middleware.
+     * GET admin/school-years/context
+     * GET student/school-year/context
+     */
+    public function context(Request $request): JsonResponse
+    {
+        $years = SchoolYear::query()
+            ->whereIn('status', ['active', 'closed'])
+            ->orderByDesc('year')
+            ->pluck('year')
+            ->values()
+            ->all();
+
+        $requested = $request->attributes->get('requested_school_year')
+            ?: ($request->query('school_year') ?: $request->input('school_year'));
+
+        $effective = $request->attributes->get('effective_school_year')
+            ?: ($request->input('school_year') ?: $request->attributes->get('active_school_year'));
+
+        $status = null;
+        if (!empty($effective)) {
+            $status = SchoolYear::where('year', $effective)->value('status');
+        }
+
+        return response()->json([
+            'requested_year' => $requested,
+            'effective_year' => $effective,
+            'status' => $status,
+            'available' => (bool) $request->attributes->get('school_year_available', true),
+            'read_only' => (bool) $request->attributes->get('school_year_read_only', false),
+            'years' => $years,
+        ]);
     }
 
     /**
@@ -126,6 +155,22 @@ class PromotionController extends Controller
         $toYear     = $validated['to_year'];
         $filterIds  = $validated['student_ids'] ?? null;
 
+        $fromSchoolYear = SchoolYear::firstOrCreate(
+            ['year' => $fromYear],
+            ['status' => 'active', 'opened_at' => now()]
+        );
+
+        if ($fromSchoolYear->status !== 'active') {
+            return response()->json([
+                'message' => "L'année $fromYear n'est pas active et ne peut pas être clôturée.",
+            ], 422);
+        }
+
+        $toSchoolYear = SchoolYear::firstOrCreate(
+            ['year' => $toYear],
+            ['status' => 'draft']
+        );
+
         // Vérification : l'année source doit avoir des inscriptions actives
         $count = Enrollment::active()->forYear($fromYear)->count();
         if ($count === 0) {
@@ -149,7 +194,7 @@ class PromotionController extends Controller
         $skipped   = 0;
         $errors    = [];
 
-        DB::transaction(function () use ($enrollments, $toYear, &$promoted, &$graduated, &$skipped, &$errors) {
+        DB::transaction(function () use ($enrollments, $toYear, $fromSchoolYear, $toSchoolYear, &$promoted, &$graduated, &$skipped, &$errors) {
             foreach ($enrollments as $enrollment) {
                 try {
                     $studyLevel = $enrollment->levelFee?->studyLevel;
@@ -202,6 +247,26 @@ class PromotionController extends Controller
                     ];
                 }
             }
+
+            // Cycle de vie des années scolaires
+            SchoolYear::where('status', 'active')
+                ->where('year', '!=', $toSchoolYear->year)
+                ->update([
+                    'status' => 'closed',
+                    'closed_at' => now(),
+                ]);
+
+            $fromSchoolYear->update([
+                'status' => 'closed',
+                'closed_at' => now(),
+                'promoted_to_year' => $toSchoolYear->year,
+            ]);
+
+            $toSchoolYear->update([
+                'status' => 'active',
+                'opened_at' => $toSchoolYear->opened_at ?: now(),
+                'closed_at' => null,
+            ]);
         });
 
         return response()->json([

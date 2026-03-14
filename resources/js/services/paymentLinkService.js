@@ -11,6 +11,9 @@ export default {
   store(payload) {
     return api.post('admin/payment-links', payload);
   },
+  broadcast(payload) {
+    return api.post('admin/payment-links/broadcast', payload);
+  },
   update(id, payload) {
     // try patch then put
     return api.patch(`admin/payment-links/${id}`, payload).catch((e) => {

@@ -32,8 +32,23 @@ class StudentAuthController extends Controller
         $key = "student_otp_{$student->id}";
         Cache::put($key, $otp, now()->addMinutes(10));
 
-        // Envoi email (simple HTML)
-        Mail::to($student->email)->send(new StudentOtpMail($otp, $student));
+        // Envoi email — on capture les erreurs SMTP pour ne pas bloquer le login
+        try {
+            Mail::to($student->email)->send(new StudentOtpMail($otp, $student));
+        } catch (\Throwable $e) {
+            // En dev : voir le code OTP dans les logs Laravel
+            \Log::error('StudentAuthController: échec envoi OTP email', [
+                'student_id' => $student->id,
+                'email'      => $student->email,
+                'otp'        => $otp,   // retirer en production
+                'error'      => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'message'            => 'Impossible d\'envoyer l\'email OTP. Vérifiez la configuration SMTP.',
+                'expires_in_minutes' => 10,
+            ], 500);
+        }
 
         return response()->json([
             'message' => 'Code OTP envoyé si l\'email est configuré',

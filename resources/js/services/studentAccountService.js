@@ -2,6 +2,7 @@ import api from './api';
 
 // Clé localStorage pour le token de session étudiant
 const TOKEN_KEY = 'student_token';
+const TOKEN_EXP_KEY = 'student_token_expires_at';
 
 export default {
   //Envoi du matricule pr généré et envoie OTP par email 
@@ -13,8 +14,9 @@ export default {
     return api.post('students/verify-otp', { matricule, otp });
   },
 
-  saveToken(token) {
+  saveToken(token, expiresInMinutes = 60) {
     localStorage.setItem(TOKEN_KEY, token);
+    localStorage.setItem(TOKEN_EXP_KEY, String(Date.now() + (expiresInMinutes * 60 * 1000)));
   },
 
   getToken() {
@@ -23,10 +25,20 @@ export default {
 
   removeToken() {
     localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(TOKEN_EXP_KEY);
   },
 
   isAuthenticated() {
-    return !!this.getToken();
+    const token = this.getToken();
+    if (!token) return false;
+
+    const expiresAt = Number(localStorage.getItem(TOKEN_EXP_KEY) || 0);
+    if (expiresAt && Date.now() > expiresAt) {
+      this.removeToken();
+      return false;
+    }
+
+    return true;
   },
 
   authHeaders() {
@@ -38,8 +50,8 @@ export default {
     this.removeToken();
   },
 
-  getProfile() {
-    return api.get('student/profile', { headers: this.authHeaders() });
+  getProfile(params = {}) {
+    return api.get('student/profile', { params, headers: this.authHeaders() });
   },
 
   /**

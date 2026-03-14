@@ -15,6 +15,7 @@ class StorePaymentLinkRequest extends FormRequest
     {
         return [
             'student_id' => 'required|uuid|exists:students,id',
+            'school_year'=> 'sometimes|nullable|regex:/^\d{4}-\d{4}$/',
             'amount'     => 'required|numeric|min:0.01',
             'type'       => 'sometimes|string',
             'description'=> 'sometimes|nullable|string',

@@ -75,8 +75,8 @@ export default {
    * @param {string} id - ID du rappel
    * @returns {Promise}
    */
-  preview(id) {
-    return api.get(`/admin/reminders/${id}/preview`);
+  preview(id, params = {}) {
+    return api.get(`/admin/reminders/${id}/preview`, { params });
   },
 
   /**
@@ -84,7 +84,7 @@ export default {
    * @param {string} id - ID du rappel
    * @returns {Promise}
    */
-  sendNow(id) {
-    return api.post(`/admin/reminders/${id}/send-now`);
+  sendNow(id, params = {}) {
+    return api.post(`/admin/reminders/${id}/send-now`, null, { params });
   },
 };

@@ -1,11 +1,11 @@
 <template>
   <div
-    class="overflow-hidden rounded-2xl border border-gray-200 bg-white px-4 pb-3 pt-4 dark:border-gray-800 dark:bg-white/[0.03] sm:px-6"
+    class="overflow-hidden rounded-2xl border border-slate-200 bg-white px-4 pb-3 pt-4 dark:border-slate-700 dark:bg-slate-800 sm:px-6"
   >
     <div class="flex flex-col gap-2 mb-4 sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Paiements récents</h3>
-        <p v-if="scopeLabel" class="mt-0.5 text-theme-xs text-gray-400 dark:text-gray-500">{{ scopeLabel }}</p>
+        <h3 class="text-lg font-semibold text-slate-800 dark:text-white">Paiements récents</h3>
+        <p v-if="scopeLabel" class="mt-0.5 text-theme-xs text-slate-400 dark:text-slate-300">{{ scopeLabel }}</p>
       </div>
 
       <div class="flex items-center gap-3">
@@ -16,7 +16,7 @@
             'inline-flex items-center gap-2 rounded-lg border px-4 py-2.5 text-theme-sm font-medium shadow-theme-xs transition',
             hasActiveFilters
               ? 'border-brand-500 bg-brand-50 text-brand-700 dark:border-brand-600 dark:bg-brand-500/10 dark:text-brand-400'
-              : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03]',
+              : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:hover:bg-slate-600',
           ]"
         >
           <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -28,7 +28,7 @@
 
         <router-link
           to="/finances"
-          class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-theme-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200"
+          class="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-theme-sm font-medium text-slate-700 shadow-theme-xs hover:bg-slate-50 hover:text-slate-800 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:hover:bg-slate-600 dark:hover:text-white"
         >
           Voir tout
         </router-link>
@@ -39,12 +39,12 @@
     <Transition name="slide-down">
       <div
         v-if="showFilter"
-        class="mb-4 grid grid-cols-2 gap-3 rounded-xl border border-gray-100 bg-gray-50 p-3 dark:border-gray-800 dark:bg-white/[0.02] sm:grid-cols-3 lg:grid-cols-4"
+        class="mb-4 grid grid-cols-2 gap-3 rounded-xl border border-slate-100 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-700/40 sm:grid-cols-3 lg:grid-cols-4"
       >
         <!-- Status -->
         <div>
-          <label class="mb-1 block text-theme-xs font-medium text-gray-500 dark:text-gray-400">Statut</label>
-          <select v-model="filters.status" class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-theme-sm text-gray-700 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
+          <label class="mb-1 block text-theme-xs font-medium text-slate-500 dark:text-slate-300">Statut</label>
+          <select v-model="filters.status" class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-theme-sm text-slate-700 focus:border-brand-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white">
             <option value="">Tous</option>
             <option value="success">Payé</option>
             <option value="pending">En attente</option>
@@ -54,8 +54,8 @@
 
         <!-- Method -->
         <div>
-          <label class="mb-1 block text-theme-xs font-medium text-gray-500 dark:text-gray-400">Méthode</label>
-          <select v-model="filters.method" class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-theme-sm text-gray-700 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
+          <label class="mb-1 block text-theme-xs font-medium text-slate-500 dark:text-slate-300">Méthode</label>
+          <select v-model="filters.method" class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-theme-sm text-slate-700 focus:border-brand-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white">
             <option value="">Toutes</option>
             <option value="mtn">MTN Mobile Money</option>
             <option value="moov">Moov Money</option>
@@ -68,8 +68,8 @@
 
         <!-- Type -->
         <div>
-          <label class="mb-1 block text-theme-xs font-medium text-gray-500 dark:text-gray-400">Type</label>
-          <select v-model="filters.type" class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-theme-sm text-gray-700 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
+          <label class="mb-1 block text-theme-xs font-medium text-slate-500 dark:text-slate-300">Type</label>
+          <select v-model="filters.type" class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-theme-sm text-slate-700 focus:border-brand-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white">
             <option value="">Tous</option>
             <option value="tuition">Scolarité</option>
             <option value="registration">Inscription</option>
@@ -79,8 +79,8 @@
 
         <!-- Branch filter (super_admin_institution only) -->
         <div v-if="isSuperAdminInstitution && annexes.length">
-          <label class="mb-1 block text-theme-xs font-medium text-gray-500 dark:text-gray-400">Annexe</label>
-          <select v-model="filters.annexe_id" class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-theme-sm text-gray-700 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
+          <label class="mb-1 block text-theme-xs font-medium text-slate-500 dark:text-slate-300">Annexe</label>
+          <select v-model="filters.annexe_id" class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-theme-sm text-slate-700 focus:border-brand-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white">
             <option value="">Toutes</option>
             <option v-for="a in annexes" :key="a.id" :value="a.id">{{ a.name }}</option>
           </select>
@@ -88,14 +88,14 @@
 
         <!-- Date from -->
         <div>
-          <label class="mb-1 block text-theme-xs font-medium text-gray-500 dark:text-gray-400">Du</label>
-          <input type="date" v-model="filters.from" class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-theme-sm text-gray-700 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300" />
+          <label class="mb-1 block text-theme-xs font-medium text-slate-500 dark:text-slate-300">Du</label>
+          <input type="date" v-model="filters.from" class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-theme-sm text-slate-700 focus:border-brand-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white" />
         </div>
 
         <!-- Date to -->
         <div>
-          <label class="mb-1 block text-theme-xs font-medium text-gray-500 dark:text-gray-400">Au</label>
-          <input type="date" v-model="filters.to" class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-theme-sm text-gray-700 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300" />
+          <label class="mb-1 block text-theme-xs font-medium text-slate-500 dark:text-slate-300">Au</label>
+          <input type="date" v-model="filters.to" class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-theme-sm text-slate-700 focus:border-brand-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white" />
         </div>
 
         <!-- Actions -->
@@ -108,7 +108,7 @@
           </button>
           <button
             @click="resetFilters"
-            class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-theme-sm font-medium text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 transition"
+            class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-theme-sm font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:hover:bg-slate-600 transition"
           >
             Réinitialiser
           </button>
@@ -126,33 +126,33 @@
       </div>
 
       <!-- Empty -->
-      <div v-else-if="!payments.length" class="py-8 text-center text-theme-sm text-gray-400 dark:text-gray-500">
+      <div v-else-if="!payments.length" class="py-8 text-center text-theme-sm text-slate-400 dark:text-slate-300">
         Aucun paiement trouvé.
       </div>
 
       <table v-else class="min-w-full">
         <thead>
-          <tr class="border-t border-gray-100 dark:border-gray-800">
+          <tr class="border-t border-slate-100 dark:border-slate-700">
             <th class="py-3 pr-4 text-left">
-              <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Étudiant</p>
+              <p class="font-medium text-slate-500 text-theme-xs dark:text-slate-300">Étudiant</p>
             </th>
             <th class="py-3 pr-4 text-left">
-              <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Date</p>
+              <p class="font-medium text-slate-500 text-theme-xs dark:text-slate-300">Date</p>
             </th>
             <th v-if="isSuperAdminInstitution" class="py-3 pr-4 text-left">
-              <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Annexe</p>
+              <p class="font-medium text-slate-500 text-theme-xs dark:text-slate-300">Annexe</p>
             </th>
             <th class="py-3 pr-4 text-left">
-              <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Type</p>
+              <p class="font-medium text-slate-500 text-theme-xs dark:text-slate-300">Type</p>
             </th>
             <th class="py-3 pr-4 text-left">
-              <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Méthode</p>
+              <p class="font-medium text-slate-500 text-theme-xs dark:text-slate-300">Méthode</p>
             </th>
             <th class="py-3 pr-4 text-left">
-              <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Amount</p>
+              <p class="font-medium text-slate-500 text-theme-xs dark:text-slate-300">Montant</p>
             </th>
             <th class="py-3 text-left">
-              <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Status</p>
+              <p class="font-medium text-slate-500 text-theme-xs dark:text-slate-300">Statut</p>
             </th>
           </tr>
         </thead>
@@ -160,22 +160,22 @@
           <tr
             v-for="(p, idx) in payments"
             :key="p.id ?? idx"
-            class="border-t border-gray-100 transition hover:bg-gray-50/50 dark:border-gray-800 dark:hover:bg-white/[0.02]"
+            class="border-t border-slate-100 transition hover:bg-slate-50/50 dark:border-slate-700 dark:hover:bg-slate-700/40"
           >
             <!-- Élève -->
             <td class="py-3 pr-4 whitespace-nowrap">
-              <p class="font-medium text-gray-800 text-theme-sm dark:text-white/90">{{ getStudentName(p) }}</p>
-              <span class="text-gray-400 text-theme-xs dark:text-gray-500">{{ p.student?.email ?? '' }}</span>
+              <p class="font-medium text-slate-800 text-theme-sm dark:text-white">{{ getStudentName(p) }}</p>
+              <span class="text-slate-400 text-theme-xs dark:text-slate-300">{{ p.student?.email ?? '' }}</span>
             </td>
 
             <!-- Date -->
             <td class="py-3 pr-4 whitespace-nowrap">
-              <p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ formatDate(p.paid_at ?? p.created_at) }}</p>
+              <p class="text-slate-500 text-theme-sm dark:text-slate-300">{{ formatDate(p.paid_at ?? p.created_at) }}</p>
             </td>
 
             <!-- Annexe (super_admin_institution) -->
             <td v-if="isSuperAdminInstitution" class="py-3 pr-4 whitespace-nowrap">
-              <p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ p.student?.annexe?.name ?? '–' }}</p>
+              <p class="text-slate-500 text-theme-sm dark:text-slate-300">{{ p.student?.annexe?.name ?? '–' }}</p>
             </td>
 
             <!-- Type de paiement -->
@@ -185,12 +185,12 @@
 
             <!-- Méthode -->
             <td class="py-3 pr-4 whitespace-nowrap">
-              <p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ methodLabel(p.method) }}</p>
+              <p class="text-slate-500 text-theme-sm dark:text-slate-300">{{ methodLabel(p.method) }}</p>
             </td>
 
             <!-- Montant -->
             <td class="py-3 pr-4 whitespace-nowrap">
-              <p class="font-medium text-gray-800 text-theme-sm dark:text-white/80">{{ formatAmount(p.amount) }}</p>
+              <p class="font-medium text-slate-800 text-theme-sm dark:text-white">{{ formatAmount(p.amount) }}</p>
             </td>
 
             <!-- Statut -->
@@ -327,4 +327,9 @@ onMounted(() => { loadPayments(); loadAnnexes() })
 .slide-down-leave-active { transition: all 0.2s ease; }
 .slide-down-enter-from,
 .slide-down-leave-to { opacity: 0; transform: translateY(-8px); }
+
+select option {
+  color: #f8fafc;
+  background-color: #334155;
+}
 </style>

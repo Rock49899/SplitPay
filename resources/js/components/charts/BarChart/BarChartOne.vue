@@ -7,7 +7,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import VueApexCharts from 'vue3-apexcharts'
 
 const props = defineProps({
@@ -33,13 +33,31 @@ const defaultSeries = [
 const defaultCategories = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 
 const activeSeries = computed(() => props.series ?? defaultSeries)
+const isDark = ref(false)
+let classObserver = null
+
+const syncTheme = () => {
+  isDark.value = document.documentElement.classList.contains('dark')
+}
+
+onMounted(() => {
+  syncTheme()
+  classObserver = new MutationObserver(syncTheme)
+  classObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
+})
+
+onBeforeUnmount(() => {
+  classObserver?.disconnect()
+})
 
 const mergedOptions = computed(() => ({
   colors: props.colors,
+  theme: { mode: isDark.value ? 'dark' : 'light' },
   chart: {
     fontFamily: 'Outfit, sans-serif',
     type: 'bar',
     toolbar: { show: false },
+    foreColor: isDark.value ? '#9CA3AF' : '#6B7280',
   },
   plotOptions: {
     bar: {
@@ -56,7 +74,11 @@ const mergedOptions = computed(() => ({
     axisBorder: { show: false },
     axisTicks: { show: false },
     labels: {
-      style: { fontFamily: 'Outfit, sans-serif', fontSize: '12px' },
+      style: {
+        fontFamily: 'Outfit, sans-serif',
+        fontSize: '12px',
+        colors: isDark.value ? '#9CA3AF' : '#6B7280',
+      },
     },
   },
   legend: {
@@ -65,6 +87,7 @@ const mergedOptions = computed(() => ({
     horizontalAlign: 'left',
     fontFamily: 'Outfit',
     markers: { radius: 99 },
+    labels: { colors: isDark.value ? '#9CA3AF' : '#6B7280' },
   },
   yaxis: {
     title: false,
@@ -72,7 +95,10 @@ const mergedOptions = computed(() => ({
       formatter: props.yFormatter ?? ((val) => val.toString()),
     },
   },
-  grid: { yaxis: { lines: { show: true } } },
+  grid: {
+    borderColor: isDark.value ? '#1F2937' : '#E5E7EB',
+    yaxis: { lines: { show: true } },
+  },
   fill: { opacity: 1 },
   tooltip: {
     x: { show: false },

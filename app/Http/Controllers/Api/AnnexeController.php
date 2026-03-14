@@ -109,8 +109,17 @@ class AnnexeController extends Controller
     // GET /api/admin/annexes/{id}
     public function show($id)
     {
-        // include manager & pivot info
-        $annexe = Annexe::with(['user_annexes.role', 'user_annexes.user'])->findOrFail($id);
+        $annexe = Annexe::findOrFail($id);
+
+        $with = [];
+        if (method_exists($annexe, 'institution')) $with[] = 'institution';
+        if (method_exists($annexe, 'users')) $with[] = 'users';
+        if (method_exists($annexe, 'manager')) $with[] = 'manager';
+
+        if (count($with)) {
+            $annexe->load($with);
+        }
+
         return response()->json($annexe, 200);
     }
 

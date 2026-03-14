@@ -26,7 +26,18 @@ class StudentController extends Controller
 
     public function index(Request $request)
     {
+        if ($request->attributes->get('school_year_available') === false) {
+            return response()->json([
+                'data' => [],
+                'current_page' => 1,
+                'last_page' => 1,
+                'per_page' => (int) $request->get('per_page', 15),
+                'total' => 0,
+            ], 200);
+        }
+
         $perPage = (int) $request->get('per_page', 15);
+        $requestedYear = $request->get('school_year');
 
         $query = Student::query();
         
@@ -90,8 +101,25 @@ class StudentController extends Controller
                 $query->whereHas('enrollments', fn ($q) => $q->where('school_year', $schoolYear));
             }
 
-            $students = $query->with(['annexe', 'specialization', 'currentEnrollment.levelFee.studyLevel'])
+            $with = ['annexe', 'specialization', 'currentEnrollment.levelFee.studyLevel'];
+
+            if ($requestedYear) {
+                $with['enrollments'] = function ($q) use ($requestedYear) {
+                    $q->where('school_year', $requestedYear)
+                        ->with('levelFee.studyLevel');
+                };
+            }
+
+            $students = $query->with($with)
                 ->orderBy('last_name')->paginate($perPage);
+
+            if ($requestedYear) {
+                $students->getCollection()->transform(function ($student) {
+                    $yearEnrollment = $student->enrollments->first() ?? null;
+                    $student->setRelation('currentEnrollment', $yearEnrollment);
+                    return $student;
+                });
+            }
 
             return response()->json($students, 200);
         } catch (QueryException $e) {
@@ -148,6 +176,16 @@ class StudentController extends Controller
     public function show($id)
     {
         try {
+            if (request()->attributes->get('school_year_available') === false) {
+                return response()->json([
+                    'message' => 'Aucune donnée pour cette année scolaire.',
+                    'student' => null,
+                    'finance' => null,
+                ], 200);
+            }
+
+            $requestedYear = request()->get('school_year');
+
             $student = Student::with([
                 'annexe',
                 'specialization',
@@ -155,7 +193,15 @@ class StudentController extends Controller
                 'enrollments.levelFee.studyLevel',
             ])->findOrFail($id);
 
-            $enrollment = $student->currentEnrollment;
+            $enrollment = $requestedYear
+                ? $student->enrollments()->with('levelFee.studyLevel')->where('school_year', $requestedYear)->first()
+                : $student->currentEnrollment;
+
+            // Aligner la relation retournée avec l'année active sélectionnée
+            if ($requestedYear) {
+                $student->setRelation('currentEnrollment', $enrollment);
+            }
+
             $tuition    = (float) ($enrollment?->tuition_amount ?? 0);
             $amountPaid = (float) ($enrollment?->amount_paid    ?? 0);
             $amountDue  = max(0, $tuition - $amountPaid);
@@ -183,18 +229,44 @@ class StudentController extends Controller
     public function financials($id)
     {
         try {
+            if (request()->attributes->get('school_year_available') === false) {
+                return response()->json([
+                    'data' => [
+                        'tuition_amount' => 0,
+                        'amount_paid' => 0,
+                        'amount_due' => 0,
+                        'recovery_rate' => 0,
+                        'school_year' => request()->get('school_year'),
+                        'last_payment_date' => null,
+                        'recent_payments' => [],
+                        'history' => [],
+                    ],
+                ], 200);
+            }
+
+            $requestedYear = request()->get('school_year');
+
             $student = Student::with([
                 'currentEnrollment',
                 'enrollments.levelFee.studyLevel',
             ])->findOrFail($id);
 
-            $enrollment = $student->currentEnrollment;
+            $enrollment = $requestedYear
+                ? $student->enrollments()->with('levelFee.studyLevel')->where('school_year', $requestedYear)->first()
+                : $student->currentEnrollment;
+
             $tuition    = (float) ($enrollment?->tuition_amount ?? 0);
             $amountPaid = (float) ($enrollment?->amount_paid    ?? 0);
             $amountDue  = max(0, $tuition - $amountPaid);
 
             // Historique des paiements directs (via table payments)
-            $payments = \App\Models\Payment::where('student_id', $student->id)
+            $paymentsQuery = \App\Models\Payment::where('student_id', $student->id);
+
+            if ($requestedYear) {
+                $paymentsQuery->whereHas('paymentLink', fn ($q) => $q->where('school_year', $requestedYear));
+            }
+
+            $payments = $paymentsQuery
                 ->orderByDesc('paid_at')
                 ->take(10)
                 ->get();
@@ -205,7 +277,7 @@ class StudentController extends Controller
                     'amount_paid'       => $amountPaid,
                     'amount_due'        => $amountDue,
                     'recovery_rate'     => $enrollment?->recovery_rate ?? 0,
-                    'school_year'       => $enrollment?->school_year,
+                    'school_year'       => $enrollment?->school_year ?? $requestedYear,
                     'last_payment_date' => $payments->first()?->paid_at?->toDateString(),
                     'recent_payments'   => $payments,
                     'history'           => $student->enrollments->map(fn($e) => [

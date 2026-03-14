@@ -2,7 +2,7 @@
   <AdminLayout>
     <PageBreadcrumb :pageTitle="currentPageTitle" />
     <div class="flex items-center gap-3 mb-4">
-      <button @click="showCreateModal = true" class="px-4 py-2 bg-brand-500 text-white rounded">Ajouter un étudiant</button>
+      <button @click="showCreateModal = true" class="px-4 py-2 bg-brand-500 text-white rounded hover:bg-brand-600">Ajouter un étudiant</button>
       <button @click="showImportModal = true" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
         <svg class="w-4 h-4 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
@@ -15,35 +15,35 @@
         </svg>
         {{ exporting ? 'Exportation...' : 'Exporter' }}
       </button>
-      <button @click="showCols = true" class="px-3 py-2 border rounded">Colonnes</button>
+      <button @click="showCols = true" class="px-3 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-100 rounded hover:bg-slate-50 dark:hover:bg-slate-600">Colonnes</button>
     </div>
 
     <!-- Filtres : Annexe / Niveau d'étude / Spécialisation / Appliquer / Réinitialiser -->
     <div class="flex flex-wrap gap-3 items-end mb-4">
       <div class="w-56">
-        <label class="block text-xs text-gray-500 mb-1">Annexe</label>
-        <select v-model="filters.annexe_id" class="w-full rounded border px-3 py-2">
+        <label class="block text-xs text-slate-500 dark:text-slate-300 mb-1">Annexe</label>
+        <select v-model="filters.annexe_id" class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white px-3 py-2">
           <option :value="null">Toutes les annexes</option>
           <option v-for="a in annexes" :key="a.id" :value="a.id">{{ a.name }}</option>
         </select>
       </div>
       <div class="w-40">
-        <label class="block text-xs text-gray-500 mb-1">Niveau d'étude</label>
-        <select v-model="filters.study_level_id" class="w-full rounded border px-3 py-2">
+        <label class="block text-xs text-slate-500 dark:text-slate-300 mb-1">Niveau d'étude</label>
+        <select v-model="filters.study_level_id" class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white px-3 py-2">
           <option :value="null">Tous les niveaux</option>
           <option v-for="level in studyLevels" :key="level.id" :value="level.id">{{ level.label }}</option>
         </select>
       </div>
       <div class="w-40">
-        <label class="block text-xs text-gray-500 mb-1">Spécialisation</label>
-        <select v-model="filters.specialization_id" class="w-full rounded border px-3 py-2">
+        <label class="block text-xs text-slate-500 dark:text-slate-300 mb-1">Spécialisation</label>
+        <select v-model="filters.specialization_id" class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white px-3 py-2">
           <option :value="null">Toutes les spécialisations</option>
           <option v-for="spec in specializations" :key="spec.id" :value="spec.id">{{ spec.label }}</option>
         </select>
       </div>
       <div class="flex items-center gap-2">
         <button @click="applyFilters" class="px-3 py-2 bg-brand-500 text-white rounded">Appliquer</button>
-        <button @click="clearFilters" class="px-3 py-2 border rounded">Réinitialiser</button>
+        <button @click="clearFilters" class="px-3 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-100 rounded hover:bg-slate-50 dark:hover:bg-slate-600">Réinitialiser</button>
       </div>
     </div>
 
@@ -65,28 +65,28 @@
     <div class="space-y-5 sm:space-y-6">
       <ComponentCard :title="`${annexeName}`" v-for="(studentsInAnnexe, annexeName) in groupedByAnnexe" :key="annexeName" >
         <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
+          <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+            <thead class="bg-slate-50 dark:bg-slate-700">
               <tr>
-                <th v-if="visibleColumns.includes('name')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nom</th>
-                <th v-if="visibleColumns.includes('matricule')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Matricule</th>
-                <th v-if="visibleColumns.includes('email')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                <th v-if="visibleColumns.includes('phone')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Téléphone</th>
-                <th v-if="visibleColumns.includes('study_level')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Niveau d'étude</th>
-                <th v-if="visibleColumns.includes('specialization')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Spécialisation</th>
-                <th v-if="visibleColumns.includes('annexes')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Annexes</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Statut</th>
-                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                <th v-if="visibleColumns.includes('name')" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase">Nom</th>
+                <th v-if="visibleColumns.includes('matricule')" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase">Matricule</th>
+                <th v-if="visibleColumns.includes('email')" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase">Email</th>
+                <th v-if="visibleColumns.includes('phone')" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase">Téléphone</th>
+                <th v-if="visibleColumns.includes('study_level')" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase">Niveau d'étude</th>
+                <th v-if="visibleColumns.includes('specialization')" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase">Spécialisation</th>
+                <th v-if="visibleColumns.includes('annexes')" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase">Annexes</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase">Statut</th>
+                <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-300 uppercase">Actions</th>
               </tr>
             </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
+            <tbody class="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
               <tr 
                 v-for="s in (studentsInAnnexe || [])" 
                 :key="s.id"
                 @click="router.push(`/admin/students/${s.id}`)"
-                class="cursor-pointer hover:bg-gray-50 transition-colors"
+                class="cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
               >
-                <td v-if="visibleColumns.includes('name')" class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                <td v-if="visibleColumns.includes('name')" class="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">
                   <div class="flex items-center gap-2.5">
                     <AvatarDisplay 
                       :src="s.avatar_url" 
@@ -98,12 +98,12 @@
                     <span>{{ s.first_name }} {{ s.last_name }}</span>
                   </div>
                 </td>
-                <td v-if="visibleColumns.includes('matricule')" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ s.matricule ?? '-' }}</td>
-                <td v-if="visibleColumns.includes('email')" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ s.email ?? '-' }}</td>
-                <td v-if="visibleColumns.includes('phone')" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ s.phone ?? '-' }}</td>
-                <td v-if="visibleColumns.includes('study_level')" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ s?.current_enrollment?.level_fee?.study_level?.label ?? '—' }}</td>
-                <td v-if="visibleColumns.includes('specialization')" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ s.specialization?.label ?? s.specialization?.code ?? '-' }}</td>
-                <td v-if="visibleColumns.includes('annexes')" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td v-if="visibleColumns.includes('matricule')" class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-300">{{ s.matricule ?? '-' }}</td>
+                <td v-if="visibleColumns.includes('email')" class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-300">{{ s.email ?? '-' }}</td>
+                <td v-if="visibleColumns.includes('phone')" class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-300">{{ s.phone ?? '-' }}</td>
+                <td v-if="visibleColumns.includes('study_level')" class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-300">{{ s?.current_enrollment?.level_fee?.study_level?.label ?? '—' }}</td>
+                <td v-if="visibleColumns.includes('specialization')" class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-300">{{ s.specialization?.label ?? s.specialization?.code ?? '-' }}</td>
+                <td v-if="visibleColumns.includes('annexes')" class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-300">
                   {{ annexeNames(s) || '-' }}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm">
@@ -112,13 +112,13 @@
                   </button>
                 </td>
                 <td class="px-6 py-4 text-right whitespace-nowrap text-sm">
-                  <router-link @click.stop :to="`/admin/students/${s.id}`" class="text-brand-500 mr-3">Voir</router-link>
-                  <router-link @click.stop :to="`/admin/students/${s.id}/finance`" class="text-indigo-600 mr-3">Finance</router-link>
+                  <router-link @click.stop :to="`/admin/students/${s.id}`" class="text-brand-500 dark:text-brand-300 mr-3">Voir</router-link>
+                  <router-link @click.stop :to="`/admin/students/${s.id}/finance`" class="text-indigo-600 dark:text-indigo-300 mr-3">Finance</router-link>
                   <button @click.stop="remove(s.id)" class="text-red-500">Supprimer</button>
                 </td>
               </tr>
               <tr v-if="!studentsInAnnexe || studentsInAnnexe.length === 0">
-                <td colspan="10" class="px-6 py-4 text-center text-sm text-gray-500">Aucun étudiant</td>
+                <td colspan="10" class="px-6 py-4 text-center text-sm text-slate-500 dark:text-slate-300">Aucun étudiant</td>
               </tr>
             </tbody>
           </table>
@@ -128,9 +128,9 @@
       <div class="flex items-center justify-between">
         <div></div>
         <div class="flex items-center gap-2">
-          <button @click="prevPage" :disabled="students.page <= 1" class="px-3 py-1 border rounded">Précédent</button>
-          <span>Page {{ students.page }}</span>
-          <button @click="nextPage" :disabled="students.meta && students.page >= students.meta.last_page" class="px-3 py-1 border rounded">Suivant</button>
+          <button @click="prevPage" :disabled="students.page <= 1" class="px-3 py-1 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-100 rounded disabled:opacity-50">Précédent</button>
+          <span class="text-slate-700 dark:text-slate-200">Page {{ students.page }}</span>
+          <button @click="nextPage" :disabled="students.meta && students.page >= students.meta.last_page" class="px-3 py-1 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-100 rounded disabled:opacity-50">Suivant</button>
         </div>
       </div>
     </div>
@@ -286,6 +286,8 @@ const enrichStudents = async () => {
       const annObj = d.annexe ?? annFromStore ?? s.annexe ?? null;
       return {
         ...s,
+        current_enrollment: d.current_enrollment ?? s.current_enrollment ?? null,
+        currentEnrollment: d.currentEnrollment ?? s.currentEnrollment ?? null,
         matricule: s.matricule ?? d.matricule ?? null,
         student_number: s.student_number ?? d.student_number ?? null,
         class_name: s.class_name ?? d.class_name ?? d.class ?? null,
@@ -437,3 +439,10 @@ const loadStudents = async (page = 1) => {
 };
 
 </script>
+
+<style scoped>
+select option {
+  color: #f8fafc;
+  background-color: #334155;
+}
+</style>

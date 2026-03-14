@@ -2,18 +2,18 @@
   <!-- CreateStudent modal — selects niveau/filière/année, tuition auto-résolu -->
   <div class="fixed inset-0 z-50 flex items-center justify-center">
     <div class="fixed inset-0 bg-black/50" @click="close"></div>
-    <div class="bg-white dark:bg-gray-900 rounded-xl p-6 z-50 w-full max-w-2xl shadow-xl max-h-[88vh] overflow-auto">
+    <div class="bg-white dark:bg-slate-800 border border-transparent dark:border-slate-700 rounded-xl p-6 z-50 w-full max-w-2xl shadow-xl max-h-[88vh] overflow-auto">
 
       <div class="flex items-center justify-between mb-5">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Nouvel étudiant</h3>
-        <button @click="close" class="text-gray-400 hover:text-gray-600">✕</button>
+        <button @click="close" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">✕</button>
       </div>
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
         <!-- Avatar -->
         <div class="sm:col-span-2 flex items-center gap-4">
-          <div class="w-14 h-14 rounded-full bg-gray-100 border border-gray-200 overflow-hidden shrink-0 flex items-center justify-center">
+          <div class="w-14 h-14 rounded-full bg-gray-100 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 overflow-hidden shrink-0 flex items-center justify-center">
             <img v-if="avatarPreview" :src="avatarPreview" class="w-full h-full object-cover" />
             <svg v-else class="w-7 h-7 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
               <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0" />
@@ -73,8 +73,23 @@
           <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Année scolaire *</label>
           <select v-model="form.school_year" @change="resolveTuition"
             class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-transparent text-gray-900 dark:text-white">
-            <option v-for="y in schoolYearOptions" :key="y" :value="y">{{ y }}</option>
+            <option v-for="y in schoolYearSelectOptions" :key="y" :value="y">{{ y }}</option>
           </select>
+          <div class="mt-2 flex items-center gap-2">
+            <input
+              v-model.trim="customSchoolYear"
+              placeholder="Ex: 2026-2027"
+              class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-transparent text-gray-900 dark:text-white text-sm"
+            />
+            <button
+              type="button"
+              @click="applyCustomSchoolYear"
+              class="px-3 py-2 rounded-lg border border-brand-300 text-brand-600 dark:border-brand-500/40 dark:text-brand-300 text-xs font-medium"
+            >
+              Ajouter
+            </button>
+          </div>
+          <p class="mt-1 text-[11px] text-gray-400">Format valide: YYYY-YYYY (ex: 2026-2027)</p>
         </div>
 
         <!-- Filière -->
@@ -125,7 +140,7 @@
 
       <!-- Actions -->
       <div class="flex gap-2 justify-end mt-5">
-        <button @click="close" class="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg text-sm">Annuler</button>
+        <button @click="close" class="px-4 py-2 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-200 rounded-lg text-sm">Annuler</button>
         <button @click="submit" :disabled="loading"
           class="px-5 py-2 bg-brand-500 text-white rounded-lg text-sm font-medium disabled:opacity-60">
           <span v-if="!loading">Créer l'étudiant</span>
@@ -138,7 +153,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue'
+import { computed, ref, watch, onMounted } from 'vue'
 import studentService from '@/services/studentService'
 import studyLevelService from '@/services/studyLevelService'
 import specializationService from '@/services/specializationService'
@@ -157,7 +172,34 @@ const annexesLocal    = ref(props.annexes ?? [])
 const studyLevels     = ref([])
 const specializations = ref([])
 
-const { current: currentYear, options: schoolYearOptions } = useSchoolYear(4)
+const { current: currentYear, options: schoolYearOptions } = useSchoolYear(4, { futureCount: 4 })
+const customYears = ref([])
+const customSchoolYear = ref('')
+const schoolYearSelectOptions = computed(() => {
+  return Array.from(new Set([...schoolYearOptions, ...customYears.value]))
+    .sort((a, b) => Number(b.split('-')[0]) - Number(a.split('-')[0]))
+})
+
+const isValidSchoolYear = (value) => {
+  if (!/^\d{4}-\d{4}$/.test(value)) return false
+  const [start, end] = value.split('-').map(Number)
+  return end === start + 1
+}
+
+const applyCustomSchoolYear = () => {
+  if (!customSchoolYear.value) return
+  if (!isValidSchoolYear(customSchoolYear.value)) {
+    error.value = "Année invalide. Utilisez le format YYYY-YYYY (ex: 2026-2027)."
+    return
+  }
+  error.value = null
+  if (!schoolYearSelectOptions.value.includes(customSchoolYear.value)) {
+    customYears.value.push(customSchoolYear.value)
+  }
+  form.value.school_year = customSchoolYear.value
+  customSchoolYear.value = ''
+  resolveTuition()
+}
 
 // ── Avatar ─────────────────────────────────────────────────────────────────────
 const avatarFile    = ref(null)
@@ -220,6 +262,7 @@ const submit = async () => {
   if (!form.value.matricule)  { error.value = 'Le matricule est requis'; return }
   if (!form.value.annexe_id)  { error.value = 'Sélectionner une annexe'; return }
   if (!form.value.school_year){ error.value = "L'année scolaire est requise"; return }
+  if (!isValidSchoolYear(form.value.school_year)) { error.value = "Le format de l'année scolaire est invalide (YYYY-YYYY)"; return }
 
   loading.value = true
   try {
@@ -264,4 +307,9 @@ onMounted(async () => {
 })
 </script>
 
-<style scoped></style>
+<style scoped>
+select option {
+  color: #f8fafc;
+  background-color: #334155;
+}
+</style>

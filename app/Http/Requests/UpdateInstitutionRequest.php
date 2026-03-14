@@ -19,6 +19,8 @@ class UpdateInstitutionRequest extends FormRequest
             'name'      => 'required|string|max:255',
             'email'     => 'nullable|email|max:150|unique:institutions,email,'.$institutionId.',id',
             'phone'     => 'nullable|string|max:30',
+            'logo'      => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
+            'remove_logo' => 'sometimes|boolean',
             'is_active' => 'sometimes|boolean',
         ];
     }

@@ -14,6 +14,64 @@
 
       <!-- Settings Grid -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+        <!-- Institution Settings (Super Admin Institution) -->
+        <router-link
+          to="/admin/institution/settings"
+          v-if="showInstitutionSettings"
+          class="group bg-white dark:bg-gray-dark rounded-lg shadow-sm hover:shadow-lg p-6 transition-all border border-gray-200 dark:border-gray-800 hover:border-cyan-500 dark:hover:border-cyan-500"
+        >
+          <div class="flex items-start gap-4">
+            <div class="flex-shrink-0 w-12 h-12 bg-cyan-100 dark:bg-cyan-900/30 rounded-lg flex items-center justify-center text-cyan-600 dark:text-cyan-400 group-hover:scale-110 transition-transform">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21h18M5 21V7l8-4 6 3v15M9 9h.01M9 12h.01M9 15h.01M13 9h.01M13 12h.01M13 15h.01"></path>
+              </svg>
+            </div>
+            <div class="flex-1">
+              <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-1 group-hover:text-cyan-600 dark:group-hover:text-cyan-400">
+                Paramètres Institution
+              </h3>
+              <p class="text-sm text-gray-600 dark:text-gray-400">
+                Modifiez les informations globales et le logo de votre institution
+              </p>
+              <div class="mt-3 flex items-center gap-2 text-xs text-cyan-600 dark:text-cyan-400 font-medium">
+                <span>Modifier</span>
+                <svg class="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+              </div>
+            </div>
+          </div>
+        </router-link>
+
+        <!-- Annexe Settings (role-scoped) -->
+        <router-link
+          :to="annexeSettingsRoute"
+          v-if="showAnnexeSettings"
+          class="group bg-white dark:bg-gray-dark rounded-lg shadow-sm hover:shadow-lg p-6 transition-all border border-gray-200 dark:border-gray-800 hover:border-teal-500 dark:hover:border-teal-500"
+        >
+          <div class="flex items-start gap-4">
+            <div class="flex-shrink-0 w-12 h-12 bg-teal-100 dark:bg-teal-900/30 rounded-lg flex items-center justify-center text-teal-600 dark:text-teal-400 group-hover:scale-110 transition-transform">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10m-2 10H9a2 2 0 01-2-2V7h10v12a2 2 0 01-2 2z"></path>
+              </svg>
+            </div>
+            <div class="flex-1">
+              <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-1 group-hover:text-teal-600 dark:group-hover:text-teal-400">
+                Paramètres Annexe
+              </h3>
+              <p class="text-sm text-gray-600 dark:text-gray-400">
+                Gérez les informations de votre annexe autorisée
+              </p>
+              <div class="mt-3 flex items-center gap-2 text-xs text-teal-600 dark:text-teal-400 font-medium">
+                <span>Modifier</span>
+                <svg class="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+              </div>
+            </div>
+          </div>
+        </router-link>
         
         <!-- Rappels Automatiques -->
         <router-link
@@ -211,9 +269,33 @@
 </template>
 
 <script setup>
+import { computed } from 'vue';
 import AdminLayout from '@/components/layout/AdminLayout.vue';
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue';
 import { usePermissions } from '@/composables/usePermissions';
 
-const { hasPermission, isGestionnaire, isComptable } = usePermissions();
+const { hasPermission, hasRole, isGestionnaire, isComptable, currentUser } = usePermissions();
+
+const showInstitutionSettings = computed(() => hasRole('super_admin_institution'));
+
+const principalAnnexeId = computed(() => {
+  const annexes = currentUser.value?.annexes || [];
+  return annexes.find(a => a.is_principal)?.id || annexes[0]?.id || null;
+});
+
+const ownAnnexeId = computed(() => {
+  return currentUser.value?.annexe_id || principalAnnexeId.value;
+});
+
+const annexeSettingsRoute = computed(() => {
+  if (showInstitutionSettings.value) {
+    return principalAnnexeId.value ? `/admin/annexe/${principalAnnexeId.value}/settings` : '/settings';
+  }
+  return ownAnnexeId.value ? `/admin/annexe/${ownAnnexeId.value}/settings` : '/settings';
+});
+
+const showAnnexeSettings = computed(() => {
+  if (showInstitutionSettings.value) return !!principalAnnexeId.value;
+  return (hasRole('super_admin_annexe') || hasRole('admin_annexe')) && !!ownAnnexeId.value;
+});
 </script>

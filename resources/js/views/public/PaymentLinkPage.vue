@@ -4,8 +4,17 @@
 
       <!-- En-tête -->
       <div class="text-center mb-6">
+        <div class="mb-3 flex justify-center">
+          <img
+            v-if="paymentInstitutionLogo"
+            :src="paymentInstitutionLogo"
+            :alt="paymentInstitutionName"
+            class="h-16 w-auto max-w-[260px] object-contain"
+          />
+          <span v-else class="inline-block rounded-lg bg-white px-3 py-1 text-sm font-semibold text-gray-700 shadow-sm border border-gray-100">{{ paymentInstitutionDisplayName }}</span>
+        </div>
         <h1 class="text-2xl font-bold text-gray-800">Paiement de scolarité</h1>
-        <p class="text-sm text-gray-500 mt-1">SplitPay — Paiement sécurisé</p>
+        <p class="text-sm text-gray-500 mt-1">{{ paymentInstitutionDisplayName }} — Paiement sécurisé</p>
       </div>
 
       <!-- Chargement -->
@@ -81,12 +90,12 @@
               <span class="font-medium text-gray-700">{{ studentName }}</span>
             </div>
             <div>
-              <span class="text-gray-400 block text-xs">Scolarité totale</span>
-              <span class="font-medium text-gray-700">{{ fmt(link.student?.tuition_amount, link.currency) }}</span>
+              <span class="text-gray-400 block text-xs">Montant du lien</span>
+              <span class="font-medium text-gray-700">{{ fmt(link.amount, link.currency) }}</span>
             </div>
             <div>
-              <span class="text-gray-400 block text-xs">Montant payé</span>
-              <span class="font-medium text-green-600">{{ fmt(link.student?.amount_paid, link.currency) }}</span>
+              <span class="text-gray-400 block text-xs">Montant payé (ce lien)</span>
+              <span class="font-medium text-green-600">{{ fmt(paidOnLink, link.currency) }}</span>
             </div>
           </div>
           <!-- Restant dû mis en avant -->
@@ -277,6 +286,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRoute } from 'vue-router';
 import paymentLinkService from '@/services/paymentLinkService';
 import paymentService from '@/services/paymentService';
+import { useInstitutionBrand } from '@/composables/useInstitutionBrand'
 
 const route = useRoute();
 const token = route.params.token;
@@ -291,6 +301,7 @@ const paymentReference  = ref('');
 const paymentConfirmed  = ref(false);  // polling → statut success
 const paymentFailed     = ref(false);  // polling → statut failed
 const pollTimer         = ref(null);
+const { brandName, brandLogoUrl, loadBrand } = useInstitutionBrand()
 
 const POLL_INTERVAL_MS = 5000;   // vérifier toutes les 5 secondes
 const POLL_MAX_TRIES   = 24;     // abandon après 2 minutes (24 × 5s)
@@ -345,20 +356,36 @@ const form = ref({
   payer_last_name:   '',
 });
 
+const successfulPaymentsForLink = computed(() => {
+  if (!link.value) return [];
+
+  const byId = new Map();
+
+  (link.value.payments ?? []).forEach((p) => {
+    if (p?.status === 'success') {
+      byId.set(p.id ?? `${p.reference}-${p.amount}-${p.paid_at}`, p);
+    }
+  });
+
+  (link.value.installments ?? []).forEach((inst) => {
+    (inst?.payments ?? []).forEach((p) => {
+      if (p?.status === 'success') {
+        byId.set(p.id ?? `${p.reference}-${p.amount}-${p.paid_at}`, p);
+      }
+    });
+  });
+
+  return Array.from(byId.values());
+});
+
+const paidOnLink = computed(() => {
+  return successfulPaymentsForLink.value.reduce((sum, p) => sum + Number(p?.amount ?? 0), 0);
+});
+
 const remaining = computed(() => {
   if (!link.value) return 0;
   const total = Number(link.value.amount ?? 0);
-  let paid = 0;
-  //  compter QUE les paiements confirmés (status = 'success')
-  (link.value.installments ?? []).forEach(i => {
-    (i.payments ?? []).filter(p => p.status === 'success').forEach(p => {
-      paid += Number(p.amount ?? 0);
-    });
-  });
-  (link.value.payments ?? []).filter(p => p.status === 'success').forEach(p => {
-    paid += Number(p.amount ?? 0);
-  });
-  return Math.max(0, total - paid);
+  return Math.max(0, total - paidOnLink.value);
 });
 
 const studentName = computed(() => {
@@ -372,6 +399,23 @@ const fullPhone = computed(() => {
   if (!local) return '';
   return form.value.country_code + local;
 });
+
+const paymentInstitution = computed(() => link.value?.student?.annexe?.institution ?? null)
+
+const paymentInstitutionName = computed(() => {
+  return paymentInstitution.value?.name || brandName.value || 'SplitPay'
+})
+
+const paymentInstitutionDisplayName = computed(() => {
+  const name = paymentInstitutionName.value || 'SplitPay'
+  return name.length > 22 ? `${name.slice(0, 21)}…` : name
+})
+
+const paymentInstitutionLogo = computed(() => {
+  const logo = paymentInstitution.value?.logo
+  if (logo) return `/storage/${logo}`
+  return brandLogoUrl.value || ''
+})
 
 // Validation 8 à 15 chiffres au total 
 const phoneError = computed(() => {
@@ -400,6 +444,7 @@ const fmt = (v, currency = 'XOF') => {
 };
 
 onMounted(async () => {
+  loadBrand(true)
   try {
     const res = await paymentLinkService.publicShow(token);
     link.value = res.data ?? res;

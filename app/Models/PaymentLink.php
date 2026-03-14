@@ -42,6 +42,7 @@ class PaymentLink extends Model
      */
     protected $fillable = [
         'student_id',
+        'school_year',
         'type',
         'token',
         'amount',

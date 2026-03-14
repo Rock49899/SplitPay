@@ -2,83 +2,130 @@
 
 namespace Tests\Feature;
 
+use App\Models\Annexe;
+use App\Models\Institution;
+use App\Models\PaymentLink;
+use App\Models\Student;
+use App\Services\PayPlusService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
 use Illuminate\Support\Str;
-use App\Models\User;
+use Mockery;
+use Tests\TestCase;
 
 class PaymentFlowsTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_admin_can_create_payment_link_and_public_can_view_and_pay()
+    public function test_public_can_view_payment_link_by_token(): void
     {
-        if (! class_exists(\App\Models\PaymentLink::class) || ! class_exists(\App\Models\Annexe::class)) {
-            $this->markTestSkipped('PaymentLink or Annexe model missing.');
-        }
-
-        // create admin
-        $admin = User::create([
+        $institution = Institution::create([
             'id' => (string) Str::uuid(),
-            'name' => 'Admin',
-            'email' => 'admin@local.test',
-            'password' => bcrypt('secret'),
-            'scope' => 'institution',
+            'name' => 'School One',
+            'email' => 'school.one@example.com',
             'is_active' => true,
         ]);
 
-        $this->actingAs($admin, 'sanctum');
-
-        // create annexe
-        $annexe = \App\Models\Annexe::create([
+        $annexe = Annexe::create([
             'id' => (string) Str::uuid(),
-            'institution_id' => \App\Models\Institution::factory()->create()->id ?? (string) Str::uuid(),
+            'institution_id' => $institution->id,
             'name' => 'Main Campus',
             'is_active' => true,
         ]);
 
-        // admin create payment link
-        $payload = [
-            'title' => 'Tuition fee',
-            'description' => 'Term 1',
+        $student = Student::create([
+            'id' => (string) Str::uuid(),
+            'annexe_id' => $annexe->id,
+            'matricule' => 'MAT-PUBLIC-001',
+            'first_name' => 'Jean',
+            'last_name' => 'Public',
+            'email' => 'jean.public@example.com',
+            'status' => 'active',
+        ]);
+
+        $link = PaymentLink::create([
+            'id' => (string) Str::uuid(),
+            'student_id' => $student->id,
+            'school_year' => '2025-2026',
+            'type' => 'tuition',
+            'token' => 'tok_test_public_link_001',
             'amount' => 1000,
             'currency' => 'USD',
+            'status' => 'active',
+        ]);
+
+        $publicResp = $this->getJson('/api/payment-links/token/' . $link->token);
+        $publicResp->assertStatus(200)
+            ->assertJsonPath('id', $link->id)
+            ->assertJsonPath('token', $link->token);
+    }
+
+    public function test_public_checkout_creates_pending_payment_and_returns_payplus_token(): void
+    {
+        $institution = Institution::create([
+            'id' => (string) Str::uuid(),
+            'name' => 'School Two',
+            'email' => 'school.two@example.com',
+            'is_active' => true,
+        ]);
+
+        $annexe = Annexe::create([
+            'id' => (string) Str::uuid(),
+            'institution_id' => $institution->id,
+            'name' => 'North Campus',
+            'is_active' => true,
+        ]);
+
+        $student = Student::create([
+            'id' => (string) Str::uuid(),
             'annexe_id' => $annexe->id,
+            'matricule' => 'MAT-CHECKOUT-001',
+            'first_name' => 'Aline',
+            'last_name' => 'Client',
+            'email' => 'aline.client@example.com',
+            'status' => 'active',
+        ]);
+
+        $link = PaymentLink::create([
+            'id' => (string) Str::uuid(),
+            'student_id' => $student->id,
+            'school_year' => '2025-2026',
+            'type' => 'tuition',
+            'token' => 'tok_test_checkout_link_001',
+            'amount' => 500,
+            'currency' => 'USD',
+            'status' => 'active',
+        ]);
+
+        $this->instance(PayPlusService::class, Mockery::mock(PayPlusService::class, function ($mock) {
+            $mock->shouldReceive('launchPayment')
+                ->once()
+                ->andReturn(['token' => 'pp_test_123']);
+        }));
+
+        $payload = [
+            'payment_link_id' => $link->id,
+            'amount' => 500,
+            'method' => 'mtn',
+            'payer_phone' => '0700000000',
+            'payer_first_name' => 'Aline',
+            'payer_last_name' => 'Client',
+            'payer_email' => 'aline.client@example.com',
         ];
 
-        $resp = $this->postJson('/api/admin/payment-links', $payload);
-        $resp->assertStatus(201);
+        $resp = $this->postJson('/api/payments/public/checkout', $payload);
 
-        $link = $resp->json('payment_link') ?? $resp->json('paymentLink') ?? $resp->json('payment_link', []);
+        $resp->assertStatus(201)
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('payplus_token', 'pp_test_123');
 
-        // ensure we have id or public_token
-        $this->assertTrue(!empty($link['id'] ?? null) || !empty($link['public_token'] ?? null));
+        $reference = $resp->json('reference');
+        $this->assertNotEmpty($reference);
 
-        $token = $link['public_token'] ?? null;
-        if (! $token && ! empty($link['id'])) {
-            // try to fetch token from record
-            $record = \App\Models\PaymentLink::find($link['id']);
-            $token = $record->public_token ?? null;
-        }
-
-        $this->assertNotEmpty($token);
-
-        // public view by token
-        $publicResp = $this->getJson("/api/payment-links/{$token}");
-        $publicResp->assertStatus(200)->assertJsonFragment(['title' => 'Tuition fee']);
-
-        // public create payment
-        if (! class_exists(\App\Models\Payment::class)) {
-            $this->markTestSkipped('Payment model missing.');
-        }
-
-        $payPayload = [
-            'payment_link_id' => $link['id'] ?? $record->id,
-            'amount' => 1000,
-            'method' => 'card',
-        ];
-
-        $payResp = $this->postJson('/api/payments/public', $payPayload);
-        $payResp->assertStatus(201)->assertJsonStructure(['message','payment']);
+        $this->assertDatabaseHas('payments', [
+            'reference' => $reference,
+            'payment_link_id' => $link->id,
+            'student_id' => $student->id,
+            'status' => 'pending',
+        ]);
     }
 }

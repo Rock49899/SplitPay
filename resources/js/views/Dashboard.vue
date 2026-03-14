@@ -5,6 +5,15 @@
       <!-- ── Header bar  -->
       <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
+          <div class="mb-2 flex items-center gap-3">
+            <img
+              v-if="brandLogoUrl"
+              :src="brandLogoUrl"
+              :alt="brandName"
+              class="h-10 w-auto max-w-[180px] object-contain"
+            />
+            <span v-else class="inline-block rounded-lg bg-gray-100 px-3 py-1 text-sm font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-200">{{ displayName }}</span>
+          </div>
           <h1 class="text-xl font-semibold text-gray-800 dark:text-white/90">Tableau de bord</h1>
           <p class="mt-0.5 text-sm text-gray-400 dark:text-gray-500">
             {{ isSuperAdminInstitution ? 'Vue d\'éensemble de l\'établissement' : scopeLabel }}
@@ -76,8 +85,10 @@ import AnnexeStatsChart        from '../components/dashboard/AnnexeStatsChart.vu
 import api                     from '@/services/api'
 import { usePermissions }      from '@/composables/usePermissions'
 import { useActiveYearStore }  from '@/stores/useActiveYearStore'
+import { useInstitutionBrand } from '@/composables/useInstitutionBrand'
 
 const { isSuperAdminInstitution, isSuperAdminAnnexe, isComptable, isGestionnaire, currentUser } = usePermissions()
+const { brandName, brandLogoUrl, displayName, loadBrand } = useInstitutionBrand()
 
 const activeYearStore = useActiveYearStore()
 
@@ -178,6 +189,7 @@ const loadAll = () => {
 }
 
 onMounted(async () => {
+  loadBrand(true)
   await activeYearStore.loadAvailableYears()
   loadAll()
 })
