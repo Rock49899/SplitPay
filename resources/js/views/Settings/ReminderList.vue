@@ -366,12 +366,15 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import reminderService from '@/services/reminderService'
 import annexeService from '@/services/annexeService'
+import { useActiveYearStore } from '@/stores/useActiveYearStore'
 import Swal from 'sweetalert2'
+
+const activeYearStore = useActiveYearStore()
 
 const reminders = ref([])
 const annexes = ref([])
@@ -461,7 +464,9 @@ const openCreateModal = async () => {
 const loadReminders = async () => {
   try {
     loading.value = true
-    const response = await reminderService.getAll()
+    const response = await reminderService.getAll({
+      school_year: activeYearStore.activeYear || undefined,
+    })
     reminders.value = response.data
   } catch (error) {
     console.error('Failed to load reminders:', error)
@@ -558,7 +563,9 @@ const deactivateReminder = async (reminder) => {
 
 const previewReminder = async (reminder) => {
   try {
-    const response = await reminderService.preview(reminder.id)
+    const response = await reminderService.preview(reminder.id, {
+      school_year: activeYearStore.activeYear || undefined,
+    })
     previewData.value = response.data
   } catch (error) {
     console.error('Failed to preview reminder:', error)
@@ -585,7 +592,9 @@ const sendNowReminder = async (reminder) => {
     })
 
     if (result.isConfirmed) {
-      const response = await reminderService.sendNow(reminder.id)
+      const response = await reminderService.sendNow(reminder.id, {
+        school_year: activeYearStore.activeYear || undefined,
+      })
       
       Swal.fire({
         title: 'Envoi programmé !',
@@ -645,5 +654,9 @@ const formatDate = (dateString) => {
 onMounted(() => {
   loadReminders()
   loadAnnexes()
+})
+
+watch(() => activeYearStore.activeYear, () => {
+  loadReminders()
 })
 </script>

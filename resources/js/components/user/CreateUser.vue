@@ -1,10 +1,10 @@
 <template>
   <div class="fixed inset-0 z-50 flex items-center justify-center">
     <div class="fixed inset-0 bg-black/50" @click="close"></div>
-    <div class="bg-white dark:bg-gray-900 rounded-lg p-6 z-50 w-full max-w-2xl shadow-lg">
+    <div class="bg-white dark:bg-slate-800 border border-transparent dark:border-slate-700 rounded-lg p-6 z-50 w-full max-w-2xl shadow-lg">
       <div class="flex items-center justify-between mb-4">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Créer un utilisateur</h3>
-        <button @click="close" class="text-gray-500 hover:text-gray-700">✕</button>
+        <button @click="close" class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-200">✕</button>
       </div>
 
       <div class="grid grid-cols-1 gap-3">
@@ -23,14 +23,14 @@
           <div class="text-xs text-gray-500 dark:text-gray-400">Cliquez sur l'icône caméra pour ajouter une photo</div>
         </div>
         
-        <input v-model="form.name" placeholder="Nom complet" class="px-3 py-2 rounded border bg-transparent text-gray-900 dark:text-white" />
-        <input v-model="form.email" placeholder="Email" class="px-3 py-2 rounded border bg-transparent text-gray-900 dark:text-white" />
-        <input v-model="form.password" type="password" placeholder="Mot de passe" class="px-3 py-2 rounded border bg-transparent text-gray-900 dark:text-white" />
-        <input v-model="form.phone" placeholder="Téléphone" class="px-3 py-2 rounded border bg-transparent text-gray-900 dark:text-white" />
+        <input v-model="form.name" placeholder="Nom complet" class="px-3 py-2 rounded border border-slate-300 dark:border-slate-600 bg-transparent dark:bg-slate-700 text-slate-900 dark:text-white" />
+        <input v-model="form.email" placeholder="Email" class="px-3 py-2 rounded border border-slate-300 dark:border-slate-600 bg-transparent dark:bg-slate-700 text-slate-900 dark:text-white" />
+        <input v-model="form.password" type="password" placeholder="Mot de passe (optionnel)" class="px-3 py-2 rounded border border-slate-300 dark:border-slate-600 bg-transparent dark:bg-slate-700 text-slate-900 dark:text-white" />
+        <input v-model="form.phone" placeholder="Téléphone" class="px-3 py-2 rounded border border-slate-300 dark:border-slate-600 bg-transparent dark:bg-slate-700 text-slate-900 dark:text-white" />
 
         <div>
           <label class="block text-sm mb-1 text-gray-700 dark:text-gray-400">Rôle</label>
-          <select v-model="form.role_id" class="w-full rounded border px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
+          <select v-model="form.role_id" class="w-full rounded border border-slate-300 dark:border-slate-600 px-3 py-2 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
             <option value="">-- sélectionner un rôle --</option>
             <option v-for="r in rolesLocal" :key="r.id" :value="r.id">{{ labelForRole(r) }}</option>
           </select>
@@ -38,7 +38,7 @@
 
         <div>
           <label class="block text-sm mb-1 text-gray-700 dark:text-gray-400">Annexes (choisissez-en une comme principale)</label>
-          <div class="space-y-1 max-h-40 overflow-auto p-2 border rounded bg-gray-50 dark:bg-gray-800">
+          <div class="space-y-1 max-h-40 overflow-auto p-2 border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700/50">
             <div v-for="a in annexesLocal" :key="a.id" class="flex items-center gap-2">
               <input type="checkbox" :value="a.id" v-model="form.annexes" />
               <label class="flex-1 text-gray-900 dark:text-white">{{ a.name }}</label>
@@ -48,7 +48,7 @@
         </div>
 
         <div class="flex gap-2 justify-end mt-3">
-          <button @click="close" class="px-3 py-2 border rounded">Annuler</button>
+          <button @click="close" class="px-3 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-100 rounded hover:bg-slate-50 dark:hover:bg-slate-600">Annuler</button>
           <button @click="submit" :disabled="loading" class="px-4 py-2 bg-brand-500 text-white rounded">
             <span v-if="!loading">Créer</span>
             <span v-else>Création...</span>
@@ -125,8 +125,8 @@ const close = () => emit('close');
 
 const submit = async () => {
   error.value = null;
-  if (!form.value.name || !form.value.email || !form.value.password) {
-    error.value = 'Name, email and password are required';
+  if (!form.value.name || !form.value.email) {
+    error.value = 'Le nom et l\'email sont obligatoires';
     return;
   }
   loading.value = true;
@@ -139,7 +139,7 @@ const submit = async () => {
       payload = new FormData();
       payload.append('name', form.value.name);
       payload.append('email', form.value.email);
-      payload.append('password', form.value.password);
+      if (form.value.password) payload.append('password', form.value.password);
       if (form.value.phone) payload.append('phone', form.value.phone);
       if (form.value.role_id) payload.append('role_id', form.value.role_id);
       if (form.value.primary_annexe) payload.append('annexe_id', form.value.primary_annexe);
@@ -150,7 +150,7 @@ const submit = async () => {
       payload = {
         name: form.value.name,
         email: form.value.email,
-        password: form.value.password,
+        password: form.value.password || null,
         phone: form.value.phone || null,
         role_id: form.value.role_id || null,
         annexe_id: form.value.primary_annexe || null,
@@ -181,5 +181,12 @@ const submit = async () => {
   }
 };
 </script>
+
+<style scoped>
+select option {
+  color: #f8fafc;
+  background-color: #334155;
+}
+</style>
 
 

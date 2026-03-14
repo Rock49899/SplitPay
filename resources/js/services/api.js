@@ -20,9 +20,34 @@ api.interceptors.request.use((config) => {
 	if (activeAnnexeId) {
 		config.headers['X-Active-Annexe-Id'] = activeAnnexeId;
 	}
+
+	// Ajouter automatiquement l'année scolaire active
+	const activeSchoolYear = localStorage.getItem('active_school_year');
+	if (activeSchoolYear) {
+		config.headers['X-Active-School-Year'] = activeSchoolYear;
+	}
 	
 	return config;
 });
+
+api.interceptors.response.use(
+	(response) => {
+		const effectiveYear = response?.headers?.['x-effective-school-year'];
+		if (effectiveYear && localStorage.getItem('active_school_year') !== effectiveYear) {
+			localStorage.setItem('active_school_year', effectiveYear);
+		}
+
+		return response;
+	},
+	(error) => {
+		const effectiveYear = error?.response?.headers?.['x-effective-school-year'];
+		if (effectiveYear && localStorage.getItem('active_school_year') !== effectiveYear) {
+			localStorage.setItem('active_school_year', effectiveYear);
+		}
+
+		return Promise.reject(error);
+	}
+);
 
 // helper to set/remove Authorization header
 function applyToken(token) {

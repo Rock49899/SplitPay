@@ -1,8 +1,8 @@
 <template>
-  <div class="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] overflow-hidden">
+  <div class="rounded-2xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800 overflow-hidden">
 
     <!-- Tabs header -->
-    <div class="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 px-5 pt-5 pb-0">
+    <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-700 px-5 pt-5 pb-0">
       <div>
         <h3 class="text-base font-semibold text-gray-800 dark:text-white/90">Branches Overview</h3>
         <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5 mb-3">{{ schoolYear }}</p>
@@ -69,7 +69,7 @@
       </div>
 
       <!-- Stat table -->
-      <div class="mt-3 divide-y divide-gray-50 dark:divide-gray-800">
+      <div class="mt-3 divide-y divide-slate-100 dark:divide-slate-700">
         <div
           v-for="(label, i) in labels" :key="label"
           class="flex items-center justify-between py-2 text-xs"

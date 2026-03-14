@@ -6,7 +6,7 @@
     <div class="space-y-5 sm:space-y-6">
       <ComponentCard title="Détails de l'étudiant">
         <!-- Avatar header -->
-        <div class="flex items-center gap-4 mb-6 pb-5 border-b border-gray-100">
+        <div class="flex items-center gap-4 mb-6 pb-5 border-b border-slate-100 dark:border-slate-700">
           <div class="relative shrink-0">
             <AvatarDisplay 
               :src="avatarPreview || student?.avatar_url" 
@@ -24,36 +24,36 @@
             </label>
           </div>
           <div>
-            <p class="font-semibold text-gray-900">{{ form.first_name || '—' }} {{ form.last_name }}</p>
-            <p class="text-sm text-gray-500">{{ student?.matricule ?? '' }}</p>
-            <p v-if="editMode" class="text-xs text-gray-400 mt-0.5">Cliquez sur l'icône caméra pour modifier la photo</p>
-            <p v-else-if="avatarPreview || student?.avatar_url" class="text-xs text-gray-400 mt-0.5">Cliquez sur la photo pour agrandir</p>
+            <p class="font-semibold text-gray-900 dark:text-gray-100">{{ form.first_name || '—' }} {{ form.last_name }}</p>
+            <p class="text-sm text-gray-500 dark:text-gray-400">{{ student?.matricule ?? '' }}</p>
+            <p v-if="editMode" class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Cliquez sur l'icône caméra pour modifier la photo</p>
+            <p v-else-if="avatarPreview || student?.avatar_url" class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Cliquez sur la photo pour agrandir</p>
           </div>
         </div>
 
         <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Prénom</label>
-            <template v-if="!editMode"><p class="mt-1 text-gray-900">{{ form.first_name || '—' }}</p></template>
-            <template v-else><input v-model="form.first_name" class="mt-1 block w-full rounded-md border px-3 py-2 text-white bg-gray-800" /></template>
+            <template v-if="!editMode"><p class="mt-1 text-gray-900 dark:text-gray-100">{{ form.first_name || '—' }}</p></template>
+            <template v-else><input v-model="form.first_name" class="mt-1 block w-full rounded-md border border-slate-300 dark:border-slate-600 px-3 py-2 bg-white dark:bg-slate-700 text-slate-900 dark:text-white" /></template>
           </div>
 
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Nom</label>
-            <template v-if="!editMode"><p class="mt-1 text-gray-900">{{ form.last_name || '—' }}</p></template>
-            <template v-else><input v-model="form.last_name" class="mt-1 block w-full rounded-md border px-3 py-2 text-white bg-gray-800" /></template>
+            <template v-if="!editMode"><p class="mt-1 text-gray-900 dark:text-gray-100">{{ form.last_name || '—' }}</p></template>
+            <template v-else><input v-model="form.last_name" class="mt-1 block w-full rounded-md border border-slate-300 dark:border-slate-600 px-3 py-2 bg-white dark:bg-slate-700 text-slate-900 dark:text-white" /></template>
           </div>
 
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Email</label>
-            <template v-if="!editMode"><p class="mt-1 text-gray-900">{{ form.email || '—' }}</p></template>
-            <template v-else><input v-model="form.email" class="mt-1 block w-full rounded-md border px-3 py-2 text-white bg-gray-800" /></template>
+            <template v-if="!editMode"><p class="mt-1 text-gray-900 dark:text-gray-100">{{ form.email || '—' }}</p></template>
+            <template v-else><input v-model="form.email" class="mt-1 block w-full rounded-md border border-slate-300 dark:border-slate-600 px-3 py-2 bg-white dark:bg-slate-700 text-slate-900 dark:text-white" /></template>
           </div>
 
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Téléphone</label>
-            <template v-if="!editMode"><p class="mt-1 text-gray-900">{{ form.phone || '—' }}</p></template>
-            <template v-else><input v-model="form.phone" class="mt-1 block w-full rounded-md border px-3 py-2 text-white bg-gray-800" /></template>
+            <template v-if="!editMode"><p class="mt-1 text-gray-900 dark:text-gray-100">{{ form.phone || '—' }}</p></template>
+            <template v-else><input v-model="form.phone" class="mt-1 block w-full rounded-md border border-slate-300 dark:border-slate-600 px-3 py-2 bg-white dark:bg-slate-700 text-slate-900 dark:text-white" /></template>
           </div>
 
           <!-- <div>
@@ -64,16 +64,16 @@
 
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Matricule</label>
-            <p class="mt-1 text-gray-900">{{ student?.matricule ?? '—' }}</p>
+            <p class="mt-1 text-gray-900 dark:text-gray-100">{{ student?.matricule ?? '—' }}</p>
           </div>
 
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Année scolaire</label>
             <template v-if="!editMode">
-              <p class="mt-1 text-gray-900">{{ student?.current_enrollment?.school_year ?? '—' }}</p>
+              <p class="mt-1 text-gray-900 dark:text-gray-100">{{ student?.current_enrollment?.school_year ?? '—' }}</p>
             </template>
             <template v-else>
-              <select v-model="form.school_year" class="mt-1 block w-full rounded-md border px-3 py-2 text-white bg-gray-800">
+              <select v-model="form.school_year" class="mt-1 block w-full rounded-md border border-slate-300 dark:border-slate-600 px-3 py-2 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
                 <option :value="null">— Sélectionner —</option>
                 <option v-for="y in schoolYearOptions" :key="y" :value="y">{{ y }}</option>
               </select>
@@ -83,10 +83,10 @@
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Niveau d'étude</label>
             <template v-if="!editMode">
-              <p class="mt-1 text-gray-900">{{ student?.current_enrollment?.level_fee?.study_level?.label ?? '—' }}</p>
+              <p class="mt-1 text-gray-900 dark:text-gray-100">{{ student?.current_enrollment?.level_fee?.study_level?.label ?? '—' }}</p>
             </template>
             <template v-else>
-              <select v-model="form.study_level_id" class="mt-1 block w-full rounded-md border px-3 py-2 text-white bg-gray-800">
+              <select v-model="form.study_level_id" class="mt-1 block w-full rounded-md border border-slate-300 dark:border-slate-600 px-3 py-2 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
                 <option :value="null">Sélectionner un niveau</option>
                 <option v-for="level in studyLevels" :key="level.id" :value="level.id">{{ level.label }}</option>
               </select>
@@ -96,10 +96,10 @@
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Spécialisation</label>
             <template v-if="!editMode">
-              <p class="mt-1 text-gray-900">{{ student?.specialization?.label ?? student?.specialization?.code ?? '—' }}</p>
+              <p class="mt-1 text-gray-900 dark:text-gray-100">{{ student?.specialization?.label ?? student?.specialization?.code ?? '—' }}</p>
             </template>
             <template v-else>
-              <select v-model="form.specialization_id" class="mt-1 block w-full rounded-md border px-3 py-2 text-white bg-gray-800">
+              <select v-model="form.specialization_id" class="mt-1 block w-full rounded-md border border-slate-300 dark:border-slate-600 px-3 py-2 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
                 <option :value="null">Sélectionner une spécialisation</option>
                 <option v-for="spec in specializations" :key="spec.id" :value="spec.id">{{ spec.label }}</option>
               </select>
@@ -108,7 +108,7 @@
 
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Annexe</label>
-            <p class="mt-1 text-gray-900">{{ student?.annexe?.name ?? 'Aucune annexe' }}</p>
+            <p class="mt-1 text-gray-900 dark:text-gray-100">{{ student?.annexe?.name ?? 'Aucune annexe' }}</p>
           </div>
         </div>
 
@@ -155,15 +155,15 @@
         <div class="mt-6 flex gap-3">
             <button v-if="!editMode" @click="enterEdit" class="px-4 py-2 bg-brand-500 text-white rounded">Modifier</button>
             <button v-else @click="save" :disabled="saving" class="px-4 py-2 bg-brand-500 text-white rounded">Enregistrer</button>
-            <button v-if="editMode" @click="cancelEdit" class="px-4 py-2 border rounded">Annuler</button>
-            <button @click="toggleActiveStatus" class="px-3 py-2 border rounded">
+            <button v-if="editMode" @click="cancelEdit" class="px-4 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-600">Annuler</button>
+            <button @click="toggleActiveStatus" class="px-3 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-600">
               <!-- afficher action selon le status courant -->
               {{ student?.status === 'active' ? 'Suspendre' : 'Activer' }}
             </button>
             <router-link :to="`/admin/students/${id}/finance`" class="px-3 py-2 bg-indigo-600 text-white rounded">Finance</router-link>
         </div>
       </ComponentCard>
-      <div v-if="error" class="text-sm text-red-600 mt-2">{{ error }}</div>
+      <div v-if="error" class="text-sm text-red-600 dark:text-red-400 mt-2">{{ error }}</div>
     </div>
     
     <!-- Modal pour agrandir l'avatar -->
@@ -176,7 +176,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import AdminLayout from '@/components/layout/AdminLayout.vue';
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue';
@@ -189,11 +189,13 @@ import specializationService from '@/services/specializationService';
 import reminderService from '@/services/reminderService';
 import { useSchoolYear } from '@/composables/useSchoolYear';
 import { usePermissions } from '@/composables/usePermissions';
+import { useActiveYearStore } from '@/stores/useActiveYearStore';
 
 const route = useRoute();
 const router = useRouter();
 const id = route.params.id;
 const { hasPermission } = usePermissions();
+const activeYearStore = useActiveYearStore();
 
 const student = ref(null);
 const studyLevels = ref([]);
@@ -416,8 +418,16 @@ onMounted(async () => {
     loadSpecializations()
   ]);
 });
+
+watch(() => activeYearStore.activeYear, () => {
+  load();
+});
 </script>
 
 <style scoped>
 /* minimal styles */
+select option {
+  color: #f8fafc;
+  background-color: #334155;
+}
 </style>

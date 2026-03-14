@@ -27,8 +27,24 @@ Route::post('test', function () {
 Route::get('ping', fn () => response('pong'));
 
 Route::get('check-institution', function () {
-    $exists = \App\Models\Institution::count() > 0;
-    return response()->json(['exists' => $exists]);
+    $institution = \App\Models\Institution::query()->orderBy('created_at')->first();
+
+    if (! $institution) {
+        return response()->json([
+            'exists' => false,
+            'institution' => null,
+        ]);
+    }
+
+    return response()->json([
+        'exists' => true,
+        'institution' => [
+            'id' => $institution->id,
+            'name' => $institution->name,
+            'logo' => $institution->logo,
+            'logo_url' => $institution->logo ? asset('storage/' . $institution->logo) : null,
+        ],
+    ]);
 });
 
 Route::post('register', [\App\Http\Controllers\Api\RegistrationController::class, 'register']);
@@ -38,9 +54,11 @@ Route::post('students/verify-otp', [\App\Http\Controllers\Api\StudentAuthControl
 Route::post('students/me-by-token', [\App\Http\Controllers\Api\StudentAuthController::class, 'meByToken']);
 
 Route::match(['post','get'], 'admin/login', [\App\Http\Controllers\Api\AuthController::class, 'login']);
+Route::post('admin/request-otp', [\App\Http\Controllers\Api\AuthController::class, 'requestOtp']);
+Route::post('admin/verify-otp', [\App\Http\Controllers\Api\AuthController::class, 'verifyOtp']);
 
 //sanctum
-Route::middleware(['auth:sanctum', 'active.annexe'])->prefix('admin')->group(function () {
+Route::middleware(['auth:sanctum', 'active.annexe', 'active.school_year', 'school_year.lock'])->prefix('admin')->group(function () {
     Route::match(['get','post'], 'logout', [\App\Http\Controllers\Api\AuthController::class, 'logout']);
     Route::get('me', [\App\Http\Controllers\Api\AuthController::class, 'me']);
     Route::get('me/annexe/{annexeId}', [\App\Http\Controllers\Api\AuthController::class, 'meForAnnexe']);
@@ -74,9 +92,9 @@ Route::middleware(['auth:sanctum', 'active.annexe'])->prefix('admin')->group(fun
     Route::post('students/{id}/payment-link', [StudentController::class, 'createPaymentLink'])->middleware('permission:link.create');
 
     // Institutions management
-    Route::get('institutions', [\App\Http\Controllers\Api\InstitutionController::class, 'index'])->middleware('permission:institution.view');
-    Route::get('institutions/{id}', [\App\Http\Controllers\Api\InstitutionController::class, 'show'])->middleware('permission:institution.view');
-    Route::match(['put', 'patch'], 'institutions/{id}', [\App\Http\Controllers\Api\InstitutionController::class, 'update'])->middleware('permission:institution.edit');
+    Route::get('institutions', [\App\Http\Controllers\Api\InstitutionController::class, 'index'])->middleware('permission:annexe.view');
+    Route::get('institutions/{id}', [\App\Http\Controllers\Api\InstitutionController::class, 'show'])->middleware('permission:annexe.view');
+    Route::match(['put', 'patch'], 'institutions/{id}', [\App\Http\Controllers\Api\InstitutionController::class, 'update'])->middleware('permission:annexe.edit');
     Route::get('institutions/{id}/annexes', [\App\Http\Controllers\Api\InstitutionController::class, 'annexes'])->middleware('permission:annexe.view');
 
     // Annexes management
@@ -102,6 +120,7 @@ Route::middleware(['auth:sanctum', 'active.annexe'])->prefix('admin')->group(fun
 
     // Années scolaires disponibles
     Route::get('school-years', [\App\Http\Controllers\Api\PromotionController::class, 'schoolYears']);
+    Route::get('school-years/context', [\App\Http\Controllers\Api\PromotionController::class, 'context']);
 
     // Promotions / Clôture d'année scolaire
     Route::get('promotions/preview', [\App\Http\Controllers\Api\PromotionController::class, 'preview'])->middleware('permission:student.edit');
@@ -190,7 +209,8 @@ Route::prefix('payment-links')->group(function () {
 });
 
 // Protégé : profil, liens, paiements
-Route::middleware('student.auth')->prefix('student')->group(function () {
+Route::middleware(['student.auth', 'active.school_year', 'school_year.lock'])->prefix('student')->group(function () {
+    Route::get('school-year/context', [\App\Http\Controllers\Api\PromotionController::class, 'context']);
     Route::get('profile',       [\App\Http\Controllers\Api\StudentProfileController::class, 'show']);
     Route::get('payment-links', [\App\Http\Controllers\Api\StudentProfileController::class, 'paymentLinks']);
     Route::get('payments',      [\App\Http\Controllers\Api\StudentProfileController::class, 'payments']);

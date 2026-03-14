@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
 use App\Http\Requests\StoreInstitutionRequest;
 use App\Http\Requests\UpdateInstitutionRequest;
 use App\Models\Institution;
@@ -16,6 +17,15 @@ class InstitutionController extends Controller
         $this->middleware('auth:sanctum');
     }
 
+    private function ensureInstitutionSuperAdmin(): void
+    {
+        $user = auth()->user();
+
+        if (! $user || ! $user->hasRole('super_admin_institution')) {
+            abort(403, 'Accès réservé au super administrateur institution.');
+        }
+    }
+
     // NOTE: in this SaaS instance the first registration creates the institution + default annexe + super-admin.
     // A full institutions CRUD is provided for administrative convenience but in typical single-tenant installs
     // only annexes will be managed after initial registration. Apply policies if you need to restrict create/destroy.
@@ -23,6 +33,8 @@ class InstitutionController extends Controller
     // GET /api/admin/institutions
     public function index(Request $request)
     {
+        $this->ensureInstitutionSuperAdmin();
+
         $perPage = (int) $request->get('per_page', 15);
         $query = Institution::query();
 
@@ -52,6 +64,8 @@ class InstitutionController extends Controller
     // GET /api/admin/institutions/{id}
     public function show($id)
     {
+        $this->ensureInstitutionSuperAdmin();
+
         $institution = Institution::findOrFail($id);
         return response()->json($institution, 200);
     }
@@ -59,8 +73,25 @@ class InstitutionController extends Controller
     // PUT/PATCH /api/admin/institutions/{id}
     public function update(UpdateInstitutionRequest $request, $id)
     {
+        $this->ensureInstitutionSuperAdmin();
+
         $institution = Institution::findOrFail($id);
         $v = $request->validated();
+
+        if ($request->boolean('remove_logo')) {
+            if ($institution->logo) {
+                Storage::disk('public')->delete($institution->logo);
+            }
+            $v['logo'] = null;
+        }
+
+        if ($request->hasFile('logo')) {
+            if ($institution->logo) {
+                Storage::disk('public')->delete($institution->logo);
+            }
+            $v['logo'] = $request->file('logo')->store('logos', 'public');
+        }
+
         $institution->update($v);
 
         return response()->json(['message' => 'Institution updated', 'institution' => $institution], 200);
@@ -77,6 +108,8 @@ class InstitutionController extends Controller
     // GET /api/admin/institutions/{id}/annexes
     public function annexes($id)
     {
+        $this->ensureInstitutionSuperAdmin();
+
         $institution = Institution::with('annexes')->findOrFail($id);
         return response()->json($institution->annexes, 200);
     }

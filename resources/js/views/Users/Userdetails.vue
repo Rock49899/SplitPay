@@ -4,7 +4,7 @@
     <div class="space-y-5 sm:space-y-6">
       <ComponentCard title="User details">
         <!-- Avatar header -->
-        <div class="flex items-center gap-4 mb-6 pb-5 border-b border-gray-100">
+        <div class="flex items-center gap-4 mb-6 pb-5 border-b border-slate-100 dark:border-slate-700">
           <div class="relative shrink-0">
             <AvatarDisplay 
               :src="avatarPreview || user?.avatar_url" 
@@ -22,10 +22,10 @@
             </label>
           </div>
           <div>
-            <p class="font-semibold text-gray-900">{{ form.name || '—' }}</p>
-            <p class="text-sm text-gray-500">{{ form.email }}</p>
-            <p v-if="editMode" class="text-xs text-gray-400 mt-0.5">Cliquez sur l'icône caméra pour changer la photo</p>
-            <p v-else-if="avatarPreview || user?.avatar_url" class="text-xs text-gray-400 mt-0.5">Cliquez sur la photo pour agrandir</p>
+            <p class="font-semibold text-gray-900 dark:text-gray-100">{{ form.name || '—' }}</p>
+            <p class="text-sm text-gray-500 dark:text-gray-400">{{ form.email }}</p>
+            <p v-if="editMode" class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Cliquez sur l'icône caméra pour changer la photo</p>
+            <p v-else-if="avatarPreview || user?.avatar_url" class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Cliquez sur la photo pour agrandir</p>
           </div>
         </div>
 
@@ -37,7 +37,7 @@
               <p class="mt-1 text-gray-900 dark:text-white">{{ form.name || '—' }}</p>
             </template>
             <template v-else>
-              <input v-model="form.name" class="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 placeholder:text-gray-400 dark:text-white dark:bg-gray-800 dark:border-gray-700" />
+              <input v-model="form.name" class="mt-1 block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900 placeholder:text-slate-400 dark:text-white dark:bg-slate-700 dark:border-slate-600" />
             </template>
           </div>
 
@@ -48,7 +48,7 @@
               <p class="mt-1 text-gray-900 dark:text-white">{{ form.email || '—' }}</p>
             </template>
             <template v-else>
-              <input v-model="form.email" class="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 placeholder:text-gray-400 dark:text-white dark:bg-gray-800 dark:border-gray-700" />
+              <input v-model="form.email" class="mt-1 block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900 placeholder:text-slate-400 dark:text-white dark:bg-slate-700 dark:border-slate-600" />
             </template>
           </div>
 
@@ -59,14 +59,14 @@
               <p class="mt-1 text-gray-900 dark:text-white">{{ form.phone || '—' }}</p>
             </template>
             <template v-else>
-              <input v-model="form.phone" class="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 placeholder:text-gray-400 dark:text-white dark:bg-gray-800 dark:border-gray-700" />
+              <input v-model="form.phone" class="mt-1 block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900 placeholder:text-slate-400 dark:text-white dark:bg-slate-700 dark:border-slate-600" />
             </template>
           </div>
 
           <!-- Scope -->
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Scope</label>
-            <p class="mt-1 text-gray-900">{{ form.scope || '—' }}</p>
+            <p class="mt-1 text-gray-900 dark:text-gray-100">{{ form.scope || '—' }}</p>
           </div>
 
           <!-- Annexes -->
@@ -136,8 +136,8 @@
           <button v-else @click="save" :disabled="saving" class="px-4 py-2 bg-brand-500 text-white rounded disabled:opacity-50">
             <span v-if="!saving">Enregistrer</span><span v-else>Enregistrement...</span>
           </button>
-          <button v-if="editMode" @click="cancelEdit" class="px-4 py-2 border rounded">Annuler</button>
-          <button @click="goBack" class="ml-auto px-4 py-2 border rounded">Retour</button>
+          <button v-if="editMode" @click="cancelEdit" class="px-4 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-600">Annuler</button>
+          <button @click="goBack" class="ml-auto px-4 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded hover:bg-slate-50 dark:hover:bg-slate-600">Retour</button>
         </div>
       </ComponentCard>
 
@@ -145,7 +145,7 @@
         <div class="grid grid-cols-1 gap-4">
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Sélectionner une annexe</label>
-            <select v-model="selectedAnnexe" class="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:bg-gray-800 dark:text-white dark:border-gray-700">
+            <select v-model="selectedAnnexe" class="mt-1 block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:bg-slate-700 dark:text-white dark:border-slate-600">
               <option value="">-- sélectionner une annexe --</option>
               <option v-for="a in annexes" :key="a.id" :value="a.id">{{ a.name }}</option>
             </select>
@@ -153,7 +153,7 @@
 
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Assign role</label>
-            <select v-model="selectedRole" class="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:bg-gray-800 dark:text-white dark:border-gray-700">
+            <select v-model="selectedRole" class="mt-1 block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:bg-slate-700 dark:text-white dark:border-slate-600">
               <option value="">-- select role --</option>
               <option v-for="r in roles" :key="r.id" :value="r.id">{{ roleLabel(r) }}</option>
             </select>
@@ -174,7 +174,7 @@
         <div class="mt-4">
           <h4 class="text-sm font-medium text-gray-700 dark:text-gray-400 mb-2">Current roles</h4>
           <ul class="space-y-2">
-            <li v-for="r in rolesList" :key="r.id + '-' + r.annexe_id" class="flex items-center justify-between bg-gray-50 dark:bg-gray-800 rounded p-2">
+            <li v-for="r in rolesList" :key="r.id + '-' + r.annexe_id" class="flex items-center justify-between bg-slate-50 dark:bg-slate-700/60 border border-slate-100 dark:border-slate-600 rounded p-2">
               <div>
                 <div class="font-medium text-sm text-gray-900 dark:text-white">{{ r.name }}</div>
                 <div class="text-xs text-gray-500 dark:text-gray-400">
@@ -184,12 +184,12 @@
               </div>
               <button @click="removeRole(r.annexe_id)" class="text-red-500 text-sm hover:text-red-700">Remove</button>
             </li>
-            <li v-if="!rolesList.length" class="text-sm text-gray-500">No roles</li>
+            <li v-if="!rolesList.length" class="text-sm text-gray-500 dark:text-gray-400">No roles</li>
           </ul>
         </div>
       </ComponentCard>
 
-      <div v-if="error" class="text-sm text-red-600 mt-2">{{ error }}</div>
+      <div v-if="error" class="text-sm text-red-600 dark:text-red-400 mt-2">{{ error }}</div>
     </div>
 
     <!-- Modal pour agrandir l'avatar -->
@@ -319,7 +319,12 @@ const save = async () => {
   try {
     const fd = new FormData();
     Object.entries(form.value).forEach(([k, v]) => {
-      if (v != null && v !== '') fd.append(k, String(v));
+      if (v == null || v === '') return;
+      if (typeof v === 'boolean') {
+        fd.append(k, v ? '1' : '0');
+        return;
+      }
+      fd.append(k, String(v));
     });
     if (avatarFile.value) fd.append('avatar', avatarFile.value);
     await userService.update(id, fd);
@@ -549,14 +554,13 @@ onMounted(load);
 </script>
 
 <style scoped>
-/* force option styles for dark select dropdowns (inline as fallback) */
+/* force option styles for dark select dropdowns */
 select option {
-  color: #ffffff !important;
-  background-color: #1f2937 !important; /* Tailwind gray-800 */
+  color: #f8fafc !important;
+  background-color: #334155 !important;
 }
-/* placeholder option may be shown in white too */
 select option[value=""] {
-  color: #ffffff !important;
-  background-color: #1f2937 !important;
+  color: #f8fafc !important;
+  background-color: #334155 !important;
 }
 </style>

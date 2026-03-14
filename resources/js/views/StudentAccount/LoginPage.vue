@@ -217,7 +217,7 @@ const verifyOtp = async () => {
   verifying.value   = true;
   try {
     const res = await studentAccountService.verifyOtp(matricule.value.trim(), otpCode.value);
-    studentAccountService.saveToken(res.data.token);
+    studentAccountService.saveToken(res.data.token, res.data.expires_in_minutes || 60);
     router.push({ name: 'StudentProfile' });
   } catch (e) {
     verifyError.value = e.response?.data?.message || 'Invalid or expired code.';

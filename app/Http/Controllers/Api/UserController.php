@@ -132,9 +132,11 @@ class UserController extends Controller
             $v['avatar'] = $request->file('avatar')->store('avatars', 'public');
         }
 
+        $plainPassword = $v['password'] ?? \Illuminate\Support\Str::password(12);
+
         $user = User::create(array_merge($v, [
             'id' => (string) Str::uuid(),
-            'password' => isset($v['password']) ? \Hash::make($v['password']) : null,
+            'password' => \Hash::make($plainPassword),
             'is_active' => $v['is_active'] ?? true,
         ]));
 

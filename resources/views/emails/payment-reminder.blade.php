@@ -170,8 +170,21 @@
         </div>
 
         <div class="footer">
+            {{-- Branding institution + annexe --}}
+            @if(!empty($institutionLogo) || !empty($institutionName))
+            <div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #dee2e6;">
+                @if(!empty($institutionLogo))
+                    <img src="{{ $institutionLogo }}" alt="{{ $institutionName ?? '' }}" style="max-height: 55px; max-width: 170px; object-fit: contain; display: block; margin: 0 auto 8px;">
+                @endif
+                @if(!empty($institutionName))
+                    <div style="font-weight: 700; font-size: 15px; color: #111827;">{{ $institutionName }}</div>
+                @endif
+                <div style="font-size: 13px; color: #6b7280; margin-top: 3px;">{{ $annexeName }}</div>
+            </div>
+            @else
             <strong>{{ $annexeName }}</strong>
-            
+            @endif
+
             <div class="footer-contact">
                 @if($annexePhone)
                     <div>📞 {{ $annexePhone }}</div>

@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import registrationService from '../services/registrationService';
 import authService from '../services/authService';
 import { applyToken } from '../services/api';
+import { initSessionTimeout, clearSessionTimeout } from '../middleware/sessionTimeout';
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -18,10 +19,17 @@ export const useAuthStore = defineStore('auth', {
       this.token = token;
       if (token) {
         localStorage.setItem('api_token', token);
+        const now = String(Date.now());
+        if (!localStorage.getItem('session_started_at')) localStorage.setItem('session_started_at', now);
+        localStorage.setItem('session_last_activity_at', now);
         applyToken(token);
+        initSessionTimeout();
       } else {
         localStorage.removeItem('api_token');
+        localStorage.removeItem('session_started_at');
+        localStorage.removeItem('session_last_activity_at');
         applyToken(null);
+        clearSessionTimeout();
       }
     },
 
@@ -49,7 +57,10 @@ export const useAuthStore = defineStore('auth', {
         const res = await authService.login(credentials);
         const token = res.data?.token ?? null;
         if (token) this.setToken(token);
-        if (res.data?.user) this.user = res.data.user;
+        if (res.data?.user) {
+          this.user = res.data.user;
+          localStorage.setItem('user', JSON.stringify(res.data.user));
+        }
         return res;
       } catch (e) {
         this.error = e.response?.data || e.message;
@@ -69,6 +80,7 @@ export const useAuthStore = defineStore('auth', {
       } finally {
         this.setToken(null);
         this.user = null;
+        localStorage.removeItem('user');
         this.loading = false;
       }
     },
@@ -78,12 +90,14 @@ export const useAuthStore = defineStore('auth', {
       this.loading = true;
       try {
         const res = await authService.me();
-        this.user = res.data;
+        this.user = res.data?.user ?? res.data;
+        localStorage.setItem('user', JSON.stringify(this.user));
         return res;
       } catch (e) {
         // token invalid -> clear
         this.setToken(null);
         this.user = null;
+        localStorage.removeItem('user');
         throw e;
       } finally {
         this.loading = false;

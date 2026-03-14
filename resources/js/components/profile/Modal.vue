@@ -4,7 +4,7 @@
     <div class="relative z-50 w-full max-w-3xl mx-4">
       <slot name="body">
         <!-- fallback: default slot -->
-        <div class="bg-white dark:bg-gray-900 rounded-lg p-6 max-h-[90vh] overflow-auto">
+        <div class="bg-white dark:bg-slate-800 border border-transparent dark:border-slate-700 rounded-lg p-6 max-h-[90vh] overflow-auto">
           <slot />
         </div>
       </slot>

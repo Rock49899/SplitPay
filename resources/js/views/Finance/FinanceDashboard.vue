@@ -593,13 +593,16 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import AdminLayout from '@/components/layout/AdminLayout.vue';
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue';
 import AvatarDisplay from '@/components/shared/AvatarDisplay.vue';
 import paymentService from '@/services/paymentService';
 import paymentLinkService from '@/services/paymentLinkService';
 import annexeService from '@/services/annexeService';
+import { useActiveYearStore } from '@/stores/useActiveYearStore';
+
+const activeYearStore = useActiveYearStore();
 
 const loading = ref(false);
 const payments = ref([]);
@@ -617,6 +620,7 @@ const filters = ref({
   q: '',
   annexe_id: '',
   status: '',
+  school_year: activeYearStore.activeYear || '',
   from: '',
   to: '',
 });
@@ -645,6 +649,7 @@ const broadcastForm = ref({
   target: 'all',
   annexe_id: '',
   class: '',
+  school_year: activeYearStore.activeYear || '',
   amount: 0,
   type: 'tuition',
   description: '',
@@ -797,6 +802,7 @@ function resetBroadcastForm() {
     target: 'all',
     annexe_id: '',
     class: '',
+    school_year: activeYearStore.activeYear || '',
     amount: 0,
     type: 'tuition',
     description: '',
@@ -858,7 +864,17 @@ function getPaymentTypeLabel(type) {
 }
 
 onMounted(() => {
+  activeYearStore.loadAvailableYears();
+  filters.value.school_year = activeYearStore.activeYear || '';
+  broadcastForm.value.school_year = activeYearStore.activeYear || '';
   loadPayments();
   loadAnnexes();
+});
+
+watch(() => activeYearStore.activeYear, (year) => {
+  filters.value.school_year = year || '';
+  broadcastForm.value.school_year = year || '';
+  pagination.value.current_page = 1;
+  loadPayments();
 });
 </script>

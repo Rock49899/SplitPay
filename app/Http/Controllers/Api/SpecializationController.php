@@ -29,6 +29,10 @@ class SpecializationController extends Controller
             'code' => 'required|string|max:50|unique:specializations,code',
             'label' => 'required|string|max:255',
             'description' => 'nullable|string',
+        ], [], [
+            'code' => 'sigle',
+            'label' => 'libellé',
+            'description' => 'description',
         ]);
 
         $specialization = Specialization::create($validated);
@@ -50,6 +54,10 @@ class SpecializationController extends Controller
             'code' => 'required|string|max:50|unique:specializations,code,' . $id,
             'label' => 'required|string|max:255',
             'description' => 'nullable|string',
+        ], [], [
+            'code' => 'sigle',
+            'label' => 'libellé',
+            'description' => 'description',
         ]);
 
         $specialization->update($validated);

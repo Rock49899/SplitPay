@@ -150,13 +150,14 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import studentAccountService from '../../services/studentAccountService';
 
 const props = defineProps({
   type:     { type: String, required: true },
   title:    { type: String, required: true },
   currency: { type: String, default: 'XOF' },
+  schoolYear: { type: String, default: null },
 });
 
 const links        = ref([]);
@@ -223,6 +224,7 @@ const loadLinks = async (page = 1) => {
   try {
     const res = await studentAccountService.getPaymentLinks({
       type: props.type,
+      school_year: props.schoolYear || undefined,
       status: filterStatus.value || undefined,
       page,
     });
@@ -237,4 +239,8 @@ const loadLinks = async (page = 1) => {
 };
 
 onMounted(() => loadLinks(1));
+
+watch(() => props.schoolYear, () => {
+  loadLinks(1);
+});
 </script>

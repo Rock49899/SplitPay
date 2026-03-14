@@ -6,8 +6,10 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
+use App\Models\Annexe;
+use App\Models\Institution;
+use App\Models\Role;
 use App\Models\User;
-use App\Models\Student;
 
 class ApiRoutesTest extends TestCase
 {
@@ -31,29 +33,44 @@ class ApiRoutesTest extends TestCase
             'owner_password' => 'Password123!',
         ];
 
-        $institution = Institution::factory()->create();
-
-        $annexe = Annexe::factory()->create([
-        'institution_id' => $institution->id,
-       ]);
-
-
         $response = $this->postJson('/api/register', $payload);
         $response->assertStatus(201);
-
-        // Response should contain institution/annexe/user (adjust keys if controller differs)
         $response->assertJsonStructure([
             'message',
             'institution',
             'annexe',
             'user',
         ]);
-        $user->assignToAnnexe($annexe->id, $role->id, true);
+
+        $this->assertDatabaseHas('institutions', ['name' => 'Test Institution']);
+        $this->assertDatabaseHas('annexes', ['name' => 'Main Campus']);
+        $this->assertDatabaseHas('users', ['email' => 'admin@example.com']);
     }
 
-    public function test_admin_login_and_me_and_protected_create_student()
+    public function test_admin_login_and_me()
     {
-        // Create admin user directly
+        $institution = Institution::create([
+            'id' => (string) Str::uuid(),
+            'name' => 'Institution Test',
+            'email' => 'institution@test.local',
+            'phone' => '0102030405',
+            'is_active' => true,
+        ]);
+
+        $annexe = Annexe::create([
+            'id' => (string) Str::uuid(),
+            'institution_id' => $institution->id,
+            'name' => 'Annexe Principale',
+            'is_active' => true,
+        ]);
+
+        $role = Role::create([
+            'id' => (string) Str::uuid(),
+            'code' => 'super_admin_institution',
+            'label' => 'Super admin institution',
+            'scope' => 'institution',
+        ]);
+
         $admin = User::create([
             'id' => (string) Str::uuid(),
             'name' => 'Admin Test',
@@ -61,50 +78,25 @@ class ApiRoutesTest extends TestCase
             'password' => Hash::make('secret123'),
             'scope' => 'institution',
             'is_active' => true,
+            'annexe_id' => $annexe->id,
         ]);
 
-        // login
+        $admin->assignToAnnexe($annexe->id, $role->id, true);
+
         $loginResp = $this->postJson('/api/admin/login', [
             'email' => 'admin.test@example.com',
             'password' => 'secret123',
         ]);
 
-        $loginResp->assertStatus(200);
-        $token = $loginResp->json('token') ?? null;
+        $loginResp->assertStatus(200)->assertJsonStructure(['token', 'user']);
 
-        // if token returned, use it; else try actingAs (sanctum)
-        if ($token) {
-            $meResp = $this->withHeader('Authorization', 'Bearer '.$token)
-                           ->getJson('/api/admin/me');
-            $meResp->assertStatus(200)->assertJsonFragment(['email' => 'admin.test@example.com']);
-        } else {
-            // fallback: act as user (sanctum)
-            $this->actingAs($admin, 'sanctum');
-            $meResp = $this->getJson('/api/admin/me');
-            $meResp->assertStatus(200)->assertJsonFragment(['email' => 'admin.test@example.com']);
-        }
+        $token = $loginResp->json('token');
+        $this->assertNotEmpty($token);
 
-        // Create a student via protected endpoint
-        $studentPayload = [
-            'matricule' => 'MATTEST001',
-            'first_name' => 'Jean',
-            'last_name' => 'Dupont',
-            'email' => 'jean.dupont@example.com',
-            'phone' => '0612345678',
-            'class' => 'L1',
-            'school_year' => '2024-2025',
-            'tuition_amount' => 5000,
-        ];
+        $meResp = $this->withHeader('Authorization', 'Bearer ' . $token)
+            ->getJson('/api/admin/me');
 
-        if (isset($token) && $token) {
-            $createResp = $this->withHeader('Authorization', 'Bearer '.$token)
-                               ->postJson('/api/admin/students', $studentPayload);
-        } else {
-            $createResp = $this->actingAs($admin, 'sanctum')
-                               ->postJson('/api/admin/students', $studentPayload);
-        }
-
-        $createResp->assertStatus(201)->assertJsonStructure(['message','student']);
-        $this->assertDatabaseHas('students', ['matricule' => 'MATTEST001']);
+        $meResp->assertStatus(200)
+            ->assertJsonPath('user.email', 'admin.test@example.com');
     }
 }

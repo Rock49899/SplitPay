@@ -79,6 +79,20 @@
           </div>
         </div>
 
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-5 flex flex-col sm:flex-row sm:items-center gap-3">
+          <label class="text-sm text-gray-600 font-medium">Année scolaire :</label>
+          <select
+            v-model="selectedYear"
+            @change="onYearChange"
+            class="w-full sm:w-56 text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-200 bg-white"
+          >
+            <option v-for="year in schoolYears" :key="year" :value="year">{{ year }}</option>
+          </select>
+          <span v-if="isReadOnlyYear" class="text-xs text-amber-700 bg-amber-100 px-2.5 py-1 rounded-full sm:ml-auto">
+            Année clôturée / lecture seule
+          </span>
+        </div>
+
         <!-- Onglets navigation -->
         <div class="flex gap-1 bg-white border border-gray-100 rounded-2xl p-1 mb-5 shadow-sm overflow-x-auto">
           <button
@@ -135,6 +149,7 @@
             type="tuition"
             title="Liens de scolarité"
             :currency="currency"
+            :school-year="selectedYear"
           />
         </div>
 
@@ -145,12 +160,13 @@
             type="other"
             title="Autres frais"
             :currency="currency"
+            :school-year="selectedYear"
           />
         </div>
 
         <!-- tab historique -->
         <div v-else-if="activeTab === 'history'">
-          <HistoryPanel :currency="currency" />
+          <HistoryPanel :currency="currency" :school-year="selectedYear" />
         </div>
 
       </template>
@@ -174,6 +190,9 @@ const sessionError = ref(null);
 const student      = ref(null);
 const summary      = ref({});
 const activeTab    = ref('overview');
+const schoolYears  = ref([]);
+const selectedYear = ref('');
+const isReadOnlyYear = ref(false);
 
 const tabs = [
   { id: 'overview', label: 'Aperçu' },
@@ -216,10 +235,39 @@ onMounted(async () => {
     goLogin();
     return;
   }
+  await loadProfile();
+});
+
+const loadProfile = async () => {
+  loading.value = true;
   try {
-    const res     = await studentAccountService.getProfile();
+    const res     = await studentAccountService.getProfile({
+      school_year: selectedYear.value || undefined,
+    });
     student.value = res.data.student;
     summary.value = res.data.summary;
+    schoolYears.value = Array.isArray(res.data.school_years) ? res.data.school_years : [];
+    isReadOnlyYear.value = !!res.data.school_year_read_only;
+
+    if (selectedYear.value && schoolYears.value.length > 0 && !schoolYears.value.includes(selectedYear.value)) {
+      selectedYear.value = schoolYears.value[0];
+      localStorage.setItem('active_school_year', selectedYear.value);
+      const corrected = await studentAccountService.getProfile({ school_year: selectedYear.value });
+      student.value = corrected.data.student;
+      summary.value = corrected.data.summary;
+      isReadOnlyYear.value = !!corrected.data.school_year_read_only;
+      return;
+    }
+
+    if (!selectedYear.value && res.data.selected_year) {
+      selectedYear.value = res.data.selected_year;
+      localStorage.setItem('active_school_year', res.data.selected_year);
+    }
+
+    if (!selectedYear.value && schoolYears.value.length > 0) {
+      selectedYear.value = schoolYears.value[0];
+      localStorage.setItem('active_school_year', schoolYears.value[0]);
+    }
   } catch (e) {
     sessionError.value = e.response?.status === 401
       ? 'Votre session a expiré. Veuillez vous reconnecter.'
@@ -227,5 +275,12 @@ onMounted(async () => {
   } finally {
     loading.value = false;
   }
-});
+};
+
+const onYearChange = async () => {
+  if (selectedYear.value) {
+    localStorage.setItem('active_school_year', selectedYear.value);
+  }
+  await loadProfile();
+};
 </script>

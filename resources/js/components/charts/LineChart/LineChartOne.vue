@@ -7,7 +7,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import VueApexCharts from 'vue3-apexcharts'
 
 const props = defineProps({
@@ -30,20 +30,39 @@ const defaultSeries = [
 const defaultCategories = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 
 const activeSeries = computed(() => props.series ?? defaultSeries)
+const isDark = ref(false)
+let classObserver = null
+
+const syncTheme = () => {
+  isDark.value = document.documentElement.classList.contains('dark')
+}
+
+onMounted(() => {
+  syncTheme()
+  classObserver = new MutationObserver(syncTheme)
+  classObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
+})
+
+onBeforeUnmount(() => {
+  classObserver?.disconnect()
+})
 
 const mergedOptions = computed(() => ({
   colors: props.colors,
+  theme: { mode: isDark.value ? 'dark' : 'light' },
   legend: {
     show: true,
     position: 'top',
     horizontalAlign: 'left',
     fontFamily: 'Outfit',
     markers: { radius: 99 },
+    labels: { colors: isDark.value ? '#9CA3AF' : '#6B7280' },
   },
   chart: {
     fontFamily: 'Outfit, sans-serif',
     type: 'area',
     toolbar: { show: false },
+    foreColor: isDark.value ? '#9CA3AF' : '#6B7280',
   },
   fill: {
     type: 'gradient',
@@ -53,6 +72,7 @@ const mergedOptions = computed(() => ({
   markers: { size: 0 },
   dataLabels: { enabled: false },
   grid: {
+    borderColor: isDark.value ? '#1F2937' : '#E5E7EB',
     xaxis: { lines: { show: false } },
     yaxis: { lines: { show: true } },
   },
@@ -63,12 +83,18 @@ const mergedOptions = computed(() => ({
     axisBorder: { show: false },
     axisTicks: { show: false },
     tooltip: { enabled: false },
-    labels: { style: { fontFamily: 'Outfit, sans-serif', fontSize: '12px' } },
+    labels: {
+      style: {
+        fontFamily: 'Outfit, sans-serif',
+        fontSize: '12px',
+        colors: isDark.value ? '#9CA3AF' : '#6B7280',
+      },
+    },
   },
   yaxis: {
     labels: {
       formatter: props.yFormatter ?? ((val) => val.toString()),
-      style: { fontFamily: 'Outfit, sans-serif' },
+      style: { fontFamily: 'Outfit, sans-serif', colors: isDark.value ? '#9CA3AF' : '#6B7280' },
     },
   },
 }))

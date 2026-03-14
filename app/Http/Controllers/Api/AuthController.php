@@ -5,10 +5,16 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 
 use App\Http\Requests\LoginRequest;
+use App\Http\Requests\UserRequestOtpRequest;
+use App\Http\Requests\UserVerifyOtpRequest;
+use App\Mail\UserOtpMail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use App\Models\User;
+use Carbon\Carbon;
 
 class AuthController extends Controller
 {
@@ -23,6 +29,12 @@ class AuthController extends Controller
             return response()->json([
                 'message' => 'Email ou mot de passe incorrect'
             ], 401);
+        }
+
+        if (empty($request->password)) {
+            return response()->json([
+                'message' => 'Mot de passe requis pour cette méthode. Utilisez la connexion par OTP sinon.'
+            ], 422);
         }
 
         if (!Hash::check($request->password, $user->password)) {
@@ -48,7 +60,7 @@ class AuthController extends Controller
             ], 403);
         }
 
-        $token = $user->createToken('auth-token')->plainTextToken;
+        [$token, $expiresAt] = $this->issueAuthToken($user);
 
         return response()->json([
             'message' => 'Connexion reussie',
@@ -66,6 +78,87 @@ class AuthController extends Controller
                 }),
             ],
             'token' => $token,
+            'expires_at' => $expiresAt->toIso8601String(),
+            'expires_in_minutes' => $this->tokenTtlMinutes(),
+        ], 200);
+    }
+
+    public function requestOtp(UserRequestOtpRequest $request)
+    {
+        $email = strtolower(trim($request->validated()['email']));
+
+        $user = User::where('email', $email)->first();
+        if (! $user) {
+            return response()->json(['message' => 'Aucun compte trouvé pour cet email'], 404);
+        }
+
+        if (! $user->is_active) {
+            return response()->json(['message' => 'Votre compte est désactivé. Contactez un administrateur.'], 403);
+        }
+
+        $activeAnnexes = $user->annexes->filter(fn ($annexe) => $annexe->is_active);
+        if ($activeAnnexes->isEmpty()) {
+            return response()->json(['message' => 'Aucune annexe active pour ce compte.'], 403);
+        }
+
+        $otp = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        Cache::put("user_otp_{$user->id}", $otp, now()->addMinutes(10));
+
+        Mail::to($user->email)->send(new UserOtpMail($otp, $user));
+
+        return response()->json([
+            'message' => 'Code OTP envoyé',
+            'expires_in_minutes' => 10,
+        ], 202);
+    }
+
+    public function verifyOtp(UserVerifyOtpRequest $request)
+    {
+        $data = $request->validated();
+        $email = strtolower(trim($data['email']));
+        $otp = (string) $data['otp'];
+
+        $user = User::where('email', $email)->first();
+        if (! $user) {
+            return response()->json(['message' => 'Aucun compte trouvé pour cet email'], 404);
+        }
+
+        if (! $user->is_active) {
+            return response()->json(['message' => 'Votre compte est désactivé. Contactez un administrateur.'], 403);
+        }
+
+        $cached = Cache::get("user_otp_{$user->id}");
+        if (! $cached || ! hash_equals((string) $cached, $otp)) {
+            return response()->json(['message' => 'OTP invalide ou expiré'], 401);
+        }
+
+        Cache::forget("user_otp_{$user->id}");
+
+        $activeAnnexes = $user->annexes->filter(fn ($annexe) => $annexe->is_active);
+        if ($activeAnnexes->isEmpty()) {
+            return response()->json(['message' => 'Aucune annexe active pour ce compte.'], 403);
+        }
+
+        [$token, $expiresAt] = $this->issueAuthToken($user);
+
+        return response()->json([
+            'message' => 'Connexion OTP réussie',
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'scope' => $user->scope,
+                'annexes' => $activeAnnexes->map(function ($annexe) {
+                    return [
+                        'id' => $annexe->id,
+                        'name' => $annexe->name,
+                        'is_principal' => $annexe->pivot->is_principal,
+                    ];
+                }),
+            ],
+            'token' => $token,
+            'expires_at' => $expiresAt->toIso8601String(),
+            'expires_in_minutes' => $this->tokenTtlMinutes(),
         ], 200);
     }
 
@@ -187,5 +280,21 @@ class AuthController extends Controller
             ] : null,
             'permissions' => $permissions,
         ], 200);
+    }
+
+    private function tokenTtlMinutes(): int
+    {
+        return (int) (config('sanctum.expiration') ?: 720);
+    }
+
+    /**
+     * @return array{0:string,1:\Carbon\Carbon}
+     */
+    private function issueAuthToken(User $user): array
+    {
+        $expiresAt = Carbon::now()->addMinutes($this->tokenTtlMinutes());
+        $token = $user->createToken('auth-token', ['*'], $expiresAt)->plainTextToken;
+
+        return [$token, $expiresAt];
     }
 }
