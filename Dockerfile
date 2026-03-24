@@ -1,7 +1,7 @@
-FROM php:8.4-fpm-alpine
+FROM php:8.4-fpm-alpine AS app
 WORKDIR /var/www
 
-# Installer les dépendances système + extensions PHP requises
+# Dépendances système + extensions PHP requises
 RUN apk add --no-cache \
 			libpng-dev \
 			libjpeg-turbo-dev \
@@ -13,18 +13,35 @@ RUN apk add --no-cache \
 		&& pecl install redis \
 		&& docker-php-ext-enable redis
 
-# Copier Composer depuis l'image officielle
+# Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Copier le code source (y compris assets pré-buildés)
+# Code source (inclut public/build)
 COPY . .
 
-# Installer les dépendances PHP pour la production uniquement
+# Dépendances PHP production
 RUN composer install --no-dev --optimize-autoloader --prefer-dist --no-interaction
 
-# Définir les permissions correctes pour Laravel
-RUN chown -R www-data:www-data storage bootstrap/cache
+# Permissions Laravel
+RUN chown -R www-data:www-data storage bootstrap/cache \
+	&& chmod -R ug+rwX storage bootstrap/cache
 
 EXPOSE 9000
 CMD ["php-fpm"]
+
+
+FROM nginx:alpine AS nginx
+WORKDIR /var/www
+
+# Fichiers publics servis par Nginx
+COPY public ./public
+
+# Vhost Laravel
+COPY docker/nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf
+
+# Répertoire storage attendu (monté en volume au runtime)
+RUN mkdir -p /var/www/storage/app/public
+
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
 

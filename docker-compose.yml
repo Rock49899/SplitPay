@@ -3,11 +3,15 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: saas-app
+      target: app
+    container_name: saas-app-prod
     restart: unless-stopped
     working_dir: /var/www
+    env_file:
+      - .env
     volumes:
-      - ./:/var/www
+      - app-storage:/var/www/storage
+      - app-cache:/var/www/bootstrap/cache
     networks:
       - saas-network
     depends_on:
@@ -17,24 +21,31 @@ services:
         condition: service_started
 
   nginx:
-    image: nginx:alpine
-    container_name: saas-nginx
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: nginx
+    container_name: saas-nginx-prod
     restart: unless-stopped
     ports:
-      - "8000:80" # On mappe le port 8000 du PC vers le 80 du conteneur
+      - "80:80"
     volumes:
-      - ./:/var/www
-      - ./docker/nginx/conf.d:/etc/nginx/conf.d
+      - app-storage:/var/www/storage:ro
     networks:
       - saas-network
+    depends_on:
+      app:
+        condition: service_started
 
   db:
     image: mysql:8.0
-    container_name: saas-db
+    container_name: saas-db-prod
     restart: unless-stopped
+    env_file:
+      - .env
     environment:
       MYSQL_DATABASE: ${DB_DATABASE}
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-change_me_root_password}
       MYSQL_PASSWORD: ${DB_PASSWORD}
       MYSQL_USER: ${DB_USERNAME}
     healthcheck:
@@ -42,7 +53,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 12
-      start_period: 25s
+      start_period: 30s
     volumes:
       - dbdata:/var/lib/mysql
     networks:
@@ -50,8 +61,11 @@ services:
 
   redis:
     image: redis:alpine
-    container_name: saas-redis
+    container_name: saas-redis-prod
     restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redisdata:/data
     networks:
       - saas-network
 
@@ -59,11 +73,36 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: saas-worker
+      target: app
+    container_name: saas-worker-prod
     restart: unless-stopped
-    command: php artisan queue:work redis --sleep=3 --tries=3
+    env_file:
+      - .env
+    command: php artisan queue:work redis --sleep=3 --tries=3 --max-time=3600
     volumes:
-      - ./:/var/www
+      - app-storage:/var/www/storage
+      - app-cache:/var/www/bootstrap/cache
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - saas-network
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: app
+    container_name: saas-scheduler-prod
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: php artisan schedule:work
+    volumes:
+      - app-storage:/var/www/storage
+      - app-cache:/var/www/bootstrap/cache
     depends_on:
       db:
         condition: service_healthy
@@ -78,3 +117,6 @@ networks:
 
 volumes:
   dbdata:
+  redisdata:
+  app-storage:
+  app-cache:
