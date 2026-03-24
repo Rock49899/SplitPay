@@ -5,30 +5,30 @@
     />
     <div class="space-y-4">
       <!-- Student mini-header -->
-      <div v-if="student" class="flex items-center gap-3 bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-3">
+      <div v-if="student" class="flex items-center gap-3 bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 shadow-sm px-4 py-3">
         <AvatarDisplay :src="student.avatar_url" :label="student.first_name" :size="44" />
         <div>
-          <p class="font-semibold text-gray-900 text-sm">{{ student.first_name }} {{ student.last_name }}</p>
-          <p class="text-xs text-gray-500">{{ student.matricule }}</p>
+          <p class="font-semibold text-gray-900 dark:text-white text-sm">{{ student.first_name }} {{ student.last_name }}</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400">{{ student.matricule }}</p>
         </div>
       </div>
       <ComponentCard title="Résumé financier">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <div class="text-sm text-gray-500">Montant de la scolarité</div>
-            <div class="text-lg font-semibold">{{ finance.tuition_amount ?? '-' }}</div>
+            <div class="text-sm text-gray-500 dark:text-gray-400">Montant de la scolarité</div>
+            <div class="text-lg font-semibold text-gray-900 dark:text-white">{{ finance.tuition_amount ?? '-' }}</div>
           </div>
           <div>
-            <div class="text-sm text-gray-500">Payé</div>
-            <div class="text-lg font-semibold">{{ finance.amount_paid ?? '-' }}</div>
+            <div class="text-sm text-gray-500 dark:text-gray-400">Payé</div>
+            <div class="text-lg font-semibold text-gray-900 dark:text-white">{{ finance.amount_paid ?? '-' }}</div>
           </div>
           <div>
-            <div class="text-sm text-gray-500">Restant dû</div>
-            <div class="text-lg font-semibold">{{ finance.amount_due ?? '-' }}</div>
+            <div class="text-sm text-gray-500 dark:text-gray-400">Restant dû</div>
+            <div class="text-lg font-semibold text-gray-900 dark:text-white">{{ finance.amount_due ?? '-' }}</div>
           </div>
           <div>
-            <div class="text-sm text-gray-500">Dernier paiement</div>
-            <div class="text-lg font-semibold">{{ finance.last_payment_date ?? '-' }}</div>
+            <div class="text-sm text-gray-500 dark:text-gray-400">Dernier paiement</div>
+            <div class="text-lg font-semibold text-gray-900 dark:text-white">{{ finance.last_payment_date ?? '-' }}</div>
           </div>
         </div>
         <div class="mt-4 flex items-center gap-3">

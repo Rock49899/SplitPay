@@ -2,38 +2,38 @@
   <ComponentCard title="Payment Links">
     <div class="overflow-x-auto">
       <table class="min-w-full text-sm">
-        <thead>
-          <tr class="text-left">
-            <th class="px-3 py-2">Type</th>
-            <th class="px-3 py-2">Description</th>
-            <th class="px-3 py-2">Amount</th>
-            <th class="px-3 py-2">Paid</th>
-            <th class="px-3 py-2">Due</th>
-            <th class="px-3 py-2">Last payment</th>
-            <th class="px-3 py-2">Due date</th>
-            <th class="px-3 py-2">Status</th>
-            <th class="px-3 py-2">Actions</th>
+        <thead class="bg-slate-100 dark:bg-slate-700">
+          <tr class="text-left text-gray-900 dark:text-white">
+            <th class="px-3 py-2 font-semibold">Type</th>
+            <th class="px-3 py-2 font-semibold">Description</th>
+            <th class="px-3 py-2 font-semibold">Montant</th>
+            <th class="px-3 py-2 font-semibold">Payé</th>
+            <th class="px-3 py-2 font-semibold">Dû</th>
+            <th class="px-3 py-2 font-semibold">Dernier paiement</th>
+            <th class="px-3 py-2 font-semibold">Date dû</th>
+            <th class="px-3 py-2 font-semibold">Status</th>
+            <th class="px-3 py-2 font-semibold">Actions</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="lnk in links" :key="lnk.id" class="border-t">
-            <td class="px-3 py-2">{{ lnk.type ?? 'other' }}</td>
-            <td class="px-3 py-2">
+          <tr v-for="lnk in links" :key="lnk.id" class="border-t border-gray-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700/50">
+            <td class="px-3 py-2 text-gray-900 dark:text-white">{{ lnk.type ?? 'other' }}</td>
+            <td class="px-3 py-2 text-gray-900 dark:text-white">
               <div class="max-w-[240px] truncate" :title="lnk.description">{{ lnk.description ?? '—' }}</div>
             </td>
             <!-- afficher la devise du lien si présente -->
-            <td class="px-3 py-2">{{ formatCurrency(lnk.amount, lnk.currency ?? 'USD') }}</td>
-            <td class="px-3 py-2">{{ formatCurrency(paidFor(lnk), lnk.currency ?? 'USD') }}</td>
-            <td class="px-3 py-2">{{ formatCurrency((lnk.amount || 0) - paidFor(lnk), lnk.currency ?? 'USD') }}</td>
-            <td class="px-3 py-2">{{ formatDate(lastPaymentFor(lnk)) ?? '-' }}</td>
-            <td class="px-3 py-2">{{ formatDate(lnk.due_date) ?? '-' }}</td>
-            <td class="px-3 py-2">{{ lnk.status ?? '-' }}</td>
+            <td class="px-3 py-2 text-gray-900 dark:text-white">{{ formatCurrency(lnk.amount, lnk.currency ?? 'USD') }}</td>
+            <td class="px-3 py-2 text-gray-900 dark:text-white">{{ formatCurrency(paidFor(lnk), lnk.currency ?? 'USD') }}</td>
+            <td class="px-3 py-2 text-gray-900 dark:text-white">{{ formatCurrency((lnk.amount || 0) - paidFor(lnk), lnk.currency ?? 'USD') }}</td>
+            <td class="px-3 py-2 text-gray-900 dark:text-white">{{ formatDate(lastPaymentFor(lnk)) ?? '-' }}</td>
+            <td class="px-3 py-2 text-gray-900 dark:text-white">{{ formatDate(lnk.due_date) ?? '-' }}</td>
+            <td class="px-3 py-2 text-gray-900 dark:text-white">{{ lnk.status ?? '-' }}</td>
             <td class="px-3 py-2">
-              <button @click="openActions(lnk)" class="px-2 py-1 border rounded">Actions</button>
+              <button @click="openActions(lnk)" class="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700">Actions</button>
             </td>
           </tr>
           <tr v-if="!links.length">
-            <td class="px-3 py-6 text-center" colspan="9">No payment links</td>
+            <td class="px-3 py-6 text-center text-gray-500 dark:text-gray-400" colspan="9">No payment links</td>
           </tr>
         </tbody>
       </table>

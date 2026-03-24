@@ -7,14 +7,14 @@
 
     <!-- Breadcrumb -->
     <div class="flex flex-wrap items-center justify-between gap-3">
-      <h2 class="text-xl font-semibold text-slate-800 dark:text-white" x-text="pageTitle">
+      <h2 class="text-xl font-semibold text-slate-800 dark:text-slate-800" x-text="pageTitle">
         {{ pageTitle }}
       </h2>
       <nav>
         <ol class="flex items-center gap-1.5">
           <li>
             <router-link
-              class="inline-flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-200"
+              class="inline-flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-600"
               to="/"
             >
               Accueil
@@ -36,7 +36,7 @@
               </svg>
             </router-link>
           </li>
-          <li class="text-sm text-slate-800 dark:text-white">
+          <li class="text-sm text-slate-800 dark:text-slate-800">
             {{ pageTitle }}
           </li>
         </ol>

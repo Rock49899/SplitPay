@@ -249,14 +249,14 @@
       </div>
 
       <!-- Info Box -->
-      <div class="mt-8 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
+      <div class="mt-8 bg-blue-50 dark:bg-slate-800 border border-blue-200 dark:border-slate-600 rounded-lg p-6">
         <div class="flex gap-4">
           <svg class="w-6 h-6 text-blue-600 dark:text-blue-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
           </svg>
           <div class="flex-1">
-            <h4 class="font-semibold text-blue-900 dark:text-blue-300 mb-2">À propos des paramètres</h4>
-            <p class="text-sm text-blue-800 dark:text-blue-400">
+            <h4 class="font-semibold text-blue-900 dark:text-white mb-2">À propos des paramètres</h4>
+            <p class="text-sm text-blue-800 dark:text-gray-300">
               Les options disponibles dépendent de votre rôle et de vos permissions. 
               Si vous ne voyez pas certaines options, contactez votre administrateur système.
             </p>

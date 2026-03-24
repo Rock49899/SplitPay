@@ -22,10 +22,23 @@ class StudentOtpMail extends Mailable
 
     public function build()
     {
-        $body = "<p>Bonjour ".htmlspecialchars($this->student->first_name ?? $this->student->matricule).",</p>"
-              ."<p>Votre code de connexion est : <strong>{$this->otp}</strong>.</p>"
-              ."<p>Il expire dans 10 minutes.</p>";
+        $this->student->loadMissing(['annexe.institution']);
+        $institution = $this->student->annexe?->institution;
+        $logoRelativePath = $institution?->logo ? ltrim($institution->logo, '/') : null;
+        $logoDiskPath = $logoRelativePath ? storage_path('app/public/' . $logoRelativePath) : null;
+        $logoExists = $logoDiskPath && file_exists($logoDiskPath);
 
-        return $this->subject('Votre code OTP')->html($body);
+        return $this->subject('Votre code OTP')
+            ->view('emails.otp')
+            ->with([
+                'recipientName' => $this->student->first_name ?? $this->student->matricule,
+                'otp' => $this->otp,
+                'institutionName' => $institution?->name ?? '',
+                'institutionLogo' => ($institution && $institution->logo)
+                    ? asset('storage/' . $institution->logo)
+                    : null,
+                'institutionLogoPath' => $logoExists ? $logoDiskPath : null,
+                'audienceLabel' => 'Espace Étudiant',
+            ]);
     }
 }

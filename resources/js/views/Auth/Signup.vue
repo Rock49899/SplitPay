@@ -265,7 +265,13 @@
             <common-grid-shape />
             <div class="flex flex-col items-center max-w-xs">
               <router-link to="/" class="block mb-4">
-                <span class="text-8xl font-extrabold tracking-tight text-white dark:text-white">SplitPay</span>
+                <img
+                  v-if="brandLogoUrl"
+                  :src="brandLogoUrl"
+                  :alt="brandName"
+                  class="h-28 w-auto max-w-[520px] object-contain"
+                />
+                <span v-else class="text-8xl font-extrabold tracking-tight text-white dark:text-white">{{ displayName }}</span>
               </router-link>
             </div>
           </div>
@@ -279,9 +285,10 @@
 <script setup>
 import FullScreenLayout from '@/components/layout/FullScreenLayout.vue'
 import CommonGridShape from '@/components/common/CommonGridShape.vue'
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/useAuthStore'
+import { useInstitutionBrand } from '@/composables/useInstitutionBrand'
 
 const firstName = ref('')
 const lastName = ref('')
@@ -305,6 +312,7 @@ const error = ref(null)
 
 const router = useRouter()
 const auth = useAuthStore()
+const { brandName, brandLogoUrl, displayName, loadBrand } = useInstitutionBrand()
 
 const togglePasswordVisibility = () => {
   showPassword.value = !showPassword.value
@@ -329,6 +337,10 @@ const handleLogoUpload = (event) => {
     error.value = null
   }
 }
+
+onMounted(() => {
+  loadBrand(true)
+})
 
 // minimal client validation for step1 before moving to step2
 const validateStep1 = () => {

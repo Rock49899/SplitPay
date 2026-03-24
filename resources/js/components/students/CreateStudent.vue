@@ -44,7 +44,7 @@
         </div>
         <div>
           <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Téléphone</label>
-          <input v-model="form.phone" placeholder="+237 6XX XXX XXX"
+          <input v-model="form.phone" placeholder="+229 01XX XXX XXX"
             class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-transparent text-gray-900 dark:text-white" />
         </div>
         <div>

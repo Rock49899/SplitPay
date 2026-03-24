@@ -28,6 +28,9 @@ class PaymentLinkMail extends Mailable
         $this->link->loadMissing(['student.annexe.institution']);
         $annexe      = $this->link->student->annexe      ?? null;
         $institution = $annexe?->institution              ?? null;
+        $logoRelativePath = $institution?->logo ? ltrim($institution->logo, '/') : null;
+        $logoDiskPath = $logoRelativePath ? storage_path('app/public/' . $logoRelativePath) : null;
+        $logoExists = $logoDiskPath && file_exists($logoDiskPath);
 
         // Adapter le sujet selon le type de message
         $subject = match($this->messageType) {
@@ -47,6 +50,7 @@ class PaymentLinkMail extends Mailable
                         'institutionLogo' => ($institution && $institution->logo)
                                                 ? asset('storage/' . $institution->logo)
                                                 : null,
+                        'institutionLogoPath' => $logoExists ? $logoDiskPath : null,
                         'annexeName'      => $annexe?->name ?? '',
                     ]);
     }

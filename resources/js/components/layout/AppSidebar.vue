@@ -26,7 +26,7 @@
           v-if="institutionLogo && (isExpanded || isHovered || isMobileOpen)"
           :src="institutionLogo"
           alt="Logo"
-          class="h-12 w-auto object-contain max-w-full"
+          class="h-14 w-auto object-contain max-w-full"
         />
         <!-- Texte par défaut si pas de logo -->
         <span

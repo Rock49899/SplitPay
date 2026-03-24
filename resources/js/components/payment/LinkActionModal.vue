@@ -1,30 +1,30 @@
 <template>
   <Modal @close="close">
     <template #body>
-      <div class="p-4">
-        <h3 class="text-lg font-semibold mb-2">Link actions</h3>
-        <p class="text-sm text-gray-600 mb-3">Token: <code class="break-all">{{ link.token }}</code></p>
+      <div class="p-4 bg-white dark:bg-slate-800">
+        <h3 class="text-lg font-semibold mb-2 text-gray-900 dark:text-white">Link actions</h3>
+        <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">Token: <code class="break-all text-gray-900 dark:text-white bg-gray-100 dark:bg-slate-700 px-2 py-1 rounded">{{ link.token }}</code></p>
         <div class="space-y-3">
           <div>
-            <button @click="copy" class="px-3 py-1 border rounded mr-2">Copy link</button>
-            <button @click="openPublic" class="px-3 py-1 border rounded mr-2">Open public</button>
+            <button @click="copy" class="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded mr-2 text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700">Copy link</button>
+            <button @click="openPublic" class="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded mr-2 text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700">Open public</button>
             <!-- <button @click="share" class="px-3 py-1 border rounded">Share</button> -->
           </div>
 
           <div>
-            <label class="block text-sm text-gray-600 mb-2">Send to email</label>
+            <label class="block text-sm text-gray-700 dark:text-gray-200 mb-2">Send to email</label>
             
             <div class="flex gap-2 mb-2">
-              <input v-model="email" type="email" class="flex-1 border rounded px-3 py-2" placeholder="Email address" />
+              <input v-model="email" type="email" class="flex-1 border border-gray-300 dark:border-gray-600 rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400" placeholder="Email address" />
             </div>
             
             <div class="mb-2">
-              <label class="block text-xs text-gray-500 mb-1">Message type</label>
-              <select v-model="messageType" class="w-full border rounded px-3 py-2 text-sm">
-                <option value="initial">📧 Initial notification</option>
-                <option value="reminder">🔔 Friendly reminder</option>
-                <option value="urgent">⚠️ Urgent reminder</option>
-                <option value="final">⏰ Final notice</option>
+              <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1">Message type</label>
+              <select v-model="messageType" class="w-full border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                <option value="initial">📧 Notification initiale</option>
+                <option value="reminder">🔔 Rappel amical</option>
+                <option value="urgent">⚠️ Rappel urgent</option>
+                <option value="final">⏰ Avis final</option>
               </select>
             </div>
             
@@ -34,7 +34,7 @@
           </div>
 
           <div>
-            <button @click="disableLink" class="px-3 py-1 border rounded text-red-600">Disable link</button>
+            <button @click="disableLink" class="px-3 py-1 border border-red-300 dark:border-red-600 rounded text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20">Disable link</button>
           </div>
         </div>
       </div>

@@ -1,0 +1,80 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: saas-app
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+    networks:
+      - saas-network
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  nginx:
+    image: nginx:alpine
+    container_name: saas-nginx
+    restart: unless-stopped
+    ports:
+      - "8000:80" # On mappe le port 8000 du PC vers le 80 du conteneur
+    volumes:
+      - ./:/var/www
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d
+    networks:
+      - saas-network
+
+  db:
+    image: mysql:8.0
+    container_name: saas-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_USER: ${DB_USERNAME}
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u${DB_USERNAME} -p${DB_PASSWORD} --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 25s
+    volumes:
+      - dbdata:/var/lib/mysql
+    networks:
+      - saas-network
+
+  redis:
+    image: redis:alpine
+    container_name: saas-redis
+    restart: unless-stopped
+    networks:
+      - saas-network
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: saas-worker
+    restart: unless-stopped
+    command: php artisan queue:work redis --sleep=3 --tries=3
+    volumes:
+      - ./:/var/www
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - saas-network
+
+networks:
+  saas-network:
+    driver: bridge
+
+volumes:
+  dbdata:

@@ -9,7 +9,7 @@
             v-if="paymentInstitutionLogo"
             :src="paymentInstitutionLogo"
             :alt="paymentInstitutionName"
-            class="h-16 w-auto max-w-[260px] object-contain"
+            class="h-20 w-auto max-w-[320px] object-contain"
           />
           <span v-else class="inline-block rounded-lg bg-white px-3 py-1 text-sm font-semibold text-gray-700 shadow-sm border border-gray-100">{{ paymentInstitutionDisplayName }}</span>
         </div>

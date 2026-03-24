@@ -36,8 +36,8 @@
             margin-bottom: 10px;
         }
         .header .logo {
-            max-width: 150px;
-            max-height: 60px;
+            max-width: 220px;
+            max-height: 90px;
             margin: 0 auto 15px;
             display: block;
             object-fit: contain;
@@ -104,7 +104,9 @@
 <body>
     <div class="container">
         <div class="header">
-            @if($institutionLogo)
+            @if(!empty($institutionLogoPath) && isset($message))
+                <img src="{{ $message->embed($institutionLogoPath) }}" alt="{{ $institutionName }}" class="logo">
+            @elseif($institutionLogo)
                 <img src="{{ $institutionLogo }}" alt="{{ $institutionName }}" class="logo">
             @endif
             <div class="icon">
@@ -174,7 +176,11 @@
             @if(!empty($institutionLogo) || !empty($institutionName))
             <div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #dee2e6;">
                 @if(!empty($institutionLogo))
-                    <img src="{{ $institutionLogo }}" alt="{{ $institutionName ?? '' }}" style="max-height: 55px; max-width: 170px; object-fit: contain; display: block; margin: 0 auto 8px;">
+                    @if(!empty($institutionLogoPath) && isset($message))
+                        <img src="{{ $message->embed($institutionLogoPath) }}" alt="{{ $institutionName ?? '' }}" style="max-height: 80px; max-width: 220px; object-fit: contain; display: block; margin: 0 auto 8px;">
+                    @else
+                        <img src="{{ $institutionLogo }}" alt="{{ $institutionName ?? '' }}" style="max-height: 80px; max-width: 220px; object-fit: contain; display: block; margin: 0 auto 8px;">
+                    @endif
                 @endif
                 @if(!empty($institutionName))
                     <div style="font-weight: 700; font-size: 15px; color: #111827;">{{ $institutionName }}</div>

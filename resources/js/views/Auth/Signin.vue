@@ -288,7 +288,7 @@
                   v-if="brandLogoUrl"
                   :src="brandLogoUrl"
                   :alt="brandName"
-                  class="h-20 w-auto max-w-[320px] object-contain"
+                  class="h-28 w-auto max-w-[520px] object-contain"
                 />
                 <span v-else class="text-5xl font-extrabold tracking-tight text-white dark:text-white">{{ displayName }}</span>
               </router-link>

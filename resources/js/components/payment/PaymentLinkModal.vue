@@ -1,15 +1,15 @@
 <template>
   <Modal @close="close">
     <template #body>
-      <div class="w-full max-w-lg p-6 bg-white dark:bg-gray-900 rounded-2xl">
-        <h3 class="text-lg font-semibold mb-3">Créer un lien de paiement</h3>
+      <div class="w-full max-w-lg p-6 bg-white dark:bg-slate-800 rounded-2xl">
+        <h3 class="text-lg font-semibold mb-3 text-gray-900 dark:text-white">Créer un lien de paiement</h3>
 
         <div class="space-y-3">
 
           <!-- Type de lien -->
           <div>
-            <label class="block text-sm text-gray-600">Type</label>
-            <select v-model="form.type" class="w-full border rounded px-3 py-2">
+            <label class="block text-sm text-gray-700 dark:text-gray-200">Type</label>
+            <select v-model="form.type" class="w-full border border-gray-300 dark:border-gray-600 rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
               <option value="tuition">Scolarité</option>
               <option value="other">Autre</option>
             </select>
@@ -18,7 +18,7 @@
           <!-- Confirmation scolarité avec réduction possible (tuition + barème connu) -->
           <div v-if="isTuition && props.tuitionAmount > 0"
             class="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
               Scolarité de référence
               <span v-if="tuitionChanged" class="text-orange-500 text-xs ml-2">
                 ↳ réduction appliquée
@@ -28,10 +28,10 @@
               type="number"
               v-model.number="confirmedTuition"
               min="0" step="500"
-              class="w-full border rounded px-3 py-2 text-sm"
+              class="w-full border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               @input="syncAmount"
             />
-            <p class="text-xs text-gray-400 mt-1">
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
               Montant initial : {{ fmtAmount(props.tuitionAmount) }}
               &nbsp;&mdash;&nbsp;
               Restant effectif : <strong>{{ fmtAmount(effectiveRemaining) }}</strong>
@@ -40,47 +40,47 @@
 
           <!-- Tranche number (uniquement pour tuition) -->
           <div v-if="isTuition">
-            <label class="block text-sm text-gray-600">Numéro de tranche</label>
+            <label class="block text-sm text-gray-700 dark:text-gray-200">Numéro de tranche</label>
             <input
               type="number"
               v-model.number="form.tranche_number"
               min="1"
               step="1"
-              class="w-full border rounded px-3 py-2"
+              class="w-full border border-gray-300 dark:border-gray-600 rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             />
           </div>
 
           <!-- Amount -->
           <div>
-            <label class="block text-sm text-gray-600">Montant</label>
+            <label class="block text-sm text-gray-700 dark:text-gray-200">Montant</label>
             <input
               type="number"
               step="0.01"
               v-model.number="form.amount"
-              class="w-full border rounded px-3 py-2"
+              class="w-full border border-gray-300 dark:border-gray-600 rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               :max="maxAllowed"
             />
-            <div v-if="isTuition" class="text-xs text-gray-500 mt-1">
+            <div v-if="isTuition" class="text-xs text-gray-500 dark:text-gray-400 mt-1">
               Restant dû : {{ fmtAmount(effectiveRemaining) }} &mdash; Max : {{ fmtAmount(maxAllowed) }}
             </div>
           </div>
 
           <!-- Due date -->
           <div>
-            <label class="block text-sm text-gray-600">Échéance</label>
-            <input type="date" v-model="form.due_date" class="w-full border rounded px-3 py-2" />
+            <label class="block text-sm text-gray-700 dark:text-gray-200">Échéance</label>
+            <input type="date" v-model="form.due_date" class="w-full border border-gray-300 dark:border-gray-600 rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
           </div>
 
           <!-- Description -->
           <div>
-            <label class="block text-sm text-gray-600">Description</label>
-            <input type="text" v-model="form.description" class="w-full border rounded px-3 py-2" />
+            <label class="block text-sm text-gray-700 dark:text-gray-200">Description</label>
+            <input type="text" v-model="form.description" class="w-full border border-gray-300 dark:border-gray-600 rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
           </div>
 
           <!-- Currency -->
           <div>
-            <label class="block text-sm text-gray-600">Devise</label>
-            <select v-model="form.currency" class="w-full border rounded px-3 py-2">
+            <label class="block text-sm text-gray-700 dark:text-gray-200">Devise</label>
+            <select v-model="form.currency" class="w-full border border-gray-300 dark:border-gray-600 rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
               <option v-for="c in currencies" :key="c" :value="c">{{ c }}</option>
             </select>
           </div>

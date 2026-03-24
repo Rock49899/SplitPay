@@ -46,8 +46,12 @@ class PaymentReminderMail extends Mailable
     public function content(): Content
     {
         $remaining = $this->installment->amount - $this->installment->amount_paid;
+        $this->student->loadMissing(['annexe.institution']);
         $annexe = $this->student->annexe;
-        $institution = $annexe->institution;
+        $institution = $annexe?->institution;
+        $logoRelativePath = $institution?->logo ? ltrim($institution->logo, '/') : null;
+        $logoDiskPath = $logoRelativePath ? storage_path('app/public/' . $logoRelativePath) : null;
+        $logoExists = $logoDiskPath && file_exists($logoDiskPath);
 
         return new Content(
             view: 'emails.payment-reminder',
@@ -58,11 +62,12 @@ class PaymentReminderMail extends Mailable
                 'dueDate' => $this->installment->due_date->format('d/m/Y'),
                 'daysBeforeDue' => $this->daysBeforeDue,
                 'customMessage' => $this->message,
-                'annexeName' => $annexe->name,
+                'annexeName' => $annexe?->name ?? '',
                 'annexePhone' => $annexe->phone ?? '',
                 'annexeEmail' => $annexe->email ?? '',
                 'institutionName' => $institution->name ?? '',
                 'institutionLogo' => $institution->logo ? asset('storage/' . $institution->logo) : null,
+                'institutionLogoPath' => $logoExists ? $logoDiskPath : null,
             ],
         );
     }

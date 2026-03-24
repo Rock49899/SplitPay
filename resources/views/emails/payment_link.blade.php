@@ -30,8 +30,8 @@
             font-weight: normal;
         }
         .header .logo {
-            max-width: 160px;
-            max-height: 65px;
+            max-width: 220px;
+            max-height: 90px;
             margin: 0 auto 15px;
             display: block;
             object-fit: contain;
@@ -164,12 +164,14 @@
         ];
         
         $title = $titles[$type] ?? $titles['initial'];
-        $message = $messages[$type] ?? $messages['initial'];
+        $emailMessage = $messages[$type] ?? $messages['initial'];
     @endphp
     
     <div class="container">
         <div class="header">
-            @if(!empty($institutionLogo))
+            @if(!empty($institutionLogoPath) && isset($message) && method_exists($message, 'embed'))
+                <img src="{{ $message->embed($institutionLogoPath) }}" alt="{{ $institutionName ?? '' }}" class="logo">
+            @elseif(!empty($institutionLogo))
                 <img src="{{ $institutionLogo }}" alt="{{ $institutionName ?? '' }}" class="logo">
             @endif
             <h1>{{ $title }}</h1>
@@ -182,7 +184,7 @@
             <p>Bonjour,</p>
 
             <div class="info-box">
-                {{ $message }}
+                {{ $emailMessage }}
             </div>
 
             @if(isset($link->student))
@@ -271,7 +273,11 @@
             @if(!empty($institutionLogo) || !empty($institutionName) || !empty($annexeName))
             <div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #e5e7eb;">
                 @if(!empty($institutionLogo))
-                    <img src="{{ $institutionLogo }}" alt="{{ $institutionName ?? '' }}" style="max-height: 55px; max-width: 170px; object-fit: contain; display: block; margin: 0 auto 8px;">
+                    @if(!empty($institutionLogoPath) && isset($message) && method_exists($message, 'embed'))
+                        <img src="{{ $message->embed($institutionLogoPath) }}" alt="{{ $institutionName ?? '' }}" style="max-height: 80px; max-width: 220px; object-fit: contain; display: block; margin: 0 auto 8px;">
+                    @else
+                        <img src="{{ $institutionLogo }}" alt="{{ $institutionName ?? '' }}" style="max-height: 80px; max-width: 220px; object-fit: contain; display: block; margin: 0 auto 8px;">
+                    @endif
                 @endif
                 @if(!empty($institutionName))
                     <div style="font-weight: 700; font-size: 15px; color: #111827;">{{ $institutionName }}</div>

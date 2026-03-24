@@ -39,8 +39,12 @@ class OverduePaymentMail extends Mailable
     public function content(): Content
     {
         $remaining    = $this->installment->amount - $this->installment->amount_paid;
+        $this->student->loadMissing(['annexe.institution']);
         $annexe       = $this->student->annexe;
         $institution  = $annexe?->institution;
+        $logoRelativePath = $institution?->logo ? ltrim($institution->logo, '/') : null;
+        $logoDiskPath = $logoRelativePath ? storage_path('app/public/' . $logoRelativePath) : null;
+        $logoExists = $logoDiskPath && file_exists($logoDiskPath);
 
         return new Content(
             view: 'emails.overdue-payment',
@@ -50,13 +54,14 @@ class OverduePaymentMail extends Mailable
                 'amount'          => number_format($remaining, 0, ',', ' ') . ' FCFA',
                 'dueDate'         => $this->installment->due_date->format('d/m/Y'),
                 'daysOverdue'     => $this->daysOverdue,
-                'annexeName'      => $annexe->name,
+                'annexeName'      => $annexe?->name ?? '',
                 'annexePhone'     => $annexe->phone ?? '',
                 'annexeEmail'     => $annexe->email ?? '',
                 'institutionName' => $institution?->name ?? '',
                 'institutionLogo' => ($institution && $institution->logo)
                                          ? asset('storage/' . $institution->logo)
                                          : null,
+                'institutionLogoPath' => $logoExists ? $logoDiskPath : null,
             ],
         );
     }

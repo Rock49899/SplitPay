@@ -10,7 +10,7 @@
               v-if="brandLogoUrl"
               :src="brandLogoUrl"
               :alt="brandName"
-              class="h-10 w-auto max-w-[180px] object-contain"
+              class="h-14 w-auto max-w-[260px] object-contain"
             />
             <span v-else class="inline-block rounded-lg bg-gray-100 px-3 py-1 text-sm font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-200">{{ displayName }}</span>
           </div>

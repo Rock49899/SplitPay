@@ -56,6 +56,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Force HTTPS URLs
+    |--------------------------------------------------------------------------
+    |
+    | Allow forcing generated URLs to HTTPS via environment variable.
+    | Useful in production behind TLS, and disabled for local Docker/dev.
+    |
+    */
+
+    'force_https' => (bool) env('APP_FORCE_HTTPS', false),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |

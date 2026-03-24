@@ -22,13 +22,26 @@ class UserOtpMail extends Mailable
 
     public function build()
     {
-        $displayName = htmlspecialchars($this->user->name ?? $this->user->email);
+        $this->user->loadMissing(['annexe.institution', 'annexes.institution']);
 
-        $body = "<p>Bonjour {$displayName},</p>"
-            ."<p>Votre code de connexion est : <strong>{$this->otp}</strong>.</p>"
-            ."<p>Ce code expire dans 10 minutes.</p>"
-            ."<p>Si vous n'êtes pas à l'origine de cette demande, ignorez cet email.</p>";
+        $institution = $this->user->annexe?->institution
+            ?? $this->user->annexes->first()?->institution;
 
-        return $this->subject('Votre code OTP de connexion')->html($body);
+        $logoRelativePath = $institution?->logo ? ltrim($institution->logo, '/') : null;
+        $logoDiskPath = $logoRelativePath ? storage_path('app/public/' . $logoRelativePath) : null;
+        $logoExists = $logoDiskPath && file_exists($logoDiskPath);
+
+        return $this->subject('Votre code OTP de connexion')
+            ->view('emails.otp')
+            ->with([
+                'recipientName' => $this->user->name ?? $this->user->email,
+                'otp' => $this->otp,
+                'institutionName' => $institution?->name ?? '',
+                'institutionLogo' => ($institution && $institution->logo)
+                    ? asset('storage/' . $institution->logo)
+                    : null,
+                'institutionLogoPath' => $logoExists ? $logoDiskPath : null,
+                'audienceLabel' => 'Espace Administration',
+            ]);
     }
 }
