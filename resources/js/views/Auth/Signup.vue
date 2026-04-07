@@ -56,7 +56,7 @@
                         type="text"
                         id="fname"
                         placeholder="Enter your first name"
-                        class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 px-4 text-sm text-white placeholder:text-gray-400 dark:placeholder:text-white/60"
+                        class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder:text-gray-400 dark:bg-dark-900 dark:text-white dark:placeholder:text-white/60"
                       />
                     </div>
                     <!-- Last Name -->
@@ -69,7 +69,7 @@
                         type="text"
                         id="lname"
                         placeholder="Enter your last name"
-                        class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 px-4 text-sm text-white placeholder:text-gray-400 dark:placeholder:text-white/60"
+                        class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder:text-gray-400 dark:bg-dark-900 dark:text-white dark:placeholder:text-white/60"
                       />
                     </div>
                   </div>
@@ -84,7 +84,7 @@
                       type="email"
                       id="email"
                       placeholder="Enter your email"
-                      class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 px-4 text-sm text-white placeholder:text-gray-400 dark:placeholder:text-white/60"
+                      class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder:text-gray-400 dark:bg-dark-900 dark:text-white dark:placeholder:text-white/60"
                     />
                   </div>
 
@@ -99,7 +99,7 @@
                         :type="showPassword ? 'text' : 'password'"
                         id="password"
                         placeholder="Enter your password"
-                        class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 py-2.5 pl-4 pr-11 text-sm text-white placeholder:text-gray-400 dark:placeholder:text-white/60"
+                        class="h-11 w-full rounded-lg border border-gray-300 bg-white py-2.5 pl-4 pr-11 text-sm text-gray-900 placeholder:text-gray-400 dark:bg-dark-900 dark:text-white dark:placeholder:text-white/60"
                       />
                       <span @click="togglePasswordVisibility" class="absolute z-30 text-gray-500 -translate-y-1/2 cursor-pointer right-4 top-1/2 dark:text-gray-400">
                         <svg v-if="!showPassword" class="fill-current" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -168,7 +168,7 @@
                       type="text"
                       id="institution"
                       placeholder="Enter institution name"
-                      class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 px-4 text-sm text-white placeholder:text-gray-400 dark:placeholder:text-white/60"
+                      class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder:text-gray-400 dark:bg-dark-900 dark:text-white dark:placeholder:text-white/60"
                     />
                   </div>
 
@@ -180,7 +180,7 @@
                       type="email"
                       id="institution_email"
                       placeholder="Institution contact email"
-                      class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 px-4 text-sm text-white placeholder:text-gray-400 dark:placeholder:text-white/60"
+                      class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder:text-gray-400 dark:bg-dark-900 dark:text-white dark:placeholder:text-white/60"
                     />
                   </div>
 
@@ -205,7 +205,7 @@
                       type="text"
                       id="annexe"
                       placeholder="Enter annexe name"
-                      class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 px-4 text-sm text-white placeholder:text-gray-400 dark:placeholder:text-white/60"
+                      class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder:text-gray-400 dark:bg-dark-900 dark:text-white dark:placeholder:text-white/60"
                     />
                   </div>
 
@@ -218,7 +218,7 @@
                         type="email"
                         id="annexe_email"
                         placeholder="contact@annexe.com"
-                        class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 px-4 text-sm text-white placeholder:text-gray-400 dark:placeholder:text-white/60"
+                        class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder:text-gray-400 dark:bg-dark-900 dark:text-white dark:placeholder:text-white/60"
                       />
                     </div>
                     <div>
@@ -228,7 +228,7 @@
                         type="tel"
                         id="annexe_phone"
                         placeholder="+242 XX XXX XXXX"
-                        class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 px-4 text-sm text-white placeholder:text-gray-400 dark:placeholder:text-white/60"
+                        class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder:text-gray-400 dark:bg-dark-900 dark:text-white dark:placeholder:text-white/60"
                       />
                     </div>
                   </div>

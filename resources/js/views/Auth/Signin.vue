@@ -82,7 +82,7 @@
                         id="email"
                         name="email"
                         placeholder="info@gmail.com"
-                        class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-white placeholder:text-gray-400 dark:placeholder:text-white/60 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10"
+                        class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:bg-dark-900 dark:text-white dark:placeholder:text-white/60"
                       />
                     </div>
 
@@ -101,7 +101,7 @@
                           id="otp"
                           maxlength="6"
                           placeholder="Entrez le code reçu par email"
-                          class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent py-2.5 px-4 text-sm text-white placeholder:text-gray-400 dark:placeholder:text-white/60 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10"
+                          class="h-11 w-full rounded-lg border border-gray-300 bg-white py-2.5 px-4 text-sm text-gray-900 placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:bg-dark-900 dark:text-white dark:placeholder:text-white/60"
                         />
                         <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Code valide pendant 10 minutes.</p>
                       </div>
@@ -154,7 +154,7 @@
                           :type="showPassword ? 'text' : 'password'"
                           id="password"
                           placeholder="Entrez votre mot de passe"
-                          class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent py-2.5 pl-4 pr-11 text-sm text-white placeholder:text-gray-400 dark:placeholder:text-white/60 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10"
+                          class="h-11 w-full rounded-lg border border-gray-300 bg-white py-2.5 pl-4 pr-11 text-sm text-gray-900 placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:bg-dark-900 dark:text-white dark:placeholder:text-white/60"
                         />
                         <span
                           @click="togglePasswordVisibility"
