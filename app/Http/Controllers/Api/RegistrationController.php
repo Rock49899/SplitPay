@@ -21,6 +21,18 @@ class RegistrationController extends Controller
     {
         $data = $request->validated();
 
+        if (! empty($data['institution_email']) && Institution::query()->where('email', $data['institution_email'])->exists()) {
+            return response()->json([
+                'message' => 'Cet e-mail institution existe déjà.'
+            ], 422);
+        }
+
+        if (Institution::query()->whereRaw('LOWER(name) = ?', [mb_strtolower($data['institution_name'])])->exists()) {
+            return response()->json([
+                'message' => 'Ce nom d\'institution existe déjà.'
+            ], 422);
+        }
+
         $result = DB::transaction(function () use ($data, $request) {
             // Gérer l'upload du logo si fourni
             $logoPath = null;

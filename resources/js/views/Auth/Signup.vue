@@ -26,7 +26,7 @@
                   stroke-linejoin="round"
                 />
               </svg>
-              Back to dashboard
+              Retour au tableau de bord
             </router-link>
           </div>
           <!-- Form -->
@@ -35,10 +35,10 @@
               <h1
                 class="mb-2 font-semibold text-gray-800 text-title-sm dark:text-white/90 sm:text-title-md"
               >
-                Sign Up
+                Inscription
               </h1>
               <p class="text-sm text-gray-500 dark:text-gray-400">
-                Enter your email and password to sign up!
+                Créez votre compte institution en quelques étapes.
               </p>
             </div>
             <form @submit.prevent="handleSubmit">
@@ -49,26 +49,26 @@
                     <!-- First Name -->
                     <div class="sm:col-span-1">
                       <label for="fname" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                        First Name<span class="text-error-500">*</span>
+                        Prénom<span class="text-error-500">*</span>
                       </label>
                       <input
                         v-model="firstName"
                         type="text"
                         id="fname"
-                        placeholder="Enter your first name"
+                        placeholder="Entrez votre prénom"
                         class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder:text-gray-400 dark:bg-dark-900 dark:text-white dark:placeholder:text-white/60"
                       />
                     </div>
                     <!-- Last Name -->
                     <div class="sm:col-span-1">
                       <label for="lname" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                        Last Name<span class="text-error-500">*</span>
+                        Nom<span class="text-error-500">*</span>
                       </label>
                       <input
                         v-model="lastName"
                         type="text"
                         id="lname"
-                        placeholder="Enter your last name"
+                        placeholder="Entrez votre nom"
                         class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder:text-gray-400 dark:bg-dark-900 dark:text-white dark:placeholder:text-white/60"
                       />
                     </div>
@@ -77,13 +77,13 @@
                   <!-- Email -->
                   <div>
                     <label for="email" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                      Email<span class="text-error-500">*</span>
+                      E-mail<span class="text-error-500">*</span>
                     </label>
                     <input
                       v-model="email"
                       type="email"
                       id="email"
-                      placeholder="Enter your email"
+                      placeholder="Entrez votre e-mail"
                       class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder:text-gray-400 dark:bg-dark-900 dark:text-white dark:placeholder:text-white/60"
                     />
                   </div>
@@ -91,14 +91,14 @@
                   <!-- Password -->
                   <div>
                     <label for="password" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                      Password<span class="text-error-500">*</span>
+                      Mot de passe<span class="text-error-500">*</span>
                     </label>
                     <div class="relative">
                       <input
                         v-model="password"
                         :type="showPassword ? 'text' : 'password'"
                         id="password"
-                        placeholder="Enter your password"
+                        placeholder="Entrez votre mot de passe"
                         class="h-11 w-full rounded-lg border border-gray-300 bg-white py-2.5 pl-4 pr-11 text-sm text-gray-900 placeholder:text-gray-400 dark:bg-dark-900 dark:text-white dark:placeholder:text-white/60"
                       />
                       <span @click="togglePasswordVisibility" class="absolute z-30 text-gray-500 -translate-y-1/2 cursor-pointer right-4 top-1/2 dark:text-gray-400">
@@ -145,7 +145,7 @@
                             </span>
                           </div>
                         </div>
-                        <p class="inline-block font-normal text-gray-500 dark:text-gray-400">By creating an account you agree to the <span class="text-gray-800 dark:text-white/90">Terms</span> and <span class="text-gray-800 dark:text-white">Privacy Policy</span></p>
+                        <p class="inline-block font-normal text-gray-500 dark:text-gray-400">En créant un compte, vous acceptez les <span class="text-gray-800 dark:text-white/90">conditions d'utilisation</span> et la <span class="text-gray-800 dark:text-white">politique de confidentialité</span>.</p>
                       </label>
                     </div>
                   </div>
@@ -153,7 +153,7 @@
                   <!-- Navigation -->
                   <div class="flex gap-3">
                     <button type="button" @click="validateStep1" :disabled="loading" class="flex-1 px-4 py-3 text-sm font-medium text-white rounded-lg bg-brand-500 hover:bg-brand-600 disabled:opacity-50">
-                      Next
+                      Suivant
                     </button>
                   </div>
                 </div>
@@ -162,24 +162,24 @@
                 <div v-if="step === 2" class="space-y-5">
                   <!-- Institution Name -->
                   <div>
-                    <label for="institution" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Institution Name<span class="text-error-500">*</span></label>
+                    <label for="institution" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Nom de l'établissement<span class="text-error-500">*</span></label>
                     <input
                       v-model="institutionName"
                       type="text"
                       id="institution"
-                      placeholder="Enter institution name"
+                      placeholder="Entrez le nom de l'établissement"
                       class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder:text-gray-400 dark:bg-dark-900 dark:text-white dark:placeholder:text-white/60"
                     />
                   </div>
 
                   <!-- Institution Email (optional) -->
                   <div>
-                    <label for="institution_email" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Institution Email (optional)</label>
+                    <label for="institution_email" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">E-mail de l'établissement (optionnel)</label>
                     <input
                       v-model="institutionEmail"
                       type="email"
                       id="institution_email"
-                      placeholder="Institution contact email"
+                      placeholder="E-mail de contact de l'établissement"
                       class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder:text-gray-400 dark:bg-dark-900 dark:text-white dark:placeholder:text-white/60"
                     />
                   </div>
@@ -199,12 +199,12 @@
 
                   <!-- Annexe Name -->
                   <div>
-                    <label for="annexe" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Annexe Name<span class="text-error-500">*</span></label>
+                    <label for="annexe" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Nom de l'annexe<span class="text-error-500">*</span></label>
                     <input
                       v-model="annexeName"
                       type="text"
                       id="annexe"
-                      placeholder="Enter annexe name"
+                      placeholder="Entrez le nom de l'annexe"
                       class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder:text-gray-400 dark:bg-dark-900 dark:text-white dark:placeholder:text-white/60"
                     />
                   </div>
@@ -237,8 +237,8 @@
                   <div class="flex gap-3">
                     <button type="button" @click="prevStep" class="flex-1 px-4 py-3 text-sm font-medium text-gray-700 rounded-lg border border-gray-300 hover:bg-gray-50">Retour</button>
                     <button type="submit" :disabled="loading" class="flex-1 px-4 py-3 text-sm font-medium text-white rounded-lg bg-brand-500 hover:bg-brand-600 disabled:opacity-50">
-                      <span v-if="!loading">Finish & Register</span>
-                      <span v-else>Registering...</span>
+                      <span v-if="!loading">Finaliser l'inscription</span>
+                      <span v-else>Inscription en cours...</span>
                     </button>
                   </div>
                 </div>
@@ -248,11 +248,11 @@
               <p
                 class="text-sm font-normal text-center text-gray-700 dark:text-gray-400 sm:text-start"
               >
-                Already have an account?
+                Vous avez déjà un compte ?
                 <router-link
                   to="/signin"
                   class="text-brand-500 hover:text-brand-600 dark:text-brand-400"
-                  >Sign In</router-link
+                  >Se connecter</router-link
                 >
               </p>
             </div>
@@ -264,14 +264,9 @@
           <div class="flex items-center justify-center z-1">
             <common-grid-shape />
             <div class="flex flex-col items-center max-w-xs">
-              <router-link to="/" class="block mb-4">
-                <img
-                  v-if="brandLogoUrl"
-                  :src="brandLogoUrl"
-                  :alt="brandName"
-                  class="h-28 w-auto max-w-[520px] object-contain"
-                />
-                <span v-else class="text-8xl font-extrabold tracking-tight text-white dark:text-white">{{ displayName }}</span>
+              <router-link to="/" class="block mb-4 text-center">
+                <span class="text-8xl font-extrabold tracking-tight text-white dark:text-white">SplitPay</span>
+                <p class="mt-3 text-sm text-white/80">Plateforme de gestion de scolairité multi-établissements</p>
               </router-link>
             </div>
           </div>
@@ -285,10 +280,9 @@
 <script setup>
 import FullScreenLayout from '@/components/layout/FullScreenLayout.vue'
 import CommonGridShape from '@/components/common/CommonGridShape.vue'
-import { ref, onMounted } from 'vue'
-import { RouterLink, useRouter } from 'vue-router'
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/useAuthStore'
-import { useInstitutionBrand } from '@/composables/useInstitutionBrand'
 
 const firstName = ref('')
 const lastName = ref('')
@@ -301,7 +295,7 @@ const agreeToTerms = ref(false)
 const institutionName = ref('')
 const institutionEmail = ref('')
 const institutionLogo = ref(null) // File object
-const annexeName = ref('Main Campus')
+const annexeName = ref('')
 const annexeEmail = ref('')
 const annexePhone = ref('')
 
@@ -312,7 +306,6 @@ const error = ref(null)
 
 const router = useRouter()
 const auth = useAuthStore()
-const { brandName, brandLogoUrl, displayName, loadBrand } = useInstitutionBrand()
 
 const togglePasswordVisibility = () => {
   showPassword.value = !showPassword.value
@@ -338,27 +331,23 @@ const handleLogoUpload = (event) => {
   }
 }
 
-onMounted(() => {
-  loadBrand(true)
-})
-
 // minimal client validation for step1 before moving to step2
 const validateStep1 = () => {
   error.value = null
   if (!firstName.value || !lastName.value) {
-    error.value = 'First name and last name are required.'
+    error.value = 'Le prénom et le nom sont obligatoires.'
     return
   }
   if (!email.value || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)) {
-    error.value = 'A valid email is required.'
+    error.value = 'Un e-mail valide est requis.'
     return
   }
   if (!password.value || password.value.length < 8) {
-    error.value = 'Password must be at least 8 characters.'
+    error.value = 'Le mot de passe doit contenir au moins 8 caractères.'
     return
   }
   if (!agreeToTerms.value) {
-    error.value = 'You must accept the Terms and Conditions.'
+    error.value = 'Vous devez accepter les conditions d\'utilisation.'
     return
   }
   // pass validation
@@ -385,10 +374,10 @@ const handleSubmit = async () => {
   // Utiliser FormData pour supporter l'upload de logo
   const formData = new FormData()
   
-  formData.append('institution_name', institutionName.value || `${firstName.value}'s Institution`)
+  formData.append('institution_name', institutionName.value)
   formData.append('institution_email', institutionEmail.value || '')
   formData.append('institution_phone', '')
-  formData.append('annexe_name', annexeName.value || 'Main Campus')
+  formData.append('annexe_name', annexeName.value)
   formData.append('owner_name', `${firstName.value} ${lastName.value}`.trim())
   formData.append('owner_email', email.value)
   formData.append('owner_password', password.value)
@@ -410,7 +399,7 @@ const handleSubmit = async () => {
     // redirect to signin or dashboard
     router.push('/signin')
   } catch (e) {
-    error.value = e.response?.data?.message || e.message || 'Registration failed'
+    error.value = e.response?.data?.message || e.message || 'Échec de l\'inscription'
   } finally {
     loading.value = false
   }

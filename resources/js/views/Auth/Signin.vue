@@ -74,7 +74,7 @@
                         for="email"
                         class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400"
                       >
-                        Email<span class="text-error-500">*</span>
+                        E-mail<span class="text-error-500">*</span>
                       </label>
                       <input
                         v-model="email"
@@ -146,7 +146,7 @@
                         for="password"
                         class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400"
                       >
-                        Password<span class="text-error-500">*</span>
+                        Mot de passe<span class="text-error-500">*</span>
                       </label>
                       <div class="relative">
                         <input
@@ -236,13 +236,13 @@
                               </span>
                             </div>
                           </div>
-                          Keep me logged in
+                          Rester connecté
                         </label>
                       </div>
                       <router-link
                         to="/reset-password"
                         class="text-sm text-brand-500 hover:text-brand-600 dark:text-brand-400"
-                        >Forgot password?</router-link
+                        >Mot de passe oublié ?</router-link
                       >
                     </div>
                     <!-- Button -->
@@ -252,8 +252,8 @@
                         :disabled="loading"
                         class="flex items-center justify-center w-full px-4 py-3 text-sm font-medium text-white transition rounded-lg bg-brand-500 shadow-theme-xs hover:bg-brand-600 disabled:opacity-50"
                       >
-                        <span v-if="!loading">Sign In</span>
-                        <span v-else>Signing in...</span>
+                        <span v-if="!loading">Se connecter</span>
+                        <span v-else>Connexion...</span>
                       </button>
                     </div>
 
@@ -261,18 +261,7 @@
                     <p v-if="otpNotice" class="text-xs text-green-600 dark:text-green-400">{{ otpNotice }}</p>
                   </div>
                 </form>
-                <div class="mt-5">
-                  <p
-                    class="text-sm font-normal text-center text-gray-700 dark:text-gray-400 sm:text-start"
-                  >
-                    Don't have an account?
-                    <router-link
-                      to="/signup"
-                      class="text-brand-500 hover:text-brand-600 dark:text-brand-400"
-                      >Sign Up</router-link
-                    >
-                  </p>
-                </div>
+                <div class="mt-5"></div>
               </div>
             </div>
           </div>
@@ -283,14 +272,9 @@
           <div class="flex items-center justify-center z-1">
             <common-grid-shape />
             <div class="flex flex-col items-center max-w-xs">
-              <router-link to="/" class="block mb-4">
-                <img
-                  v-if="brandLogoUrl"
-                  :src="brandLogoUrl"
-                  :alt="brandName"
-                  class="h-28 w-auto max-w-[520px] object-contain"
-                />
-                <span v-else class="text-5xl font-extrabold tracking-tight text-white dark:text-white">{{ displayName }}</span>
+              <router-link to="/" class="block mb-4 text-center">
+                <span class="text-7xl font-extrabold tracking-tight text-white dark:text-white">SplitPay</span>
+                <p class="mt-3 text-sm text-white/80">Plateforme de gestion de scolairité multi-établissements</p>
               </router-link>
             </div>
           </div>
@@ -301,13 +285,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 import CommonGridShape from '@/components/common/CommonGridShape.vue'
 import FullScreenLayout from '@/components/layout/FullScreenLayout.vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/useAuthStore'
 import authService from '@/services/authService'
-import { useInstitutionBrand } from '@/composables/useInstitutionBrand'
 
 const email = ref('')
 const password = ref('')
@@ -324,7 +307,6 @@ const otpNotice = ref('')
 const auth = useAuthStore()
 const router = useRouter()
 const route = useRoute()
-const { brandName, brandLogoUrl, displayName, loadBrand } = useInstitutionBrand()
 
 const togglePasswordVisibility = () => {
   showPassword.value = !showPassword.value
@@ -351,7 +333,7 @@ const handleSubmit = async () => {
     const redirect = route.query.redirect
     router.push(redirect && redirect !== '/signin' ? redirect : '/')
   } catch (e) {
-    error.value = e.response?.data?.message || e.message || 'Login failed'
+    error.value = e.response?.data?.message || e.message || 'Échec de connexion'
   } finally {
     loading.value = false
   }
@@ -391,7 +373,4 @@ const verifyOtp = async () => {
   }
 }
 
-onMounted(() => {
-  loadBrand(true)
-})
 </script>

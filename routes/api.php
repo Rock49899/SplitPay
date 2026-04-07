@@ -47,7 +47,8 @@ Route::get('check-institution', function () {
     ]);
 });
 
-Route::post('register', [\App\Http\Controllers\Api\RegistrationController::class, 'register']);
+Route::post('register', [\App\Http\Controllers\Api\RegistrationController::class, 'register'])
+    ->middleware('throttle:5,1');
 
 Route::post('students/login', [\App\Http\Controllers\Api\StudentAuthController::class, 'requestOtp']);
 Route::post('students/verify-otp', [\App\Http\Controllers\Api\StudentAuthController::class, 'verifyOtp']);

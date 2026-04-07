@@ -217,19 +217,6 @@ router.beforeEach(async (to, from, next) => {
     return next(getRoleDashboard(user));
   }
 
-  // Hide signup if institution already exists
-  if (to.name === 'Signup') {
-    try {
-      const response = await fetch('/api/check-institution');
-      const data = await response.json();
-      if (data.exists) {
-        return next({ name: 'Signin' });
-      }
-    } catch (error) {
-      console.error('Failed to check institution existence:', error);
-    }
-  }
-
   // Protection espace admin
   if (to.meta.requiresAuth) {
     if (!token) {
