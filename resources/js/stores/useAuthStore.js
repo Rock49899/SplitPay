@@ -3,6 +3,7 @@ import registrationService from '../services/registrationService';
 import authService from '../services/authService';
 import { applyToken } from '../services/api';
 import { initSessionTimeout, clearSessionTimeout } from '../middleware/sessionTimeout';
+import router from '../router';
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -81,6 +82,9 @@ export const useAuthStore = defineStore('auth', {
         this.setToken(null);
         this.user = null;
         localStorage.removeItem('user');
+        if (router.currentRoute.value?.name !== 'Signin') {
+          router.push({ name: 'Signin' }).catch(() => {});
+        }
         this.loading = false;
       }
     },

@@ -198,12 +198,9 @@ const signOut = async () => {
     clearPermissions()
     resetContext()
     closeDropdown()
-    
-    // Redirection intelligente : seulement si on n'est pas déjà sur une page publique
-    const currentPath = router.currentRoute.value.path
-    const publicRoutes = ['/', '/signin', '/signup']
-    
-    if (!publicRoutes.includes(currentPath)) {
+
+    // Redirection systématique vers signin après déconnexion
+    if (router.currentRoute.value.name !== 'Signin') {
       router.push({ name: 'Signin' })
     }
   }
