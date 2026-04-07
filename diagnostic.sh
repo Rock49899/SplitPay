@@ -83,7 +83,7 @@ echo ""
 
 # ============ CHECK 4: SSL/TLS ============
 echo -e "${YELLOW}4️⃣ SSL Certificate Status${NC}"
-CERT_PATH="/etc/letsencrypt/live/splitpay.payplus.africa/fullchain.pem"
+CERT_PATH="/etc/letsencrypt/live/payplus.africa-0001/fullchain.pem"
 if [ -f "$CERT_PATH" ]; then
     echo -e "${GREEN}✓ Certificate found at $CERT_PATH${NC}"
     openssl x509 -in "$CERT_PATH" -text -noout 2>/dev/null | grep -A 2 "Not Before\|Not After" | head -4
