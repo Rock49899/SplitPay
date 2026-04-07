@@ -47,7 +47,7 @@ services:
     container_name: saas-nginx-prod
     restart: unless-stopped
     ports:
-      - "1080:80"
+      - "8000:80"
     volumes:
       - app-storage:/var/www/storage:ro
     networks:

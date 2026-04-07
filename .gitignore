@@ -22,3 +22,12 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+/deploy.sh
+/apache-vhost-optimal.conf
+/.env.production.example
+/FILES_INDEX.md
+/err.txt
+/DEPLOYMENT_GUIDE.md
+/QUICK_START.md
+/SOLUTIONS_SUMMARY.md
+/vhst.txt
