@@ -60,6 +60,13 @@ class Institution extends Model
         return $this->hasMany(Annexe::class);
     }
 
+    protected static function booted(): void
+    {
+        static::deleting(function (self $institution) {
+            $institution->annexes()->delete();
+        });
+    }
+
     /**
      * Annexes actives uniquement
      */

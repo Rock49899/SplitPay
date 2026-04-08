@@ -1,12 +1,18 @@
 <template>
   <FullScreenLayout>
-    <div class="relative p-6 bg-white z-1 dark:bg-gray-900 sm:p-0">
+    <div class="relative p-6 z-1 bg-gray-50 dark:bg-gray-900 sm:p-0">
       <div
-        class="relative flex flex-col justify-center w-full h-screen lg:flex-row dark:bg-gray-900"
+        class="relative flex flex-col justify-start lg:justify-center w-full min-h-screen lg:h-screen lg:flex-row bg-gray-50 dark:bg-gray-900 overflow-y-auto"
       >
         <div class="flex flex-col flex-1 w-full lg:w-1/2">
           <!-- Form -->
-          <div class="flex flex-col justify-center flex-1 w-full max-w-md mx-auto">
+          <div class="flex flex-col justify-center flex-1 w-full max-w-md mx-auto px-5 sm:px-6 lg:px-0 py-6 lg:py-0">
+            <div class="mb-8 block text-center lg:hidden">
+              <router-link to="/" class="inline-block">
+                <span class="text-4xl font-extrabold tracking-tight text-brand-600 dark:text-brand-300">SplitPay</span>
+                <p class="mt-2 text-xs text-gray-600 dark:text-gray-300">Plateforme de gestion de scolarité multi-établissements</p>
+              </router-link>
+            </div>
             <div class="mb-5 sm:mb-8">
               <h1
                 class="mb-2 font-semibold text-gray-800 text-title-sm dark:text-white/90 sm:text-title-md"
@@ -32,7 +38,7 @@
                         type="text"
                         id="fname"
                         placeholder="Entrez votre prénom"
-                        class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder:text-gray-400 dark:bg-dark-900 dark:text-white dark:placeholder:text-white/60"
+                        class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder:text-gray-400 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-400"
                       />
                     </div>
                     <!-- Last Name -->
@@ -45,7 +51,7 @@
                         type="text"
                         id="lname"
                         placeholder="Entrez votre nom"
-                        class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder:text-gray-400 dark:bg-dark-900 dark:text-white dark:placeholder:text-white/60"
+                        class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder:text-gray-400 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-400"
                       />
                     </div>
                   </div>
@@ -60,7 +66,7 @@
                       type="email"
                       id="email"
                       placeholder="Entrez votre e-mail"
-                      class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder:text-gray-400 dark:bg-dark-900 dark:text-white dark:placeholder:text-white/60"
+                      class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder:text-gray-400 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-400"
                     />
                   </div>
 
@@ -75,7 +81,7 @@
                         :type="showPassword ? 'text' : 'password'"
                         id="password"
                         placeholder="Entrez votre mot de passe"
-                        class="h-11 w-full rounded-lg border border-gray-300 bg-white py-2.5 pl-4 pr-11 text-sm text-gray-900 placeholder:text-gray-400 dark:bg-dark-900 dark:text-white dark:placeholder:text-white/60"
+                        class="h-11 w-full rounded-lg border border-gray-300 bg-white py-2.5 pl-4 pr-11 text-sm text-gray-900 placeholder:text-gray-400 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-400"
                       />
                       <span @click="togglePasswordVisibility" class="absolute z-30 text-gray-500 -translate-y-1/2 cursor-pointer right-4 top-1/2 dark:text-gray-400">
                         <svg v-if="!showPassword" class="fill-current" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -144,7 +150,7 @@
                       type="text"
                       id="institution"
                       placeholder="Entrez le nom de l'établissement"
-                      class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder:text-gray-400 dark:bg-dark-900 dark:text-white dark:placeholder:text-white/60"
+                      class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder:text-gray-400 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-400"
                     />
                   </div>
 
@@ -156,7 +162,7 @@
                       type="email"
                       id="institution_email"
                       placeholder="E-mail de contact de l'établissement"
-                      class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder:text-gray-400 dark:bg-dark-900 dark:text-white dark:placeholder:text-white/60"
+                      class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder:text-gray-400 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-400"
                     />
                   </div>
 
@@ -194,7 +200,7 @@
                         type="email"
                         id="annexe_email"
                         placeholder="contact@annexe.com"
-                        class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder:text-gray-400 dark:bg-dark-900 dark:text-white dark:placeholder:text-white/60"
+                        class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder:text-gray-400 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-400"
                       />
                     </div>
                     <div>
@@ -204,7 +210,7 @@
                         type="tel"
                         id="annexe_phone"
                         placeholder="+242 XX XXX XXXX"
-                        class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder:text-gray-400 dark:bg-dark-900 dark:text-white dark:placeholder:text-white/60"
+                        class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder:text-gray-400 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-400"
                       />
                     </div>
                   </div>
@@ -235,7 +241,7 @@
           </div>
         </div>
         <div
-          class="relative items-center hidden w-full h-full lg:w-1/2 bg-brand-950 dark:bg-white/5 lg:grid"
+          class="relative items-center hidden w-full h-full lg:w-1/2 bg-brand-950 dark:bg-gray-950 lg:grid"
         >
           <div class="flex items-center justify-center z-1">
             <common-grid-shape />

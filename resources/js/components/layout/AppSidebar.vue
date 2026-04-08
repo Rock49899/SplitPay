@@ -272,10 +272,14 @@ const fetchInstitutionInfo = async () => {
     // Récupérer l'utilisateur actuel
     const meResponse = await api.get('/admin/me').catch(() => api.get('/me'))
     const currentUser = meResponse.data?.user ?? meResponse.data
-    
-    if (currentUser?.annexe_id) {
+
+    const principalAnnexeId = currentUser?.annexes?.find?.((a) => a?.is_principal)?.id
+    const firstAnnexeId = currentUser?.annexes?.[0]?.id
+    const activeAnnexeId = currentUser?.annexe_id || principalAnnexeId || firstAnnexeId
+
+    if (activeAnnexeId) {
       // Récupérer l'annexe
-      const annexeResponse = await api.get(`/admin/annexes/${currentUser.annexe_id}`)
+      const annexeResponse = await api.get(`/admin/annexes/${activeAnnexeId}`)
       const annexe = annexeResponse.data?.annexe ?? annexeResponse.data
       
       if (annexe?.institution_id) {
@@ -285,10 +289,18 @@ const fetchInstitutionInfo = async () => {
         
         institutionName.value = institution.name ?? ''
         institutionLogo.value = institution.logo ? `/storage/${institution.logo}` : null
+      } else {
+        institutionName.value = ''
+        institutionLogo.value = null
       }
+    } else {
+      institutionName.value = ''
+      institutionLogo.value = null
     }
   } catch (error) {
     console.error('Error fetching institution info:', error)
+    institutionName.value = ''
+    institutionLogo.value = null
   }
 }
 
