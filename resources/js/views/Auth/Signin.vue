@@ -58,7 +58,7 @@
                         id="email"
                         name="email"
                         placeholder="info@gmail.com"
-                        class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:bg-dark-900 dark:text-white dark:placeholder:text-white/60"
+                          class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:bg-dark-900 dark:text-white dark:placeholder:text-white/60"
                       />
                     </div>
 

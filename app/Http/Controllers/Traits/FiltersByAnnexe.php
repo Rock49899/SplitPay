@@ -10,6 +10,32 @@ use Illuminate\Support\Facades\Log;
 trait FiltersByAnnexe
 {
     /**
+     * Récupère les annexes accessibles pour l'utilisateur courant.
+     *
+     * - Super admin institution : toutes les annexes de son institution.
+     * - Autres utilisateurs : uniquement les annexes qui leur sont assignées.
+     */
+    protected function getAccessibleAnnexeIds(): array
+    {
+        $user = auth()->user();
+
+        if (!$user) {
+            return [];
+        }
+
+        if (method_exists($user, 'getAccessibleAnnexeIds')) {
+            try {
+                return array_values(array_filter($user->getAccessibleAnnexeIds()));
+            } catch (\Throwable $e) {
+                Log::error('Error fetching accessible annexes: ' . $e->getMessage());
+            }
+        }
+
+        // fallback défensif
+        return $this->getUserAnnexeIds();
+    }
+
+    /**
      * Récupère l'ID de l'annexe active depuis le contexte de la requête
      */
     protected function getActiveAnnexeId(): ?string
@@ -65,6 +91,32 @@ trait FiltersByAnnexe
     }
 
     /**
+     * Récupère l'ID de l'institution de l'utilisateur connecté
+     */
+    protected function getCurrentInstitutionId(): ?string
+    {
+        $user = auth()->user();
+
+        if (!$user) {
+            return null;
+        }
+
+        try {
+            if ($user->annexe?->institution_id) {
+                return $user->annexe->institution_id;
+            }
+
+            $firstAnnexe = $user->annexes()->with('institution')->first();
+            return $firstAnnexe?->institution_id;
+        } catch (
+            \Exception $e
+        ) {
+            Log::error('Error fetching current institution: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
      * Vérifie si l'utilisateur est super admin institution
      */
     protected function isSuperAdminInstitution(): bool
@@ -108,21 +160,17 @@ trait FiltersByAnnexe
      */
     protected function scopeByUserAnnexes(Builder $query, string $column = 'annexe_id'): Builder
     {
-        // Si super admin institution → AUCUN filtre, voit toutes les annexes
-        if ($this->isSuperAdminInstitution()) {
-            return $query;
-        }
-        
-        // Pour les users multi-annexe → Récupérer l'annexe active
-        $activeAnnexeId = $this->getActiveAnnexeId();
-        
-        if (!$activeAnnexeId) {
-            // Si aucune annexe active, retourner une query vide
+        $allowedAnnexeIds = $this->isSuperAdminInstitution()
+            ? $this->getAccessibleAnnexeIds()
+            : [$this->getActiveAnnexeId()];
+
+        $allowedAnnexeIds = array_values(array_filter($allowedAnnexeIds));
+
+        if (empty($allowedAnnexeIds)) {
             return $query->whereRaw('1 = 0');
         }
-        
-        // Filtrer UNIQUEMENT sur l'annexe active
-        return $query->where($column, $activeAnnexeId);
+
+        return $query->whereIn($column, $allowedAnnexeIds);
     }
 
     /**
@@ -150,11 +198,7 @@ trait FiltersByAnnexe
      */
     protected function userHasAccessToAnnexe(string $annexeId): bool
     {
-        if ($this->isSuperAdminInstitution()) {
-            return true;
-        }
-
-        return in_array($annexeId, $this->getUserAnnexeIds());
+        return in_array($annexeId, $this->getAccessibleAnnexeIds());
     }
 }
 

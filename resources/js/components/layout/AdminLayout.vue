@@ -7,6 +7,7 @@
       :class="[isExpanded || isHovered ? 'lg:ml-[290px]' : 'lg:ml-[90px]']"
     >
       <app-header />
+      <AdminOnboardingTour />
       <div class="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
         <slot></slot>
       </div>
@@ -19,5 +20,6 @@ import AppSidebar from './AppSidebar.vue'
 import AppHeader from './AppHeader.vue'
 import { useSidebar } from '@/composables/useSidebar'
 import Backdrop from './Backdrop.vue'
+import AdminOnboardingTour from '@/components/onboarding/AdminOnboardingTour.vue'
 const { isExpanded, isHovered } = useSidebar()
 </script>

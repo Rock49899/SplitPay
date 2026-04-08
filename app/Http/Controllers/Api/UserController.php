@@ -30,16 +30,16 @@ class UserController extends Controller
         $perPage = (int) $request->get('per_page', 15);
 
         $query = User::query();
+        $institutionId = $this->getCurrentInstitutionId();
 
-        // IMPORTANT: Filtrer par annexe de l'utilisateur via la relation annexes
+        if (!$institutionId) {
+            return response()->json(['data' => [], 'total' => 0], 200);
+        }
+
+        // IMPORTANT: Ne montrer que les utilisateurs rattachés à l'institution courante
+        $query->whereHas('annexes', fn ($q) => $q->where('annexes.institution_id', $institutionId));
+
         if (!$this->isSuperAdminInstitution()) {
-            $annexeIds = $this->getUserAnnexeIds();
-            if (empty($annexeIds)) {
-                return response()->json(['data' => [], 'total' => 0], 200);
-            }
-            $query->whereHas('annexes', fn ($q) => $q->whereIn('annexes.id', $annexeIds));
-            
-            // (l'admin principal ne doit pas apparaître dans la liste des admins annexe)
             $query->where('scope', '!=', 'institution');
         }
 
@@ -82,7 +82,7 @@ class UserController extends Controller
 
             // optional filters (annexe_id etc.)
             if ($annexeId = $request->get('annexe_id')) {
-                $query->where('annexe_id', $annexeId);
+                $query->whereHas('annexes', fn ($q) => $q->where('annexes.id', $annexeId)->where('annexes.institution_id', $institutionId));
             }
 
             // eager-load relations with nested relations for proper display
@@ -115,11 +115,16 @@ class UserController extends Controller
     
    public function show($id)
   {
+    $institutionId = $this->getCurrentInstitutionId();
+    if (!$institutionId) {
+        abort(403, 'Institution introuvable pour cet utilisateur.');
+    }
+
     $user = User::with([
         'annexe',
         'user_annexes.role',
         'user_annexes.annexe',
-    ])->findOrFail($id);
+    ])->whereHas('annexes', fn ($q) => $q->where('annexes.institution_id', $institutionId))->findOrFail($id);
 
     return response()->json($user);
   }
@@ -127,6 +132,21 @@ class UserController extends Controller
     public function store(StoreUserRequest $request)
     {
         $v = $request->validated();
+        $institutionId = $this->getCurrentInstitutionId();
+
+        if (!$institutionId) {
+            return response()->json(['message' => 'Institution introuvable pour cet utilisateur.'], 403);
+        }
+
+        if (!empty($v['annexe_id'])) {
+            $annexeAllowed = \App\Models\Annexe::where('id', $v['annexe_id'])
+                ->where('institution_id', $institutionId)
+                ->exists();
+
+            if (!$annexeAllowed) {
+                return response()->json(['message' => 'Annexe hors de votre institution.'], 403);
+            }
+        }
 
         if ($request->hasFile('avatar')) {
             $v['avatar'] = $request->file('avatar')->store('avatars', 'public');
@@ -159,7 +179,12 @@ class UserController extends Controller
 
     public function update(UpdateUserRequest $request, $id)
     {
-        $user = User::findOrFail($id);
+        $institutionId = $this->getCurrentInstitutionId();
+        if (!$institutionId) {
+            abort(403, 'Institution introuvable pour cet utilisateur.');
+        }
+
+        $user = User::whereHas('annexes', fn ($q) => $q->where('annexes.institution_id', $institutionId))->findOrFail($id);
         $v = $request->validated();
 
         if ($request->hasFile('avatar')) {
@@ -182,7 +207,12 @@ class UserController extends Controller
 
     public function destroy($id)
     {
-        $user = User::findOrFail($id);
+        $institutionId = $this->getCurrentInstitutionId();
+        if (!$institutionId) {
+            abort(403, 'Institution introuvable pour cet utilisateur.');
+        }
+
+        $user = User::whereHas('annexes', fn ($q) => $q->where('annexes.institution_id', $institutionId))->findOrFail($id);
         $user->delete();
         return response()->json(['message'=>'User deleted'], 200);
     }
@@ -195,7 +225,20 @@ class UserController extends Controller
             'is_primary'=> 'sometimes|boolean'
         ]);
 
-        $user = User::findOrFail($id);
+        $institutionId = $this->getCurrentInstitutionId();
+        if (!$institutionId) {
+            return response()->json(['message' => 'Institution introuvable pour cet utilisateur.'], 403);
+        }
+
+        $annexeAllowed = \App\Models\Annexe::where('id', $data['annexe_id'])
+            ->where('institution_id', $institutionId)
+            ->exists();
+
+        if (!$annexeAllowed) {
+            return response()->json(['message' => 'Annexe hors de votre institution.'], 403);
+        }
+
+        $user = User::whereHas('annexes', fn ($q) => $q->where('annexes.institution_id', $institutionId))->findOrFail($id);
 
         // Autoriser via la policy UserPolicy::assignRole (vérifie que l'appelant a le droit)
         $this->authorize('assignRole', [$user, $data['annexe_id']]);
@@ -218,7 +261,20 @@ class UserController extends Controller
             'annexe_id' => 'required|uuid|exists:annexes,id',
         ]);
 
-        $user = User::findOrFail($id);
+        $institutionId = $this->getCurrentInstitutionId();
+        if (!$institutionId) {
+            return response()->json(['message' => 'Institution introuvable pour cet utilisateur.'], 403);
+        }
+
+        $annexeAllowed = \App\Models\Annexe::where('id', $data['annexe_id'])
+            ->where('institution_id', $institutionId)
+            ->exists();
+
+        if (!$annexeAllowed) {
+            return response()->json(['message' => 'Annexe hors de votre institution.'], 403);
+        }
+
+        $user = User::whereHas('annexes', fn ($q) => $q->where('annexes.institution_id', $institutionId))->findOrFail($id);
 
         // Autoriser via la policy UserPolicy::removeRole
         $this->authorize('removeRole', [$user, $data['annexe_id']]);

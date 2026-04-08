@@ -27,23 +27,18 @@ Route::post('test', function () {
 Route::get('ping', fn () => response('pong'));
 
 Route::get('check-institution', function () {
-    $institution = \App\Models\Institution::query()->orderBy('created_at')->first();
-
-    if (! $institution) {
-        return response()->json([
-            'exists' => false,
-            'institution' => null,
-        ]);
-    }
-
     return response()->json([
-        'exists' => true,
-        'institution' => [
-            'id' => $institution->id,
-            'name' => $institution->name,
-            'logo' => $institution->logo,
-            'logo_url' => $institution->logo ? asset('storage/' . $institution->logo) : null,
-        ],
+        'exists' => \App\Models\Institution::query()->exists(),
+        'count' => \App\Models\Institution::query()->count(),
+        'institutions' => \App\Models\Institution::query()
+            ->orderBy('created_at')
+            ->get(['id', 'name', 'logo'])
+            ->map(fn ($institution) => [
+                'id' => $institution->id,
+                'name' => $institution->name,
+                'logo' => $institution->logo,
+                'logo_url' => $institution->logo ? asset('storage/' . $institution->logo) : null,
+            ]),
     ]);
 });
 

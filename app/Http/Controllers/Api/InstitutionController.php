@@ -12,6 +12,8 @@ use App\Models\Institution;
 
 class InstitutionController extends Controller
 {
+    use \App\Http\Controllers\Traits\FiltersByAnnexe;
+
     public function __construct()
     {
         $this->middleware('auth:sanctum');
@@ -34,9 +36,14 @@ class InstitutionController extends Controller
     public function index(Request $request)
     {
         $this->ensureInstitutionSuperAdmin();
+        $institutionId = $this->getCurrentInstitutionId();
+
+        if (! $institutionId) {
+            return response()->json(['data' => [], 'total' => 0], 200);
+        }
 
         $perPage = (int) $request->get('per_page', 15);
-        $query = Institution::query();
+        $query = Institution::query()->where('id', $institutionId);
 
         if ($name = $request->get('name')) {
             $query->where('name', 'like', "%{$name}%");
@@ -66,7 +73,8 @@ class InstitutionController extends Controller
     {
         $this->ensureInstitutionSuperAdmin();
 
-        $institution = Institution::findOrFail($id);
+        $institutionId = $this->getCurrentInstitutionId();
+        $institution = Institution::where('id', $institutionId)->findOrFail($id);
         return response()->json($institution, 200);
     }
 
@@ -75,7 +83,8 @@ class InstitutionController extends Controller
     {
         $this->ensureInstitutionSuperAdmin();
 
-        $institution = Institution::findOrFail($id);
+        $institutionId = $this->getCurrentInstitutionId();
+        $institution = Institution::where('id', $institutionId)->findOrFail($id);
         $v = $request->validated();
 
         if ($request->boolean('remove_logo')) {
@@ -100,7 +109,8 @@ class InstitutionController extends Controller
     // DELETE /api/admin/institutions/{id}
     public function destroy($id)
     {
-        $institution = Institution::findOrFail($id);
+        $institutionId = $this->getCurrentInstitutionId();
+        $institution = Institution::where('id', $institutionId)->findOrFail($id);
         $institution->delete();
         return response()->json(['message' => 'Institution deleted'], 200);
     }
@@ -110,7 +120,8 @@ class InstitutionController extends Controller
     {
         $this->ensureInstitutionSuperAdmin();
 
-        $institution = Institution::with('annexes')->findOrFail($id);
+        $institutionId = $this->getCurrentInstitutionId();
+        $institution = Institution::with('annexes')->where('id', $institutionId)->findOrFail($id);
         return response()->json($institution->annexes, 200);
     }
 }

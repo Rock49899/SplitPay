@@ -46,7 +46,10 @@ class DashboardController extends Controller
         $q = Payment::query();
 
         if (!$this->isSuperAdminInstitution()) {
-            $ids = $this->getUserAnnexeIds();
+            $ids = $this->getAccessibleAnnexeIds();
+            $q->whereHas('student', fn($s) => $s->whereIn('annexe_id', $ids));
+        } else {
+            $ids = $this->getAccessibleAnnexeIds();
             $q->whereHas('student', fn($s) => $s->whereIn('annexe_id', $ids));
         }
 
@@ -64,9 +67,7 @@ class DashboardController extends Controller
         $q = Enrollment::where('school_year', $schoolYear)
             ->whereHas('student', function ($s) {
                 $s->where('status', 'active');
-                if (!$this->isSuperAdminInstitution()) {
-                    $s->whereIn('annexe_id', $this->getUserAnnexeIds());
-                }
+                $s->whereIn('annexe_id', $this->getAccessibleAnnexeIds());
             });
 
         return $q;
@@ -124,8 +125,8 @@ class DashboardController extends Controller
 
         // ── Annexes count ─────────────────────────────────────────────────────
         $annexesCount = $this->isSuperAdminInstitution()
-            ? Annexe::where('is_active', true)->count()
-            : count($this->getUserAnnexeIds());
+            ? count($this->getAccessibleAnnexeIds())
+            : count($this->getAccessibleAnnexeIds());
 
         return response()->json([
             'school_year'     => $schoolYear,
@@ -242,10 +243,8 @@ class DashboardController extends Controller
 
         // Determine which annexes to include
         $annexeQuery = Annexe::where('is_active', true);
-        if (!$this->isSuperAdminInstitution()) {
-            $ids = $this->getUserAnnexeIds();
-            $annexeQuery->whereIn('id', $ids);
-        }
+        $ids = $this->getAccessibleAnnexeIds();
+        $annexeQuery->whereIn('id', $ids);
         $annexes = $annexeQuery->get(['id', 'name']);
 
         // Enrollment sums per annexe for the given school year
@@ -258,8 +257,8 @@ class DashboardController extends Controller
             ->join('students', 'students.id', '=', 'enrollments.student_id')
             ->where('enrollments.school_year', $schoolYear)
             ->where('students.status', 'active')
-            ->when(!$this->isSuperAdminInstitution(), function ($q) {
-                $ids = $this->getUserAnnexeIds();
+            ->when(true, function ($q) {
+                $ids = $this->getAccessibleAnnexeIds();
                 $q->whereIn('students.annexe_id', $ids);
             })
             ->groupBy('students.annexe_id')
@@ -274,8 +273,8 @@ class DashboardController extends Controller
             ->join('students', 'students.id', '=', 'payments.student_id')
             ->where('payments.status', 'success')
             ->whereBetween('payments.paid_at', [$from, $to])
-            ->when(!$this->isSuperAdminInstitution(), function ($q) {
-                $ids = $this->getUserAnnexeIds();
+            ->when(true, function ($q) {
+                $ids = $this->getAccessibleAnnexeIds();
                 $q->whereIn('students.annexe_id', $ids);
             })
             ->groupBy('students.annexe_id')

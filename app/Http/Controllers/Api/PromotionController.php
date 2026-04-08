@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Traits\FiltersByAnnexe;
 use App\Models\Enrollment;
 use App\Models\LevelFee;
 use App\Models\SchoolYear;
@@ -12,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 
 class PromotionController extends Controller
 {
+    use FiltersByAnnexe;
 
     /**
      * Retourne la liste des années scolaires disponibles.
@@ -78,9 +80,25 @@ class PromotionController extends Controller
 
         $fromYear = $request->from_year;
         $toYear   = $request->to_year;
+        $allowedAnnexeIds = array_values(array_filter($this->getAccessibleAnnexeIds()));
+
+        if (empty($allowedAnnexeIds)) {
+            return response()->json([
+                'from_year' => $fromYear,
+                'to_year' => $toYear,
+                'summary' => [
+                    'total' => 0,
+                    'promotable' => 0,
+                    'terminal' => 0,
+                    'no_level' => 0,
+                ],
+                'details' => [],
+            ]);
+        }
 
         $enrollments = Enrollment::active()
             ->forYear($fromYear)
+            ->whereHas('student', fn ($q) => $q->whereIn('annexe_id', $allowedAnnexeIds))
             ->with('student.specialization', 'levelFee.studyLevel')
             ->get();
 
@@ -93,7 +111,7 @@ class PromotionController extends Controller
             $studyLevel = $e->levelFee?->studyLevel;
             $nextLevel  = $studyLevel?->nextLevel();
             $fee        = $nextLevel
-                ? LevelFee::resolve($nextLevel->id, $e->student->specialization_id, $toYear)
+                ? LevelFee::resolve($nextLevel->id, $e->student->specialization_id, $toYear, (string) $e->student->annexe_id)
                 : null;
 
             if (!$studyLevel) {
@@ -154,6 +172,13 @@ class PromotionController extends Controller
         $fromYear   = $validated['from_year'];
         $toYear     = $validated['to_year'];
         $filterIds  = $validated['student_ids'] ?? null;
+        $allowedAnnexeIds = array_values(array_filter($this->getAccessibleAnnexeIds()));
+
+        if (empty($allowedAnnexeIds)) {
+            return response()->json([
+                'message' => 'Aucune annexe accessible pour cette opération.',
+            ], 403);
+        }
 
         $fromSchoolYear = SchoolYear::firstOrCreate(
             ['year' => $fromYear],
@@ -172,7 +197,10 @@ class PromotionController extends Controller
         );
 
         // Vérification : l'année source doit avoir des inscriptions actives
-        $count = Enrollment::active()->forYear($fromYear)->count();
+        $count = Enrollment::active()
+            ->forYear($fromYear)
+            ->whereHas('student', fn ($q) => $q->whereIn('annexe_id', $allowedAnnexeIds))
+            ->count();
         if ($count === 0) {
             return response()->json([
                 'message' => "Aucune inscription active pour l'année $fromYear.",
@@ -181,6 +209,7 @@ class PromotionController extends Controller
 
         $query = Enrollment::active()
             ->forYear($fromYear)
+            ->whereHas('student', fn ($q) => $q->whereIn('annexe_id', $allowedAnnexeIds))
             ->with('student.specialization', 'levelFee.studyLevel');
 
         if ($filterIds) {
@@ -222,7 +251,8 @@ class PromotionController extends Controller
                     $fee = LevelFee::resolve(
                         $nextLevel->id,
                         $enrollment->student->specialization_id,
-                        $toYear
+                        $toYear,
+                        (string) $enrollment->student->annexe_id
                     );
 
                     // Créer la nouvelle inscription (évite les doublons)

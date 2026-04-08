@@ -271,7 +271,9 @@ class StudentImportController extends Controller
                     // Chercher le niveau d'étude par libellé (si fourni)
                     $studyLevelId = null;
                     if (!empty($studentData['study_level_label'])) {
-                        $studyLevel = \App\Models\StudyLevel::where('label', $studentData['study_level_label'])->first();
+                        $studyLevel = StudyLevel::where('annexe_id', $activeAnnexeId)
+                            ->where('label', $studentData['study_level_label'])
+                            ->first();
                         
                         if (!$studyLevel) {
                             $failed[] = [
@@ -288,7 +290,9 @@ class StudentImportController extends Controller
                     // Chercher la spécialisation par libellé (si fourni)
                     $specializationId = null;
                     if (!empty($studentData['specialization_label'])) {
-                        $specialization = Specialization::where('label', $studentData['specialization_label'])->first();
+                        $specialization = Specialization::where('annexe_id', $activeAnnexeId)
+                            ->where('label', $studentData['specialization_label'])
+                            ->first();
                         
                         if (!$specialization) {
                             $failed[] = [
@@ -329,7 +333,8 @@ class StudentImportController extends Controller
                         $fee = \App\Models\LevelFee::resolve(
                             $studyLevelId,
                             $specializationId,
-                            $schoolYear
+                            $schoolYear,
+                            (string) $activeAnnexeId
                         );
                         
                         // Créer l'inscription

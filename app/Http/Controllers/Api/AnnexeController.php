@@ -12,6 +12,10 @@ use Illuminate\Database\QueryException;
 use Illuminate\Validation\ValidationException;
 use App\Http\Requests\StoreAnnexeRequest;
 use App\Http\Requests\UpdateAnnexeRequest;
+use App\Models\LevelFee;
+use App\Models\Specialization;
+use App\Models\StudyLevel;
+use Illuminate\Support\Facades\DB;
 
 class AnnexeController extends Controller
 {
@@ -28,7 +32,7 @@ class AnnexeController extends Controller
         $perPage = (int) $request->get('per_page', 15);
         $query = Annexe::query();
 
-        // IMPORTANT: Filtrer par annexe de l'utilisateur
+        // IMPORTANT: Filtrer uniquement les annexes de l'institution courante
         $query = $this->scopeByUserAnnexes($query, 'id');
 
         try {
@@ -90,7 +94,12 @@ class AnnexeController extends Controller
     public function store(StoreAnnexeRequest $request)
     {
         $v = $request->validated();
-        $institutionId = auth()->user()->annexe?->institution_id;
+        $institutionId = $this->getCurrentInstitutionId();
+        $sourceAnnexeId = $this->getUserPrincipalAnnexeId() ?: $this->getActiveAnnexeId();
+
+        if (!$institutionId) {
+            return response()->json(['message' => 'Institution introuvable pour cet utilisateur.'], 403);
+        }
 
         $annexe = Annexe::create([
             'id' => (string) Str::uuid(),
@@ -102,6 +111,18 @@ class AnnexeController extends Controller
             'is_active' => $v['is_active'] ?? true,
         ]);
 
+        if ($sourceAnnexeId && $sourceAnnexeId !== $annexe->id) {
+            try {
+                $this->copyAcademicCatalog((string) $sourceAnnexeId, (string) $annexe->id);
+            } catch (\Throwable $e) {
+                \Log::warning('AnnexeController@store academic catalog copy failed', [
+                    'source_annexe_id' => $sourceAnnexeId,
+                    'target_annexe_id' => $annexe->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
         // renvoyer l'objet complet (created_at/updated_at inclus automatiquement)
         return response()->json(['message' => 'Annexe created', 'annexe' => $annexe], 201);
     }
@@ -109,7 +130,7 @@ class AnnexeController extends Controller
     // GET /api/admin/annexes/{id}
     public function show($id)
     {
-        $annexe = Annexe::findOrFail($id);
+        $annexe = $this->scopeByUserAnnexes(Annexe::query(), 'id')->findOrFail($id);
 
         $with = [];
         if (method_exists($annexe, 'institution')) $with[] = 'institution';
@@ -126,7 +147,7 @@ class AnnexeController extends Controller
     public function update(UpdateAnnexeRequest $request, $id)
     {
         try {
-            $annexe = Annexe::findOrFail($id);
+            $annexe = $this->scopeByUserAnnexes(Annexe::query(), 'id')->findOrFail($id);
 
             $data = $request->validated();
             // si client envoie 'annexe_details', mapper vers 'details'
@@ -155,8 +176,70 @@ class AnnexeController extends Controller
     // DELETE /api/admin/annexes/{id}
     public function destroy($id)
     {
-        $annexe = Annexe::findOrFail($id);
+        $annexe = $this->scopeByUserAnnexes(Annexe::query(), 'id')->findOrFail($id);
         $annexe->delete();
         return response()->json(['message' => 'Annexe deleted'], 200);
+    }
+
+    private function copyAcademicCatalog(string $sourceAnnexeId, string $targetAnnexeId): void
+    {
+        DB::transaction(function () use ($sourceAnnexeId, $targetAnnexeId) {
+            $studyLevels = StudyLevel::where('annexe_id', $sourceAnnexeId)
+                ->orderBy('order')
+                ->orderBy('id')
+                ->get();
+
+            $specializations = Specialization::where('annexe_id', $sourceAnnexeId)
+                ->orderBy('label')
+                ->orderBy('id')
+                ->get();
+
+            if ($studyLevels->isEmpty() && $specializations->isEmpty()) {
+                return;
+            }
+
+            $levelMap = [];
+            foreach ($studyLevels as $level) {
+                $newLevel = StudyLevel::create([
+                    'annexe_id' => $targetAnnexeId,
+                    'code' => $level->code,
+                    'order' => $level->order,
+                    'label' => $level->label,
+                    'description' => $level->description,
+                ]);
+
+                $levelMap[$level->id] = $newLevel->id;
+            }
+
+            $specializationMap = [];
+            foreach ($specializations as $specialization) {
+                $newSpecialization = Specialization::create([
+                    'annexe_id' => $targetAnnexeId,
+                    'code' => $specialization->code,
+                    'label' => $specialization->label,
+                    'description' => $specialization->description,
+                ]);
+
+                $specializationMap[$specialization->id] = $newSpecialization->id;
+            }
+
+            $levelFees = LevelFee::where('annexe_id', $sourceAnnexeId)->get();
+            foreach ($levelFees as $fee) {
+                if (!isset($levelMap[$fee->study_level_id])) {
+                    continue;
+                }
+
+                LevelFee::create([
+                    'annexe_id' => $targetAnnexeId,
+                    'study_level_id' => $levelMap[$fee->study_level_id],
+                    'specialization_id' => $fee->specialization_id
+                        ? ($specializationMap[$fee->specialization_id] ?? null)
+                        : null,
+                    'school_year' => $fee->school_year,
+                    'tuition_amount' => $fee->tuition_amount,
+                    'notes' => $fee->notes,
+                ]);
+            }
+        });
     }
 }

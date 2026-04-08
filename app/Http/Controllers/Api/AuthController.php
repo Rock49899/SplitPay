@@ -51,7 +51,10 @@ class AuthController extends Controller
             ], 403);
         }
 
-        $activeAnnexes = $user->annexes->filter(fn($annexe) => $annexe->is_active);
+        $institutionId = $user->annexe?->institution_id;
+        $activeAnnexes = $user->annexes
+            ->filter(fn ($annexe) => $annexe->is_active)
+            ->when($institutionId, fn ($collection) => $collection->where('institution_id', $institutionId));
         
         if ($activeAnnexes->isEmpty()) {
             // dump('Aucune annexe active pour cet utilisateur');
@@ -96,7 +99,10 @@ class AuthController extends Controller
             return response()->json(['message' => 'Votre compte est désactivé. Contactez un administrateur.'], 403);
         }
 
-        $activeAnnexes = $user->annexes->filter(fn ($annexe) => $annexe->is_active);
+        $institutionId = $user->annexe?->institution_id;
+        $activeAnnexes = $user->annexes
+            ->filter(fn ($annexe) => $annexe->is_active)
+            ->when($institutionId, fn ($collection) => $collection->where('institution_id', $institutionId));
         if ($activeAnnexes->isEmpty()) {
             return response()->json(['message' => 'Aucune annexe active pour ce compte.'], 403);
         }
@@ -134,7 +140,10 @@ class AuthController extends Controller
 
         Cache::forget("user_otp_{$user->id}");
 
-        $activeAnnexes = $user->annexes->filter(fn ($annexe) => $annexe->is_active);
+        $institutionId = $user->annexe?->institution_id;
+        $activeAnnexes = $user->annexes
+            ->filter(fn ($annexe) => $annexe->is_active)
+            ->when($institutionId, fn ($collection) => $collection->where('institution_id', $institutionId));
         if ($activeAnnexes->isEmpty()) {
             return response()->json(['message' => 'Aucune annexe active pour ce compte.'], 403);
         }
@@ -181,8 +190,12 @@ class AuthController extends Controller
 
         // dump('Recuperation des infos pour: ' . $user->email);
 
-        $user->load(['annexes' => function($query) {
+        $institutionId = $user->annexe?->institution_id;
+        $user->load(['annexes' => function($query) use ($institutionId) {
             $query->where('is_active', true);
+            if ($institutionId) {
+                $query->where('institution_id', $institutionId);
+            }
         }]);
 
         $roles = collect();

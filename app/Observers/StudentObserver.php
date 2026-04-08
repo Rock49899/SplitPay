@@ -67,7 +67,8 @@ class StudentObserver
         $fee = LevelFee::resolve(
             (int) $student->study_level_id,
             $student->specialization_id ? (int) $student->specialization_id : null,
-            $student->school_year
+            $student->school_year,
+            (string) $student->annexe_id
         );
 
         if ($fee) {
@@ -89,7 +90,8 @@ class StudentObserver
         $fee = LevelFee::resolve(
             (int) $student->study_level_id,
             $student->specialization_id ? (int) $student->specialization_id : null,
-            $student->school_year
+            $student->school_year,
+            (string) $student->annexe_id
         );
 
         if (!$fee) {
