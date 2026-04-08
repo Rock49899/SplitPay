@@ -52,6 +52,16 @@ class DevelopmentDataSeeder extends Seeder
         $roleSuperAdmin   = Role::where('code', 'super_admin_institution')->first();
         $roleGestionnaire = Role::where('code', 'gestionnaire')->first();
 
+        User::create([
+            'annexe_id' => null,
+            'name'      => 'SplitPay Platform Admin',
+            'email'     => 'platform@splitpay.test',
+            'password'  => Hash::make('password'),
+            'phone'     => '+229 90 00 00 00',
+            'is_active' => true,
+            'scope'     => 'platform',
+        ]);
+
         $superAdmin = User::create([
             'annexe_id' => $annexeNord->id,
             'name'      => 'Admin Principal',
@@ -123,9 +133,10 @@ class DevelopmentDataSeeder extends Seeder
         $this->command->newLine();
         $this->command->info('RÉSUMÉ :');
         $this->command->info('  - 1 institution, 2 annexes');
-        $this->command->info('  - 3 utilisateurs (1 Super Admin + 2 Gestionnaires)');
+        $this->command->info('  - 4 utilisateurs (1 Admin Plateforme + 1 Super Admin + 2 Gestionnaires)');
         $this->command->info('  - 10 étudiants avec enrollments 2024-2025 + paiements partiels');
         $this->command->info('  Connexion : admin@ist-edu.com | password');
+        $this->command->info('  Connexion plateforme : platform@splitpay.test | password');
     }
 
     private function seedStudents(array $list, Annexe $annexe, Specialization $spec, $levels, string $year): void

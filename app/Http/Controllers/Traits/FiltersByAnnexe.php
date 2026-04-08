@@ -23,6 +23,14 @@ trait FiltersByAnnexe
             return [];
         }
 
+        if (method_exists($user, 'isPlatformAdmin') && $user->isPlatformAdmin()) {
+            try {
+                return \App\Models\Annexe::query()->pluck('id')->toArray();
+            } catch (\Throwable $e) {
+                Log::error('Error fetching platform annexes: ' . $e->getMessage());
+            }
+        }
+
         if (method_exists($user, 'getAccessibleAnnexeIds')) {
             try {
                 return array_values(array_filter($user->getAccessibleAnnexeIds()));
@@ -128,6 +136,10 @@ trait FiltersByAnnexe
         }
         
          // Vérifier d'abord par la colonne scope (plus simple et direct)
+        if (isset($user->scope) && $user->scope === 'platform') {
+            return true;
+        }
+
         if (isset($user->scope) && $user->scope === 'institution') {
             return true;
         }

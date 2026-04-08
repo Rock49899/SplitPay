@@ -31,15 +31,18 @@ class UserController extends Controller
 
         $query = User::query();
         $institutionId = $this->getCurrentInstitutionId();
+        $platformAdmin = method_exists(auth()->user(), 'isPlatformAdmin') && auth()->user()->isPlatformAdmin();
 
-        if (!$institutionId) {
+        if (!$institutionId && ! $platformAdmin) {
             return response()->json(['data' => [], 'total' => 0], 200);
         }
 
-        // IMPORTANT: Ne montrer que les utilisateurs rattachés à l'institution courante
-        $query->whereHas('annexes', fn ($q) => $q->where('annexes.institution_id', $institutionId));
+        // IMPORTANT: Ne montrer que les utilisateurs rattachés à l'institution courante, sauf pour l'admin plateforme
+        if (! $platformAdmin) {
+            $query->whereHas('annexes', fn ($q) => $q->where('annexes.institution_id', $institutionId));
+        }
 
-        if (!$this->isSuperAdminInstitution()) {
+        if (!$this->isSuperAdminInstitution() && ! $platformAdmin) {
             $query->where('scope', '!=', 'institution');
         }
 
@@ -82,7 +85,13 @@ class UserController extends Controller
 
             // optional filters (annexe_id etc.)
             if ($annexeId = $request->get('annexe_id')) {
-                $query->whereHas('annexes', fn ($q) => $q->where('annexes.id', $annexeId)->where('annexes.institution_id', $institutionId));
+                $query->whereHas('annexes', function ($q) use ($annexeId, $institutionId, $platformAdmin) {
+                    $q->where('annexes.id', $annexeId);
+
+                    if (! $platformAdmin) {
+                        $q->where('annexes.institution_id', $institutionId);
+                    }
+                });
             }
 
             // eager-load relations with nested relations for proper display
@@ -116,15 +125,22 @@ class UserController extends Controller
    public function show($id)
   {
     $institutionId = $this->getCurrentInstitutionId();
-    if (!$institutionId) {
+    $platformAdmin = method_exists(auth()->user(), 'isPlatformAdmin') && auth()->user()->isPlatformAdmin();
+    if (!$institutionId && ! $platformAdmin) {
         abort(403, 'Institution introuvable pour cet utilisateur.');
     }
 
-    $user = User::with([
+    $query = User::with([
         'annexe',
         'user_annexes.role',
         'user_annexes.annexe',
-    ])->whereHas('annexes', fn ($q) => $q->where('annexes.institution_id', $institutionId))->findOrFail($id);
+    ]);
+
+    if (! $platformAdmin) {
+        $query->whereHas('annexes', fn ($q) => $q->where('annexes.institution_id', $institutionId));
+    }
+
+    $user = $query->findOrFail($id);
 
     return response()->json($user);
   }
@@ -133,12 +149,13 @@ class UserController extends Controller
     {
         $v = $request->validated();
         $institutionId = $this->getCurrentInstitutionId();
+        $platformAdmin = method_exists(auth()->user(), 'isPlatformAdmin') && auth()->user()->isPlatformAdmin();
 
-        if (!$institutionId) {
+        if (!$institutionId && ! $platformAdmin) {
             return response()->json(['message' => 'Institution introuvable pour cet utilisateur.'], 403);
         }
 
-        if (!empty($v['annexe_id'])) {
+        if (! $platformAdmin && !empty($v['annexe_id'])) {
             $annexeAllowed = \App\Models\Annexe::where('id', $v['annexe_id'])
                 ->where('institution_id', $institutionId)
                 ->exists();
@@ -153,6 +170,10 @@ class UserController extends Controller
         }
 
         $plainPassword = $v['password'] ?? \Illuminate\Support\Str::password(12);
+
+        if ($platformAdmin && empty($v['scope'])) {
+            $v['scope'] = 'platform';
+        }
 
         $user = User::create(array_merge($v, [
             'id' => (string) Str::uuid(),
@@ -180,11 +201,17 @@ class UserController extends Controller
     public function update(UpdateUserRequest $request, $id)
     {
         $institutionId = $this->getCurrentInstitutionId();
-        if (!$institutionId) {
+        $platformAdmin = method_exists(auth()->user(), 'isPlatformAdmin') && auth()->user()->isPlatformAdmin();
+        if (!$institutionId && ! $platformAdmin) {
             abort(403, 'Institution introuvable pour cet utilisateur.');
         }
 
-        $user = User::whereHas('annexes', fn ($q) => $q->where('annexes.institution_id', $institutionId))->findOrFail($id);
+        $query = User::query();
+        if (! $platformAdmin) {
+            $query->whereHas('annexes', fn ($q) => $q->where('annexes.institution_id', $institutionId));
+        }
+
+        $user = $query->findOrFail($id);
         $v = $request->validated();
 
         if ($request->hasFile('avatar')) {
@@ -208,11 +235,17 @@ class UserController extends Controller
     public function destroy($id)
     {
         $institutionId = $this->getCurrentInstitutionId();
-        if (!$institutionId) {
+        $platformAdmin = method_exists(auth()->user(), 'isPlatformAdmin') && auth()->user()->isPlatformAdmin();
+        if (!$institutionId && ! $platformAdmin) {
             abort(403, 'Institution introuvable pour cet utilisateur.');
         }
 
-        $user = User::whereHas('annexes', fn ($q) => $q->where('annexes.institution_id', $institutionId))->findOrFail($id);
+        $query = User::query();
+        if (! $platformAdmin) {
+            $query->whereHas('annexes', fn ($q) => $q->where('annexes.institution_id', $institutionId));
+        }
+
+        $user = $query->findOrFail($id);
         $user->delete();
         return response()->json(['message'=>'User deleted'], 200);
     }
@@ -226,19 +259,27 @@ class UserController extends Controller
         ]);
 
         $institutionId = $this->getCurrentInstitutionId();
-        if (!$institutionId) {
+        $platformAdmin = method_exists(auth()->user(), 'isPlatformAdmin') && auth()->user()->isPlatformAdmin();
+        if (!$institutionId && ! $platformAdmin) {
             return response()->json(['message' => 'Institution introuvable pour cet utilisateur.'], 403);
         }
 
-        $annexeAllowed = \App\Models\Annexe::where('id', $data['annexe_id'])
-            ->where('institution_id', $institutionId)
-            ->exists();
+        $annexeAllowed = $platformAdmin
+            ? \App\Models\Annexe::where('id', $data['annexe_id'])->exists()
+            : \App\Models\Annexe::where('id', $data['annexe_id'])
+                ->where('institution_id', $institutionId)
+                ->exists();
 
         if (!$annexeAllowed) {
             return response()->json(['message' => 'Annexe hors de votre institution.'], 403);
         }
 
-        $user = User::whereHas('annexes', fn ($q) => $q->where('annexes.institution_id', $institutionId))->findOrFail($id);
+        $userQuery = User::query();
+        if (! $platformAdmin) {
+            $userQuery->whereHas('annexes', fn ($q) => $q->where('annexes.institution_id', $institutionId));
+        }
+
+        $user = $userQuery->findOrFail($id);
 
         // Autoriser via la policy UserPolicy::assignRole (vérifie que l'appelant a le droit)
         $this->authorize('assignRole', [$user, $data['annexe_id']]);
@@ -262,19 +303,27 @@ class UserController extends Controller
         ]);
 
         $institutionId = $this->getCurrentInstitutionId();
-        if (!$institutionId) {
+        $platformAdmin = method_exists(auth()->user(), 'isPlatformAdmin') && auth()->user()->isPlatformAdmin();
+        if (!$institutionId && ! $platformAdmin) {
             return response()->json(['message' => 'Institution introuvable pour cet utilisateur.'], 403);
         }
 
-        $annexeAllowed = \App\Models\Annexe::where('id', $data['annexe_id'])
-            ->where('institution_id', $institutionId)
-            ->exists();
+        $annexeAllowed = $platformAdmin
+            ? \App\Models\Annexe::where('id', $data['annexe_id'])->exists()
+            : \App\Models\Annexe::where('id', $data['annexe_id'])
+                ->where('institution_id', $institutionId)
+                ->exists();
 
         if (!$annexeAllowed) {
             return response()->json(['message' => 'Annexe hors de votre institution.'], 403);
         }
 
-        $user = User::whereHas('annexes', fn ($q) => $q->where('annexes.institution_id', $institutionId))->findOrFail($id);
+        $userQuery = User::query();
+        if (! $platformAdmin) {
+            $userQuery->whereHas('annexes', fn ($q) => $q->where('annexes.institution_id', $institutionId));
+        }
+
+        $user = $userQuery->findOrFail($id);
 
         // Autoriser via la policy UserPolicy::removeRole
         $this->authorize('removeRole', [$user, $data['annexe_id']]);

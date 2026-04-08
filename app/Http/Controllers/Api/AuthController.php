@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use App\Models\User;
 use Carbon\Carbon;
@@ -44,19 +45,16 @@ class AuthController extends Controller
             ], 401);
         }
 
-        if (!$user->is_active) {
+        if (!$user->isAccountActive()) {
             // dump('Compte desactive');
             return response()->json([
                 'message' => 'Votre compte est desactive. Contactez l\'administrateur.'
             ], 403);
         }
 
-        $institutionId = $user->annexe?->institution_id;
-        $activeAnnexes = $user->annexes
-            ->filter(fn ($annexe) => $annexe->is_active)
-            ->when($institutionId, fn ($collection) => $collection->where('institution_id', $institutionId));
-        
-        if ($activeAnnexes->isEmpty()) {
+        $activeAnnexes = $this->accessibleActiveAnnexes($user);
+
+        if (! $user->isPlatformAdmin() && $activeAnnexes->isEmpty()) {
             // dump('Aucune annexe active pour cet utilisateur');
             return response()->json([
                 'message' => 'Aucune annexe active. Contactez l\'administrateur.'
@@ -72,6 +70,7 @@ class AuthController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
                 'scope' => $user->scope,
+                'is_platform_admin' => $user->isPlatformAdmin(),
                 'annexes' => $activeAnnexes->map(function($annexe) {
                     return [
                         'id' => $annexe->id,
@@ -95,22 +94,31 @@ class AuthController extends Controller
             return response()->json(['message' => 'Aucun compte trouvé pour cet email'], 404);
         }
 
-        if (! $user->is_active) {
+        if (! $user->isAccountActive()) {
             return response()->json(['message' => 'Votre compte est désactivé. Contactez un administrateur.'], 403);
         }
 
-        $institutionId = $user->annexe?->institution_id;
-        $activeAnnexes = $user->annexes
-            ->filter(fn ($annexe) => $annexe->is_active)
-            ->when($institutionId, fn ($collection) => $collection->where('institution_id', $institutionId));
-        if ($activeAnnexes->isEmpty()) {
+        $activeAnnexes = $this->accessibleActiveAnnexes($user);
+        if (! $user->isPlatformAdmin() && $activeAnnexes->isEmpty()) {
             return response()->json(['message' => 'Aucune annexe active pour ce compte.'], 403);
         }
 
         $otp = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
         Cache::put("user_otp_{$user->id}", $otp, now()->addMinutes(10));
 
-        Mail::to($user->email)->send(new UserOtpMail($otp, $user));
+        try {
+            Mail::to($user->email)->send(new UserOtpMail($otp, $user));
+        } catch (\Throwable $e) {
+            Log::error('AuthController: échec envoi OTP email', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'message' => 'Impossible d\'envoyer l\'email OTP. Vérifiez la configuration SMTP.',
+            ], 500);
+        }
 
         return response()->json([
             'message' => 'Code OTP envoyé',
@@ -129,7 +137,7 @@ class AuthController extends Controller
             return response()->json(['message' => 'Aucun compte trouvé pour cet email'], 404);
         }
 
-        if (! $user->is_active) {
+        if (! $user->isAccountActive()) {
             return response()->json(['message' => 'Votre compte est désactivé. Contactez un administrateur.'], 403);
         }
 
@@ -140,11 +148,8 @@ class AuthController extends Controller
 
         Cache::forget("user_otp_{$user->id}");
 
-        $institutionId = $user->annexe?->institution_id;
-        $activeAnnexes = $user->annexes
-            ->filter(fn ($annexe) => $annexe->is_active)
-            ->when($institutionId, fn ($collection) => $collection->where('institution_id', $institutionId));
-        if ($activeAnnexes->isEmpty()) {
+        $activeAnnexes = $this->accessibleActiveAnnexes($user);
+        if (! $user->isPlatformAdmin() && $activeAnnexes->isEmpty()) {
             return response()->json(['message' => 'Aucune annexe active pour ce compte.'], 403);
         }
 
@@ -190,11 +195,10 @@ class AuthController extends Controller
 
         // dump('Recuperation des infos pour: ' . $user->email);
 
-        $institutionId = $user->annexe?->institution_id;
-        $user->load(['annexes' => function($query) use ($institutionId) {
+        $user->load(['annexes' => function($query) use ($user) {
             $query->where('is_active', true);
-            if ($institutionId) {
-                $query->where('institution_id', $institutionId);
+            if (! $user->isPlatformAdmin() && $user->annexe?->institution_id) {
+                $query->where('institution_id', $user->annexe->institution_id);
             }
         }]);
 
@@ -233,6 +237,7 @@ class AuthController extends Controller
                 'avatar_url' => $user->avatar_url,
                 'scope' => $user->scope,
                 'is_active' => $user->is_active,
+                'is_platform_admin' => $user->isPlatformAdmin(),
                 'annexes' => $user->annexes->map(function($annexe) {
                     return [
                         'id' => $annexe->id,
@@ -253,22 +258,28 @@ class AuthController extends Controller
     public function meForAnnexe(Request $request, $annexeId)
     {
         $user = $request->user();
-        
-        // Vérifier que l'utilisateur a accès à cette annexe
-        $user->load(['annexes' => function($query) use ($annexeId) {
-            $query->where('annexes.id', $annexeId)
-                  ->where('is_active', true);
-        }]);
-        
-        $annexe = $user->annexes->first();
+
+        if ($user->isPlatformAdmin()) {
+            $annexe = \App\Models\Annexe::with('institution')->whereKey($annexeId)->first();
+        } else {
+            // Vérifier que l'utilisateur a accès à cette annexe
+            $user->load(['annexes' => function($query) use ($annexeId) {
+                $query->where('annexes.id', $annexeId)
+                      ->where('is_active', true);
+            }]);
+
+            $annexe = $user->annexes->first();
+        }
         
         if (!$annexe) {
             return response()->json([
                 'message' => 'Vous n\'avez pas accès à cette annexe'
             ], 403);
         }
-        
-        $role = \App\Models\Role::with('permissions')->find($annexe->pivot->role_id);
+
+        $role = $user->isPlatformAdmin()
+            ? \App\Models\Role::with('permissions')->where('code', 'platform_admin')->first()
+            : \App\Models\Role::with('permissions')->find($annexe->pivot->role_id);
         
         $permissions = [];
         if ($role) {
@@ -309,5 +320,16 @@ class AuthController extends Controller
         $token = $user->createToken('auth-token', ['*'], $expiresAt)->plainTextToken;
 
         return [$token, $expiresAt];
+    }
+
+    private function accessibleActiveAnnexes(User $user)
+    {
+        $query = $user->annexes()->where('is_active', true);
+
+        if (! $user->isPlatformAdmin() && $user->annexe?->institution_id) {
+            $query->where('institution_id', $user->annexe->institution_id);
+        }
+
+        return $query->get();
     }
 }

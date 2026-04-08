@@ -14,6 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'permission'      => \App\Http\Middleware\CheckPermission::class,
+            'active.account'  => \App\Http\Middleware\EnsureAccountActive::class,
             'active.annexe'   => \App\Http\Middleware\SetActiveAnnexe::class,
             'active.school_year' => \App\Http\Middleware\SetActiveSchoolYear::class,
             'school_year.lock' => \App\Http\Middleware\EnforceSchoolYearAccess::class,

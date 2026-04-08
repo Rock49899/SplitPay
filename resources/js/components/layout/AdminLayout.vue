@@ -1,14 +1,14 @@
 <template>
-  <div class="min-h-screen xl:flex">
+  <div class="min-h-screen xl:flex bg-slate-50 dark:bg-slate-900">
     <app-sidebar />
     <Backdrop />
     <div
-      class="flex-1 transition-all duration-300 ease-in-out"
+      class="flex-1 transition-all duration-300 ease-in-out bg-slate-50 dark:bg-slate-900"
       :class="[isExpanded || isHovered ? 'lg:ml-[290px]' : 'lg:ml-[90px]']"
     >
       <app-header />
       <AdminOnboardingTour />
-      <div class="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
+      <div class="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6 bg-slate-50 dark:bg-slate-900 min-h-[calc(100vh-64px)]">
         <slot></slot>
       </div>
     </div>

@@ -102,4 +102,12 @@ class Role extends Model
     {
         return $this->scope === 'annexe';
     }
+
+    /**
+     * Vérifier si le rôle est de scope plateforme
+     */
+    public function isPlatformScope(): bool
+    {
+        return $this->scope === 'platform';
+    }
 }

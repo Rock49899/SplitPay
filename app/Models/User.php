@@ -168,7 +168,8 @@ class User extends Authenticatable
      */
     public function isSuperAdminInstitution(): bool
     {
-        return $this->scope === 'institution' && $this->hasRole('super_admin_institution');
+        return $this->isPlatformAdmin()
+            || ($this->scope === 'institution' && $this->hasRole('super_admin_institution'));
     }
 
     /**
@@ -177,6 +178,22 @@ class User extends Authenticatable
     public function isSuperAdminAnnexe(): bool
     {
         return $this->scope === 'annexe' && $this->hasRole('super_admin_annexe');
+    }
+
+    /**
+     * Vérifier si l'utilisateur est administrateur plateforme global
+     */
+    public function isPlatformAdmin(): bool
+    {
+        return $this->scope === 'platform' || $this->hasRole('platform_admin');
+    }
+
+    /**
+     * Vérifier si l'utilisateur peut ignorer le scope tenant
+     */
+    public function canBypassTenantScope(): bool
+    {
+        return $this->isPlatformAdmin() || $this->isSuperAdminInstitution();
     }
 
    
@@ -242,6 +259,10 @@ class User extends Authenticatable
      */
     public function canAccessAnnexe(string $annexeId): bool
     {
+        if ($this->isPlatformAdmin()) {
+            return true;
+        }
+
         // Super Admin Institution a accès à toutes les annexes
         if ($this->isSuperAdminInstitution()) {
             return true;
@@ -257,6 +278,10 @@ class User extends Authenticatable
      */
     public function getAccessibleAnnexeIds(): array
     {
+        if ($this->isPlatformAdmin()) {
+            return Annexe::query()->pluck('id')->toArray();
+        }
+
         // Super Admin Institution voit toutes les annexes de son institution
         if ($this->isSuperAdminInstitution()) {
             return $this->annexe?->institution->annexes->pluck('id')->toArray() ?? [];
@@ -292,11 +317,24 @@ class User extends Authenticatable
             return false;
         }
 
-        // Vérifier si son annexe principale est active
-        if ($this->annexe && !$this->annexe->is_active) {
-            return false;
+        if ($this->isPlatformAdmin()) {
+            return true;
         }
 
-        return true;
+        $activeAnnexes = $this->annexes()
+            ->where('is_active', true)
+            ->with('institution')
+            ->get()
+            ->filter(function (Annexe $annexe) {
+                return $annexe->institution?->is_active;
+            });
+
+        if ($activeAnnexes->isNotEmpty()) {
+            return true;
+        }
+
+        return $this->annexe
+            && $this->annexe->is_active
+            && $this->annexe->institution?->is_active;
     }
 }

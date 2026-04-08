@@ -54,7 +54,7 @@ Route::post('admin/request-otp', [\App\Http\Controllers\Api\AuthController::clas
 Route::post('admin/verify-otp', [\App\Http\Controllers\Api\AuthController::class, 'verifyOtp']);
 
 //sanctum
-Route::middleware(['auth:sanctum', 'active.annexe', 'active.school_year', 'school_year.lock'])->prefix('admin')->group(function () {
+Route::middleware(['auth:sanctum', 'active.account', 'active.annexe', 'active.school_year', 'school_year.lock'])->prefix('admin')->group(function () {
     Route::match(['get','post'], 'logout', [\App\Http\Controllers\Api\AuthController::class, 'logout']);
     Route::get('me', [\App\Http\Controllers\Api\AuthController::class, 'me']);
     Route::get('me/annexe/{annexeId}', [\App\Http\Controllers\Api\AuthController::class, 'meForAnnexe']);

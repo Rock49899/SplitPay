@@ -19,7 +19,7 @@ class StoreUserRequest extends FormRequest
             'password' => 'sometimes|nullable|string|min:8',
             'annexe_id' => 'nullable|uuid|exists:annexes,id',
             'is_active' => 'sometimes|boolean',
-            'scope' => 'required|in:institution,annexe',
+            'scope' => 'sometimes|nullable|in:platform,institution,annexe',
             'role_id' => 'nullable|uuid|exists:roles,id',
             'avatar' => 'sometimes|nullable|file|image|mimes:jpeg,jpg,png,webp|max:2048',
         ];

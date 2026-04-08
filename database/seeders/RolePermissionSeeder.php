@@ -13,6 +13,7 @@ class RolePermissionSeeder extends Seeder
     {
         // Récupérer tous les rôles créés précédemment
         $superAdminInstitution = Role::where('code', 'super_admin_institution')->first();
+        $platformAdmin = Role::where('code', 'platform_admin')->first();
         $superAdminAnnexe = Role::where('code', 'super_admin_annexe')->first();
         $gestionnaire = Role::where('code', 'gestionnaire')->first();
         $comptable = Role::where('code', 'comptable')->first();
@@ -21,6 +22,11 @@ class RolePermissionSeeder extends Seeder
         $allPermissions = Permission::all()->pluck('id')->toArray();
         $superAdminInstitution->permissions()->sync($allPermissions);
         $this->command->info('Super Admin Institution : ' . count($allPermissions) . ' permissions');
+
+        if ($platformAdmin) {
+            $platformAdmin->permissions()->sync($allPermissions);
+            $this->command->info('Administrateur Plateforme : ' . count($allPermissions) . ' permissions');
+        }
 
         // sup admin annexe peut tout, sauf la gestion des annexes..
         $superAdminAnnexePermissions = Permission::whereNotIn('code', [

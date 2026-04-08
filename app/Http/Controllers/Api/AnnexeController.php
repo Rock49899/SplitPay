@@ -94,7 +94,10 @@ class AnnexeController extends Controller
     public function store(StoreAnnexeRequest $request)
     {
         $v = $request->validated();
-        $institutionId = $this->getCurrentInstitutionId();
+        $platformAdmin = method_exists(auth()->user(), 'isPlatformAdmin') && auth()->user()->isPlatformAdmin();
+        $institutionId = $platformAdmin
+            ? ($v['institution_id'] ?? null)
+            : $this->getCurrentInstitutionId();
         $sourceAnnexeId = $this->getUserPrincipalAnnexeId() ?: $this->getActiveAnnexeId();
 
         if (!$institutionId) {

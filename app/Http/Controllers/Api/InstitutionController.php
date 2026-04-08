@@ -23,7 +23,7 @@ class InstitutionController extends Controller
     {
         $user = auth()->user();
 
-        if (! $user || ! $user->hasRole('super_admin_institution')) {
+        if (! $user || (! $user->hasRole('super_admin_institution') && ! (method_exists($user, 'isPlatformAdmin') && $user->isPlatformAdmin()))) {
             abort(403, 'Accès réservé au super administrateur institution.');
         }
     }
@@ -38,12 +38,20 @@ class InstitutionController extends Controller
         $this->ensureInstitutionSuperAdmin();
         $institutionId = $this->getCurrentInstitutionId();
 
-        if (! $institutionId) {
+        if (method_exists(auth()->user(), 'isPlatformAdmin') && auth()->user()->isPlatformAdmin()) {
+            $institutionId = $request->get('institution_id') ?: null;
+        }
+
+        if (! $institutionId && ! (method_exists(auth()->user(), 'isPlatformAdmin') && auth()->user()->isPlatformAdmin())) {
             return response()->json(['data' => [], 'total' => 0], 200);
         }
 
         $perPage = (int) $request->get('per_page', 15);
-        $query = Institution::query()->where('id', $institutionId);
+        $query = Institution::query();
+
+        if ($institutionId) {
+            $query->where('id', $institutionId);
+        }
 
         if ($name = $request->get('name')) {
             $query->where('name', 'like', "%{$name}%");
@@ -73,8 +81,7 @@ class InstitutionController extends Controller
     {
         $this->ensureInstitutionSuperAdmin();
 
-        $institutionId = $this->getCurrentInstitutionId();
-        $institution = Institution::where('id', $institutionId)->findOrFail($id);
+        $institution = Institution::findOrFail($id);
         return response()->json($institution, 200);
     }
 
@@ -83,8 +90,7 @@ class InstitutionController extends Controller
     {
         $this->ensureInstitutionSuperAdmin();
 
-        $institutionId = $this->getCurrentInstitutionId();
-        $institution = Institution::where('id', $institutionId)->findOrFail($id);
+        $institution = Institution::findOrFail($id);
         $v = $request->validated();
 
         if ($request->boolean('remove_logo')) {
@@ -109,8 +115,8 @@ class InstitutionController extends Controller
     // DELETE /api/admin/institutions/{id}
     public function destroy($id)
     {
-        $institutionId = $this->getCurrentInstitutionId();
-        $institution = Institution::where('id', $institutionId)->findOrFail($id);
+        $this->ensureInstitutionSuperAdmin();
+        $institution = Institution::findOrFail($id);
         $institution->delete();
         return response()->json(['message' => 'Institution deleted'], 200);
     }
@@ -120,8 +126,7 @@ class InstitutionController extends Controller
     {
         $this->ensureInstitutionSuperAdmin();
 
-        $institutionId = $this->getCurrentInstitutionId();
-        $institution = Institution::with('annexes')->where('id', $institutionId)->findOrFail($id);
+        $institution = Institution::with('annexes')->findOrFail($id);
         return response()->json($institution->annexes, 200);
     }
 }
