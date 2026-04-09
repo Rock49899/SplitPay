@@ -18,6 +18,7 @@ class UpdateUserRequest extends FormRequest
             'name' => 'sometimes|string|max:100',
             'email' => 'sometimes|email|unique:users,email,'.$id,
             'password' => 'sometimes|nullable|string|min:8',
+            'phone' => 'sometimes|nullable|string|max:50',
             'annexe_id' => 'nullable|uuid|exists:annexes,id',
             'is_active' => 'sometimes|boolean',
             'avatar' => 'sometimes|nullable|file|image|mimes:jpeg,jpg,png,webp|max:2048',

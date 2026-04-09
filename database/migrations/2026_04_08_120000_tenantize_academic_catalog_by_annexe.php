@@ -9,35 +9,77 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('study_levels', function (Blueprint $table) {
-            $table->foreignUuid('annexe_id')->nullable()->after('id')->constrained('annexes')->nullOnDelete();
-            $table->index(['annexe_id', 'code'], 'idx_study_levels_annexe_code');
-        });
+        if (! Schema::hasColumn('study_levels', 'annexe_id')) {
+            Schema::table('study_levels', function (Blueprint $table) {
+                $table->foreignUuid('annexe_id')->nullable()->after('id')->constrained('annexes')->nullOnDelete();
+            });
+        }
 
-        Schema::table('specializations', function (Blueprint $table) {
-            $table->foreignUuid('annexe_id')->nullable()->after('id')->constrained('annexes')->nullOnDelete();
-            $table->index(['annexe_id', 'code'], 'idx_specializations_annexe_code');
-        });
+        if (! Schema::hasColumn('specializations', 'annexe_id')) {
+            Schema::table('specializations', function (Blueprint $table) {
+                $table->foreignUuid('annexe_id')->nullable()->after('id')->constrained('annexes')->nullOnDelete();
+            });
+        }
 
-        Schema::table('level_fees', function (Blueprint $table) {
-            $table->foreignUuid('annexe_id')->nullable()->after('id')->constrained('annexes')->nullOnDelete();
-            $table->index(['annexe_id', 'school_year'], 'idx_level_fees_annexe_school_year');
-        });
+        if (! Schema::hasColumn('level_fees', 'annexe_id')) {
+            Schema::table('level_fees', function (Blueprint $table) {
+                $table->foreignUuid('annexe_id')->nullable()->after('id')->constrained('annexes')->nullOnDelete();
+            });
+        }
 
-        Schema::table('level_fees', function (Blueprint $table) {
-            try {
+        try {
+            Schema::table('study_levels', function (Blueprint $table) {
+                $table->index(['annexe_id', 'code'], 'idx_study_levels_annexe_code');
+            });
+        } catch (\Throwable $e) {
+            // index déjà présent ou colonne indisponible: ignorer
+        }
+
+        try {
+            Schema::table('specializations', function (Blueprint $table) {
+                $table->index(['annexe_id', 'code'], 'idx_specializations_annexe_code');
+            });
+        } catch (\Throwable $e) {
+            // index déjà présent ou colonne indisponible: ignorer
+        }
+
+        try {
+            Schema::table('level_fees', function (Blueprint $table) {
+                $table->index(['annexe_id', 'school_year'], 'idx_level_fees_annexe_school_year');
+            });
+        } catch (\Throwable $e) {
+            // index déjà présent ou colonne indisponible: ignorer
+        }
+
+        try {
+            Schema::table('level_fees', function (Blueprint $table) {
                 $table->dropUnique('uq_level_fees');
-            } catch (\Throwable $e) {
-                // index absent: ignorer
-            }
+            });
+        } catch (\Throwable $e) {
+            // unique absent: ignorer
+        }
 
-            $table->unique([
-                'annexe_id',
-                'study_level_id',
-                'specialization_id',
-                'school_year',
-            ], 'uq_level_fees_annexe');
-        });
+        try {
+            Schema::table('level_fees', function (Blueprint $table) {
+                $table->unique([
+                    'annexe_id',
+                    'study_level_id',
+                    'specialization_id',
+                    'school_year',
+                ], 'uq_level_fees_annexe');
+            });
+        } catch (\Throwable $e) {
+            // unique déjà présent: ignorer
+        }
+
+        // Si des lignes tenantisées existent déjà, on considère la migration appliquée
+        $alreadyTenantized = DB::table('study_levels')->whereNotNull('annexe_id')->exists()
+            || DB::table('specializations')->whereNotNull('annexe_id')->exists()
+            || DB::table('level_fees')->whereNotNull('annexe_id')->exists();
+
+        if ($alreadyTenantized) {
+            return;
+        }
 
         $sourceStudyLevels = DB::table('study_levels')->whereNull('annexe_id')->get();
         $sourceSpecializations = DB::table('specializations')->whereNull('annexe_id')->get();
@@ -156,45 +198,65 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::table('level_fees', function (Blueprint $table) {
-            try {
+        try {
+            Schema::table('level_fees', function (Blueprint $table) {
                 $table->dropUnique('uq_level_fees_annexe');
-            } catch (\Throwable $e) {
-                // index absent: ignorer
-            }
+            });
+        } catch (\Throwable $e) {
+            // unique absent: ignorer
+        }
 
-            $table->unique(['study_level_id', 'specialization_id', 'school_year'], 'uq_level_fees');
+        try {
+            Schema::table('level_fees', function (Blueprint $table) {
+                $table->unique(['study_level_id', 'specialization_id', 'school_year'], 'uq_level_fees');
+            });
+        } catch (\Throwable $e) {
+            // unique déjà présent: ignorer
+        }
 
-            try {
+        try {
+            Schema::table('level_fees', function (Blueprint $table) {
                 $table->dropIndex('idx_level_fees_annexe_school_year');
-            } catch (\Throwable $e) {
-                // index absent: ignorer
-            }
+            });
+        } catch (\Throwable $e) {
+            // index absent: ignorer
+        }
 
-            $table->dropForeign(['annexe_id']);
-            $table->dropColumn('annexe_id');
-        });
-
-        Schema::table('study_levels', function (Blueprint $table) {
-            try {
+        try {
+            Schema::table('study_levels', function (Blueprint $table) {
                 $table->dropIndex('idx_study_levels_annexe_code');
-            } catch (\Throwable $e) {
-                // index absent: ignorer
-            }
+            });
+        } catch (\Throwable $e) {
+            // index absent: ignorer
+        }
 
-            $table->dropForeign(['annexe_id']);
-            $table->dropColumn('annexe_id');
-        });
-
-        Schema::table('specializations', function (Blueprint $table) {
-            try {
+        try {
+            Schema::table('specializations', function (Blueprint $table) {
                 $table->dropIndex('idx_specializations_annexe_code');
-            } catch (\Throwable $e) {
-                // index absent: ignorer
-            }
+            });
+        } catch (\Throwable $e) {
+            // index absent: ignorer
+        }
 
-            $table->dropForeign(['annexe_id']);
-            $table->dropColumn('annexe_id');
-        });
+        if (Schema::hasColumn('level_fees', 'annexe_id')) {
+            Schema::table('level_fees', function (Blueprint $table) {
+                $table->dropForeign(['annexe_id']);
+                $table->dropColumn('annexe_id');
+            });
+        }
+
+        if (Schema::hasColumn('study_levels', 'annexe_id')) {
+            Schema::table('study_levels', function (Blueprint $table) {
+                $table->dropForeign(['annexe_id']);
+                $table->dropColumn('annexe_id');
+            });
+        }
+
+        if (Schema::hasColumn('specializations', 'annexe_id')) {
+            Schema::table('specializations', function (Blueprint $table) {
+                $table->dropForeign(['annexe_id']);
+                $table->dropColumn('annexe_id');
+            });
+        }
     }
 };

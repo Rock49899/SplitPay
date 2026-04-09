@@ -107,6 +107,14 @@ class Annexe extends Model
     }
 
     /**
+     * Lignes de liaison user_annexes (utilisateurs + rôles affectés à l'annexe)
+     */
+    public function user_annexes(): HasMany
+    {
+        return $this->hasMany(UserAnnexe::class, 'annexe_id');
+    }
+
+    /**
      * Tous les étudiants de cette annexe
      */
     public function students(): HasMany

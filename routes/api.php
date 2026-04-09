@@ -178,6 +178,7 @@ Route::middleware(['auth:sanctum', 'active.account', 'active.annexe', 'active.sc
         Route::get('kpis',                [\App\Http\Controllers\Api\DashboardController::class, 'kpis']);
         Route::get('monthly-collections', [\App\Http\Controllers\Api\DashboardController::class, 'monthlyCollections']);
         Route::get('annexe-stats',        [\App\Http\Controllers\Api\DashboardController::class, 'annexeStats']);
+        Route::get('platform-overview',   [\App\Http\Controllers\Api\DashboardController::class, 'platformOverview']);
     });
 });
 // public: accessible sans authentification

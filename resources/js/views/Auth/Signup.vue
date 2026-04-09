@@ -23,6 +23,15 @@
                 Créez votre compte institution en quelques étapes.
               </p>
             </div>
+
+            <div v-if="error || fieldErrors.length" class="mb-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300">
+              <p class="font-semibold">Impossible de continuer :</p>
+              <p v-if="error" class="mt-1">{{ error }}</p>
+              <ul v-if="fieldErrors.length" class="mt-2 list-disc space-y-1 pl-5">
+                <li v-for="(msg, index) in fieldErrors" :key="index">{{ msg }}</li>
+              </ul>
+            </div>
+
             <form @submit.prevent="handleSubmit">
               <div class="space-y-5">
                 <!-- Step 1: Owner -->
@@ -187,7 +196,7 @@
                       type="text"
                       id="annexe"
                       placeholder="Entrez le nom de l'annexe"
-                      class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder:text-gray-400 dark:bg-dark-900 dark:text-white dark:placeholder:text-white/60"
+                      class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder:text-gray-400 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-400"
                     />
                   </div>
 
@@ -255,7 +264,6 @@
         </div>
       </div>
     </div>
-        <div class="mt-4 text-sm text-red-600" v-if="error">{{ error }}</div>
   </FullScreenLayout>
 </template>
 
@@ -285,6 +293,7 @@ const annexePhone = ref('')
 const step = ref(1)
 const loading = ref(false)
 const error = ref(null)
+const fieldErrors = ref([])
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -299,12 +308,14 @@ const handleLogoUpload = (event) => {
     // Valider la taille (max 2MB)
     if (file.size > 2 * 1024 * 1024) {
       error.value = 'Le logo ne doit pas dépasser 2MB'
+      fieldErrors.value = []
       event.target.value = ''
       return
     }
     // Valider le type
     if (!['image/png', 'image/jpeg', 'image/jpg'].includes(file.type)) {
       error.value = 'Format invalide. Utilisez PNG, JPG ou JPEG'
+      fieldErrors.value = []
       event.target.value = ''
       return
     }
@@ -316,6 +327,7 @@ const handleLogoUpload = (event) => {
 // minimal client validation for step1 before moving to step2
 const validateStep1 = () => {
   error.value = null
+  fieldErrors.value = []
   if (!firstName.value || !lastName.value) {
     error.value = 'Le prénom et le nom sont obligatoires.'
     return
@@ -339,11 +351,13 @@ const validateStep1 = () => {
 // go back to step 1
 const prevStep = () => {
   error.value = null
+  fieldErrors.value = []
   step.value = 1
 }
 
 const handleSubmit = async () => {
   error.value = null
+  fieldErrors.value = []
   
   // Validation des champs requis de l'annexe
   if (!annexeEmail.value || !annexePhone.value) {
@@ -381,9 +395,18 @@ const handleSubmit = async () => {
     // redirect to signin or dashboard
     router.push('/signin')
   } catch (e) {
-    error.value = e.response?.data?.message || e.message || 'Échec de l\'inscription'
+    const apiError = e.response?.data
+    error.value = apiError?.message || e.message || 'Échec de l\'inscription'
+    fieldErrors.value = flattenErrors(apiError?.errors)
   } finally {
     loading.value = false
   }
+}
+
+const flattenErrors = (errorsObj) => {
+  if (!errorsObj || typeof errorsObj !== 'object') return []
+  return Object.values(errorsObj)
+    .flat()
+    .filter((msg) => typeof msg === 'string' && msg.trim().length > 0)
 }
 </script>

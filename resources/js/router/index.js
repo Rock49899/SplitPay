@@ -8,6 +8,48 @@ const router = createRouter({
   },
   routes: [
     {
+      path: '/platform',
+      name: 'PlatformDashboard',
+      component: () => import('../views/AdminPlatforme/PlatformDashboard.vue'),
+      meta: { title: 'Plateforme', requiresAuth: true, requiresPlatform: true },
+    },
+    {
+      path: '/platform/institutions',
+      name: 'PlatformInstitutions',
+      component: () => import('../views/AdminPlatforme/PlatformInstitutions.vue'),
+      meta: { title: 'Institutions', requiresAuth: true, requiresPlatform: true },
+    },
+    {
+      path: '/platform/annexes',
+      name: 'PlatformAnnexes',
+      component: () => import('../views/AdminPlatforme/PlatformAnnexes.vue'),
+      meta: { title: 'Annexes', requiresAuth: true, requiresPlatform: true },
+    },
+    {
+      path: '/platform/users',
+      name: 'PlatformUsers',
+      component: () => import('../views/AdminPlatforme/PlatformUsers.vue'),
+      meta: { title: 'Utilisateurs plateforme', requiresAuth: true, requiresPlatform: true },
+    },
+    {
+      path: '/platform/settings',
+      name: 'PlatformSettings',
+      component: () => import('../views/AdminPlatforme/PlatformSettings.vue'),
+      meta: { title: 'Paramètres plateforme', requiresAuth: true, requiresPlatform: true },
+    },
+    {
+      path: '/platform/profile',
+      name: 'PlatformProfile',
+      component: () => import('../views/AdminPlatforme/PlatformProfile.vue'),
+      meta: { title: 'Profil plateforme', requiresAuth: true, requiresPlatform: true },
+    },
+    {
+      path: '/platform/institutions/:id',
+      name: 'PlatformInstitutionDetails',
+      component: () => import('../views/AdminPlatforme/PlatformInstitutionDetails.vue'),
+      meta: { title: 'Détail institution', requiresAuth: true, requiresPlatform: true },
+    },
+    {
       path: '/',
       name: 'Dashboard',
       component: () => import('../views/Dashboard.vue'),
@@ -187,6 +229,15 @@ export default router
 // Helper function to get role-based dashboard route
 function getRoleDashboard(user) {
   if (!user) return { name: 'Dashboard' };
+
+  const isPlatform =
+    user?.is_platform_admin === true
+    || user?.scope === 'platform'
+    || (Array.isArray(user?.roles) && user.roles.some((r) => r?.code === 'platform_admin'));
+
+  if (isPlatform) {
+    return { name: 'PlatformDashboard' };
+  }
   
   switch(user.role) {
     case 'super_admin':
@@ -211,6 +262,10 @@ router.beforeEach(async (to, from, next) => {
   }
   const userStr = localStorage.getItem('user');
   const user = userStr ? JSON.parse(userStr) : null;
+  const isPlatform =
+    user?.is_platform_admin === true
+    || user?.scope === 'platform'
+    || (Array.isArray(user?.roles) && user.roles.some((r) => r?.code === 'platform_admin'));
 
   // Redirect to dashboard if already authenticated and trying to access signin/signup
   if ((to.name === 'Signin' || to.name === 'Signup') && token) {
@@ -222,6 +277,21 @@ router.beforeEach(async (to, from, next) => {
     if (!token) {
       return next({ name: 'Signin', query: { redirect: to.fullPath } });
     }
+  }
+
+  // Protection espace plateforme (strictement réservé au platform admin)
+  if (to.meta.requiresPlatform) {
+    if (!token) {
+      return next({ name: 'Signin', query: { redirect: to.fullPath } });
+    }
+    if (!isPlatform) {
+      return next({ name: 'Dashboard' });
+    }
+  }
+
+  // Empêcher un platform admin d'utiliser l'ancien espace admin standard
+  if (token && isPlatform && to.meta.requiresAuth && !to.meta.requiresPlatform) {
+    return next({ name: 'PlatformDashboard' });
   }
 
   // Protection espace étudiant

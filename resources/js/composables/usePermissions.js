@@ -86,6 +86,12 @@ export function usePermissions() {
 
   // Computed - est super admin institution
   const isSuperAdminInstitution = computed(() => hasRole('super_admin_institution'));
+
+  // Computed - est admin plateforme
+  const isPlatformAdmin = computed(() => {
+    if (hasRole('platform_admin')) return true;
+    return currentUser.value?.is_platform_admin === true || currentUser.value?.scope === 'platform';
+  });
   
   // Computed - est super admin annexe
   const isSuperAdminAnnexe = computed(() => hasRole('super_admin_annexe'));
@@ -129,6 +135,7 @@ export function usePermissions() {
     
     // Computed
     isSuperAdminInstitution,
+    isPlatformAdmin,
     isSuperAdminAnnexe,
     isGestionnaire,
     isComptable,

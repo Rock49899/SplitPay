@@ -22,55 +22,63 @@ class DevelopmentDataSeeder extends Seeder
         $this->command->info('Création des données de test...');
 
         // ── Institution + Annexes ──────────────────────────────────────────
-        $institution = Institution::create([
-            'name'      => 'Institut Supérieur de Technologie',
-            'email'     => 'contact@ist-edu.com',
-            'phone'     => '+229 97 00 00 00',
-            'address'   => 'Avenue de la République',
-            'city'      => 'Cotonou',
-            'is_active' => true,
-        ]);
+        $institution = Institution::updateOrCreate(
+            ['email' => 'contact@ist-edu.com'],
+            [
+                'name'      => 'Institut Supérieur de Technologie',
+                'phone'     => '+229 97 00 00 00',
+                'address'   => 'Avenue de la République',
+                'city'      => 'Cotonou',
+                'is_active' => true,
+            ]
+        );
 
-        $annexeNord = Annexe::create([
-            'institution_id' => $institution->id,
-            'name'      => 'Campus Nord',
-            'address'   => 'Quartier Akpakpa',
-            'city'      => 'Cotonou',
-            'is_active' => true,
-        ]);
+        $annexeNord = Annexe::updateOrCreate(
+            ['institution_id' => $institution->id, 'name' => 'Campus Nord'],
+            [
+                'address'   => 'Quartier Akpakpa',
+                'city'      => 'Cotonou',
+                'is_active' => true,
+            ]
+        );
 
-        $annexeSud = Annexe::create([
-            'institution_id' => $institution->id,
-            'name'      => 'Campus Sud',
-            'address'   => 'Quartier Fidjrossè',
-            'city'      => 'Cotonou',
-            'is_active' => true,
-        ]);
+        $annexeSud = Annexe::updateOrCreate(
+            ['institution_id' => $institution->id, 'name' => 'Campus Sud'],
+            [
+                'address'   => 'Quartier Fidjrossè',
+                'city'      => 'Cotonou',
+                'is_active' => true,
+            ]
+        );
         $this->command->info('1 institution + 2 annexes créées');
 
         // ── Utilisateurs ───────────────────────────────────────────────────
         $roleSuperAdmin   = Role::where('code', 'super_admin_institution')->first();
         $roleGestionnaire = Role::where('code', 'gestionnaire')->first();
 
-        User::create([
-            'annexe_id' => null,
-            'name'      => 'SplitPay Platform Admin',
-            'email'     => 'platform@splitpay.test',
-            'password'  => Hash::make('password'),
-            'phone'     => '+229 90 00 00 00',
-            'is_active' => true,
-            'scope'     => 'platform',
-        ]);
+        User::updateOrCreate(
+            ['email' => 'platform@splitpay.test'],
+            [
+                'annexe_id' => null,
+                'name'      => 'SplitPay Platform Admin',
+                'password'  => Hash::make('password'),
+                'phone'     => '+229 90 00 00 00',
+                'is_active' => true,
+                'scope'     => 'platform',
+            ]
+        );
 
-        $superAdmin = User::create([
-            'annexe_id' => $annexeNord->id,
-            'name'      => 'Admin Principal',
-            'email'     => 'admin@ist-edu.com',
-            'password'  => Hash::make('password'),
-            'phone'     => '+229 97 11 11 11',
-            'is_active' => true,
-            'scope'     => 'institution',
-        ]);
+        $superAdmin = User::updateOrCreate(
+            ['email' => 'admin@ist-edu.com'],
+            [
+                'annexe_id' => $annexeNord->id,
+                'name'      => 'Admin Principal',
+                'password'  => Hash::make('password'),
+                'phone'     => '+229 97 11 11 11',
+                'is_active' => true,
+                'scope'     => 'institution',
+            ]
+        );
         $superAdmin->annexes()->attach($annexeNord->id, [
             'role_id'      => $roleSuperAdmin->id,
             'is_principal' => true,
@@ -81,15 +89,17 @@ class DevelopmentDataSeeder extends Seeder
             ['name' => 'Marie Dupont', 'email' => 'marie@ist-edu.com', 'annexe' => $annexeNord, 'phone' => '+229 97 22 22 22'],
             ['name' => 'Jean Martin',  'email' => 'jean@ist-edu.com',  'annexe' => $annexeSud,  'phone' => '+229 97 33 33 33'],
         ] as $g) {
-            $user = User::create([
-                'annexe_id' => $g['annexe']->id,
-                'name'      => $g['name'],
-                'email'     => $g['email'],
-                'password'  => Hash::make('password'),
-                'phone'     => $g['phone'],
-                'is_active' => true,
-                'scope'     => 'annexe',
-            ]);
+            $user = User::updateOrCreate(
+                ['email' => $g['email']],
+                [
+                    'annexe_id' => $g['annexe']->id,
+                    'name'      => $g['name'],
+                    'password'  => Hash::make('password'),
+                    'phone'     => $g['phone'],
+                    'is_active' => true,
+                    'scope'     => 'annexe',
+                ]
+            );
             $user->annexes()->attach($g['annexe']->id, [
                 'role_id'      => $roleGestionnaire->id,
                 'is_principal' => true,
@@ -149,17 +159,19 @@ class DevelopmentDataSeeder extends Seeder
                 continue;
             }
 
-            $student = Student::create([
-                'id'                => (string) Str::uuid(),
-                'annexe_id'         => $annexe->id,
-                'matricule'         => $data['matricule'],
-                'first_name'        => $data['first_name'],
-                'last_name'         => $data['last_name'],
-                'email'             => Str::lower(iconv('UTF-8', 'ASCII//TRANSLIT', $data['first_name'])) . '@etudiant.com',
-                'phone'             => '+229 97 ' . rand(40, 59) . ' ' . rand(10, 99) . ' ' . rand(10, 99),
-                'specialization_id' => $spec->id,
-                'status'            => 'active',
-            ]);
+            $student = Student::updateOrCreate(
+                ['matricule' => $data['matricule']],
+                [
+                    'id'                => (string) Str::uuid(),
+                    'annexe_id'         => $annexe->id,
+                    'first_name'        => $data['first_name'],
+                    'last_name'         => $data['last_name'],
+                    'email'             => Str::lower(iconv('UTF-8', 'ASCII//TRANSLIT', $data['first_name'])) . '@etudiant.com',
+                    'phone'             => '+229 97 ' . rand(40, 59) . ' ' . rand(10, 99) . ' ' . rand(10, 99),
+                    'specialization_id' => $spec->id,
+                    'status'            => 'active',
+                ]
+            );
 
             // Résoudre le barème : d'abord filière spécifique, sinon générique
             $fee = LevelFee::resolve($level->id, $spec->id, $year);
@@ -172,14 +184,18 @@ class DevelopmentDataSeeder extends Seeder
             $tuition    = (int) $fee->tuition_amount;
             $amountPaid = rand(0, $tuition);
 
-            Enrollment::create([
-                'student_id'     => $student->id,
-                'level_fee_id'   => $fee->id,
-                'tuition_amount' => $tuition,
-                'amount_paid'    => $amountPaid,
-                'school_year'    => $year,
-                'status'         => 'active',
-            ]);
+            Enrollment::updateOrCreate(
+                [
+                    'student_id'  => $student->id,
+                    'school_year' => $year,
+                ],
+                [
+                    'level_fee_id'   => $fee->id,
+                    'tuition_amount' => $tuition,
+                    'amount_paid'    => $amountPaid,
+                    'status'         => 'active',
+                ]
+            );
         }
         $this->command->info('  ' . count($list) . ' étudiants créés → ' . $annexe->name . ' (' . $spec->label . ')');
     }

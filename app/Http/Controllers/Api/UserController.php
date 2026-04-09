@@ -46,6 +46,12 @@ class UserController extends Controller
             $query->where('scope', '!=', 'institution');
         }
 
+        if ($platformAdmin && $institutionFilter = $request->get('institution_id')) {
+            $query->whereHas('annexes', function ($q) use ($institutionFilter) {
+                $q->where('annexes.institution_id', $institutionFilter);
+            });
+        }
+
         try {
             // read raw search and ignore empty strings
             $raw = $request->get('search') ?? $request->get('q');
@@ -97,8 +103,10 @@ class UserController extends Controller
             // eager-load relations with nested relations for proper display
             $query = $query->with([
                 'annexe',  // Primary annexe
+                'annexe.institution',
                 'user_annexes.role',  // All user_annexes with their role
                 'user_annexes.annexe',  // All user_annexes with their annexe
+                'user_annexes.annexe.institution',
             ]);
 
             if (Schema::hasColumn('users', 'name')) {

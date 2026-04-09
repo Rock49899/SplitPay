@@ -23,6 +23,19 @@
                   Entrez votre email pour recevoir un OTP, ou utilisez votre mot de passe.
                 </p>
               </div>
+
+              <div v-if="error || fieldErrors.length" class="mb-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300">
+                <p class="font-semibold">Impossible de continuer :</p>
+                <p v-if="error" class="mt-1">{{ error }}</p>
+                <ul v-if="fieldErrors.length" class="mt-2 list-disc space-y-1 pl-5">
+                  <li v-for="(msg, index) in fieldErrors" :key="index">{{ msg }}</li>
+                </ul>
+              </div>
+
+              <div v-if="otpNotice" class="mb-5 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700 dark:border-green-800 dark:bg-green-900/20 dark:text-green-300">
+                {{ otpNotice }}
+              </div>
+
               <div>
                 <form @submit.prevent="handleSubmit">
                   <div class="space-y-5">
@@ -238,9 +251,6 @@
                         <span v-else>Connexion...</span>
                       </button>
                     </div>
-
-                    <p v-if="error" class="text-sm text-red-600 dark:text-red-400">{{ error }}</p>
-                    <p v-if="otpNotice" class="text-xs text-green-600 dark:text-green-400">{{ otpNotice }}</p>
                   </div>
                 </form>
                 <div class="mt-5"></div>
@@ -285,6 +295,7 @@ const keepLoggedIn = ref(false)
 const loading = ref(false)
 const error = ref(null)
 const otpNotice = ref('')
+const fieldErrors = ref([])
 
 const auth = useAuthStore()
 const router = useRouter()
@@ -302,6 +313,7 @@ const handleSubmit = async () => {
 
   error.value = null
   otpNotice.value = ''
+  fieldErrors.value = []
   if (!password.value) {
     error.value = 'Veuillez saisir un mot de passe ou utiliser la connexion OTP.'
     return
@@ -315,7 +327,9 @@ const handleSubmit = async () => {
     const redirect = route.query.redirect
     router.push(redirect && redirect !== '/signin' ? redirect : '/')
   } catch (e) {
-    error.value = e.response?.data?.message || e.message || 'Échec de connexion'
+    const apiError = e.response?.data
+    error.value = apiError?.message || e.message || 'Échec de connexion'
+    fieldErrors.value = flattenErrors(apiError?.errors)
   } finally {
     loading.value = false
   }
@@ -324,13 +338,16 @@ const handleSubmit = async () => {
 const sendOtp = async () => {
   error.value = null
   otpNotice.value = ''
+  fieldErrors.value = []
   loading.value = true
   try {
     await authService.requestOtp(email.value)
     otpStep.value = true
     otpNotice.value = 'Code OTP envoyé à votre email.'
   } catch (e) {
-    error.value = e.response?.data?.message || e.message || 'Échec envoi OTP'
+    const apiError = e.response?.data
+    error.value = apiError?.message || e.message || 'Échec envoi OTP'
+    fieldErrors.value = flattenErrors(apiError?.errors)
   } finally {
     loading.value = false
   }
@@ -339,6 +356,7 @@ const sendOtp = async () => {
 const verifyOtp = async () => {
   error.value = null
   otpNotice.value = ''
+  fieldErrors.value = []
   loading.value = true
   try {
     const res = await authService.verifyOtp(email.value, otp.value)
@@ -349,10 +367,19 @@ const verifyOtp = async () => {
     const redirect = route.query.redirect
     router.push(redirect && redirect !== '/signin' ? redirect : '/')
   } catch (e) {
-    error.value = e.response?.data?.message || e.message || 'OTP invalide ou expiré'
+    const apiError = e.response?.data
+    error.value = apiError?.message || e.message || 'OTP invalide ou expiré'
+    fieldErrors.value = flattenErrors(apiError?.errors)
   } finally {
     loading.value = false
   }
+}
+
+const flattenErrors = (errorsObj) => {
+  if (!errorsObj || typeof errorsObj !== 'object') return []
+  return Object.values(errorsObj)
+    .flat()
+    .filter((msg) => typeof msg === 'string' && msg.trim().length > 0)
 }
 
 </script>

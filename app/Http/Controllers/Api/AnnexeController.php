@@ -31,9 +31,14 @@ class AnnexeController extends Controller
     {
         $perPage = (int) $request->get('per_page', 15);
         $query = Annexe::query();
+        $platformAdmin = method_exists(auth()->user(), 'isPlatformAdmin') && auth()->user()->isPlatformAdmin();
 
         // IMPORTANT: Filtrer uniquement les annexes de l'institution courante
         $query = $this->scopeByUserAnnexes($query, 'id');
+
+        if ($platformAdmin && $request->filled('institution_id')) {
+            $query->where('institution_id', $request->get('institution_id'));
+        }
 
         try {
             // normalize search (ignore empty strings)
@@ -67,7 +72,7 @@ class AnnexeController extends Controller
                 }
             }
 
-            $with = [];
+            $with = ['institution'];
             $annexeModel = new Annexe();
             if (method_exists($annexeModel, 'manager')) $with[] = 'manager';
             if (method_exists($annexeModel, 'user_annexes')) {
