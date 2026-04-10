@@ -31,6 +31,7 @@ class RolePermissionSeeder extends Seeder
         }
 
         // sup admin annexe peut tout, sauf la gestion des annexes..
+        // MAIS peut assigner des rôles dans leur annexe (user.manage_roles)
         $superAdminAnnexePermissions = Permission::whereNotIn('code', [
             'annexe.create',   
             'annexe.delete',   

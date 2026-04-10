@@ -177,6 +177,15 @@ class UserController extends Controller
             $v['avatar'] = $request->file('avatar')->store('avatars', 'public');
         }
 
+        if (!empty($v['role_id'])) {
+            $selectedRole = Role::find($v['role_id']);
+            if ($selectedRole && $selectedRole->code === 'platform_admin') {
+                return response()->json([
+                    'message' => 'Le rôle platform_admin est réservé au compte plateforme et ne peut pas être assigné.',
+                ], 403);
+            }
+        }
+
         $plainPassword = $v['password'] ?? \Illuminate\Support\Str::password(12);
 
         if ($platformAdmin && empty($v['scope'])) {
@@ -282,12 +291,26 @@ class UserController extends Controller
             return response()->json(['message' => 'Annexe hors de votre institution.'], 403);
         }
 
-        $userQuery = User::query();
+        // IMPORTANT: Also search by ID directly in case user has no annexes yet
+        $user = User::findOrFail($id);
+        
+        // Verify authorization: caller must be from same institution (unless platform admin)
         if (! $platformAdmin) {
-            $userQuery->whereHas('annexes', fn ($q) => $q->where('annexes.institution_id', $institutionId));
+            $hasInstitutionAccess = $user->annexes()
+                ->where('annexes.institution_id', $institutionId)
+                ->exists();
+            
+            if (!$hasInstitutionAccess && $user->scope !== 'annexe') {
+                return response()->json(['message' => 'Utilisateur hors de votre institution.'], 403);
+            }
         }
 
-        $user = $userQuery->findOrFail($id);
+        $role = Role::find($data['role_id']);
+        if ($role && $role->code === 'platform_admin') {
+            return response()->json([
+                'message' => 'Le rôle platform_admin est réservé au compte plateforme et ne peut pas être assigné.',
+            ], 403);
+        }
 
         // Autoriser via la policy UserPolicy::assignRole (vérifie que l'appelant a le droit)
         $this->authorize('assignRole', [$user, $data['annexe_id']]);

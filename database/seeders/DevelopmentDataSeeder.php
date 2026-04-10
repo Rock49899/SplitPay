@@ -11,6 +11,8 @@ use App\Models\StudyLevel;
 use App\Models\Specialization;
 use App\Models\LevelFee;
 use App\Models\Enrollment;
+use App\Models\PaymentLink;
+use App\Models\Payment;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -140,11 +142,15 @@ class DevelopmentDataSeeder extends Seeder
         $this->seedStudents($nordStudents, $annexeNord, $specs['INFO'],    $levels, '2024-2025');
         $this->seedStudents($sudStudents,  $annexeSud,  $specs['GESTION'], $levels, '2024-2025');
 
+        // ── Liens de paiement et paiements de test ───────────────────────────
+        $this->seedPaymentLinksAndPayments('2024-2025');
+
         $this->command->newLine();
         $this->command->info('RÉSUMÉ :');
         $this->command->info('  - 1 institution, 2 annexes');
         $this->command->info('  - 4 utilisateurs (1 Admin Plateforme + 1 Super Admin + 2 Gestionnaires)');
         $this->command->info('  - 10 étudiants avec enrollments 2024-2025 + paiements partiels');
+        $this->command->info('  - Liens de paiement (+8) avec transactions de test');
         $this->command->info('  Connexion : admin@ist-edu.com | password');
         $this->command->info('  Connexion plateforme : platform@splitpay.test | password');
     }
@@ -198,5 +204,66 @@ class DevelopmentDataSeeder extends Seeder
             );
         }
         $this->command->info('  ' . count($list) . ' étudiants créés → ' . $annexe->name . ' (' . $spec->label . ')');
+    }
+
+    private function seedPaymentLinksAndPayments(string $year): void
+    {
+        // Récupérer quelques students pour créer des liens de paiement
+        $students = Student::limit(8)->get();
+        $linksCount = 0;
+        $paymentsCount = 0;
+
+        foreach ($students as $student) {
+            // Créer 1 lien de paiement par étudiant
+            $link = PaymentLink::updateOrCreate(
+                [
+                    'student_id' => $student->id,
+                    'school_year' => $year,
+                ],
+                [
+                    'id'              => (string) Str::uuid(),
+                    'token'           => (string) Str::random(32),
+                    'type'            => 'tuition',
+                    'currency'        => 'XOF',
+                    'amount'          => 0,
+                    'status'          => 'active',
+                    'school_year'     => $year,
+                    'expire_at'       => now()->addMonths(3),
+                ]
+            );
+            $linksCount++;
+
+            // Créer 1-2 paiements par lien (pour tester partial et completed)
+            $enrollment = Enrollment::where('student_id', $student->id)
+                ->where('school_year', $year)
+                ->first();
+
+            if ($enrollment) {
+                $tuition = $enrollment->tuition_amount;
+                $link->update(['amount' => $tuition]);
+                $amountToCreate = rand(1, 2); // 1 ou 2 paiements
+
+                for ($i = 0; $i < $amountToCreate; $i++) {
+                    $partialAmount = $amountToCreate === 1 
+                        ? rand((int)($tuition * 0.3), (int)($tuition * 0.7))
+                        : rand((int)($tuition * 0.1), (int)($tuition * 0.4));
+
+                    Payment::create([
+                        'id'              => (string) Str::uuid(),
+                        'payment_link_id' => $link->id,
+                        'student_id'      => $student->id,
+                        'amount'          => $partialAmount,
+                        'reference'       => 'REF_' . Str::upper(Str::random(12)),
+                        'payplus_transaction_id' => 'PPL_' . Str::upper(Str::random(20)),
+                        'status'          => 'success',
+                        'method'          => ['mtn', 'moov', 'payplus'][rand(0, 2)],
+                        'paid_at'         => now()->subDays(rand(1, 20)),
+                    ]);
+                    $paymentsCount++;
+                }
+            }
+        }
+
+        $this->command->info("  {$linksCount} liens de paiement créés avec {$paymentsCount} transactions");
     }
 }

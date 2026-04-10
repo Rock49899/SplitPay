@@ -24,14 +24,17 @@ class SetActiveAnnexe
 
             if ($user) {
                 try {
-                    if (method_exists($user, 'isPlatformAdmin') && $user->isPlatformAdmin()) {
-                        if (! Annexe::whereKey($activeAnnexeId)->exists()) {
-                            return response()->json([
-                                'message' => 'Annexe introuvable',
-                                'error' => 'annexe_not_found'
-                            ], 404);
-                        }
+                    // Vérifier que l'annexe existe réellement
+                    if (! Annexe::whereKey($activeAnnexeId)->exists()) {
+                        // Au lieu de retourner 404 (qui expose des infos), retourner 403
+                        // Le header peut contenir un ID invalide du localStorage
+                        return response()->json([
+                            'message' => 'Accès refusé à cette annexe',
+                            'error' => 'invalid_active_annexe'
+                        ], 403);
+                    }
 
+                    if (method_exists($user, 'isPlatformAdmin') && $user->isPlatformAdmin()) {
                         $request->attributes->set('active_annexe_id', $activeAnnexeId);
                     } elseif ($user->scope === 'institution') {
                         $request->attributes->set('active_annexe_id', $activeAnnexeId);
