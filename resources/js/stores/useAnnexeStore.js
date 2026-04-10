@@ -63,9 +63,13 @@ export const useAnnexeStore = defineStore('annexes', {
         this.loading = false;
       }
     },
-    // fallback if backend uses separate endpoint to assign users
-    async assignUser(annexeId, userId, roleId = null) {
-      return api.post(`admin/annexes/${annexeId}/assign-user`, { user_id: userId, role_id: roleId });
+    // Assigner un utilisateur à une annexe avec rôle via l'endpoint existant UsersController@assignRole
+    async assignUser(annexeId, userId, roleId, isPrimary = false) {
+      return api.post(`admin/users/${userId}/assign-role`, {
+        annexe_id: annexeId,
+        role_id: roleId,
+        is_primary: isPrimary,
+      });
     },
   },
 });

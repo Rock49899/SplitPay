@@ -341,9 +341,10 @@ const sendOtp = async () => {
   fieldErrors.value = []
   loading.value = true
   try {
-    await authService.requestOtp(email.value)
+    const res = await authService.requestOtp(email.value)
+    const apiMessage = res?.data?.message
     otpStep.value = true
-    otpNotice.value = 'Code OTP envoyé à votre email.'
+    otpNotice.value = apiMessage || 'Code OTP envoyé à votre email.'
   } catch (e) {
     const apiError = e.response?.data
     error.value = apiError?.message || e.message || 'Échec envoi OTP'

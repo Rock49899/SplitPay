@@ -39,6 +39,7 @@
                 <th class="w-8 px-4 py-3"></th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Code</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Libellé</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Annexe</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Ordre</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Description</th>
                 <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Actions</th>
@@ -46,10 +47,10 @@
             </thead>
             <tbody class="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
               <tr v-if="loading">
-                <td colspan="6" class="px-6 py-12 text-center text-slate-500">Chargement...</td>
+                <td colspan="7" class="px-6 py-12 text-center text-slate-500">Chargement...</td>
               </tr>
               <tr v-else-if="!loading && studyLevels.length === 0">
-                <td colspan="6" class="px-6 py-12 text-center text-slate-500">Aucun niveau d'étude trouvé</td>
+                <td colspan="7" class="px-6 py-12 text-center text-slate-500">Aucun niveau d'étude trouvé</td>
               </tr>
 
               <template v-if="!loading && studyLevels.length > 0">
@@ -69,6 +70,7 @@
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900 dark:text-white">{{ level.code }}</td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">{{ level.label }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{{ level.annexe?.name ?? '—' }}</td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{{ level.order ?? '—' }}</td>
                   <td class="px-6 py-4 text-sm text-slate-500">{{ level.description || '—' }}</td>
                   <td class="px-6 py-4 whitespace-nowrap text-right text-sm space-x-3">
@@ -79,7 +81,7 @@
 
                 <!-- Panneau dépliable : barèmes de scolarité pour ce niveau -->
                 <tr v-if="expandedId === level.id">
-                  <td colspan="6" class="px-0 py-0 bg-slate-50 dark:bg-slate-900/40">
+                  <td colspan="7" class="px-0 py-0 bg-slate-50 dark:bg-slate-900/40">
                     <div class="px-6 py-4 border-t border-dashed border-slate-200 dark:border-slate-700">
                       <div class="flex items-center justify-between mb-3">
                         <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">

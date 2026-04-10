@@ -120,8 +120,14 @@ class AuthController extends Controller
             ], 500);
         }
 
+        Log::info('AuthController: OTP email accepté par le transport SMTP', [
+            'user_id' => $user->id,
+            'email_masked' => $this->maskEmail($user->email),
+            'mailer' => config('mail.default'),
+        ]);
+
         return response()->json([
-            'message' => 'Code OTP envoyé',
+            'message' => 'Code OTP envoyé à ' . $this->maskEmail($user->email),
             'expires_in_minutes' => 10,
         ], 202);
     }
@@ -331,5 +337,17 @@ class AuthController extends Controller
         }
 
         return $query->get();
+    }
+
+    private function maskEmail(string $email): string
+    {
+        $email = trim(strtolower($email));
+        if (!str_contains($email, '@')) {
+            return 'adresse inconnue';
+        }
+
+        [$local, $domain] = explode('@', $email, 2);
+        $visible = strlen($local) <= 2 ? substr($local, 0, 1) : substr($local, 0, 2);
+        return $visible . str_repeat('*', max(strlen($local) - strlen($visible), 3)) . '@' . $domain;
     }
 }

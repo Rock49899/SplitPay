@@ -14,7 +14,14 @@ class SpecializationController extends Controller
 
     public function index(Request $request)
     {
-        $query = $this->scopeByUserAnnexes(Specialization::query())
+        $activeAnnexeId = $this->getActiveAnnexeId();
+
+        if (!$activeAnnexeId) {
+            return response()->json(['message' => 'Annexe active introuvable.'], 422);
+        }
+
+        $query = Specialization::query()
+            ->where('annexe_id', $activeAnnexeId)
             ->orderBy('label');
         
         if ($request->filled('search')) {
@@ -60,13 +67,29 @@ class SpecializationController extends Controller
 
     public function show($id)
     {
-        $specialization = $this->scopeByUserAnnexes(Specialization::query())->findOrFail($id);
+        $activeAnnexeId = $this->getActiveAnnexeId();
+
+        if (!$activeAnnexeId) {
+            return response()->json(['message' => 'Annexe active introuvable.'], 422);
+        }
+
+        $specialization = Specialization::query()
+            ->where('annexe_id', $activeAnnexeId)
+            ->findOrFail($id);
         return response()->json(['specialization' => $specialization]);
     }
 
     public function update(Request $request, $id)
     {
-        $specialization = $this->scopeByUserAnnexes(Specialization::query())->findOrFail($id);
+        $activeAnnexeId = $this->getActiveAnnexeId();
+
+        if (!$activeAnnexeId) {
+            return response()->json(['message' => 'Annexe active introuvable.'], 422);
+        }
+
+        $specialization = Specialization::query()
+            ->where('annexe_id', $activeAnnexeId)
+            ->findOrFail($id);
         
         $validated = $request->validate([
             'code' => [
@@ -92,7 +115,15 @@ class SpecializationController extends Controller
 
     public function destroy($id)
     {
-        $specialization = $this->scopeByUserAnnexes(Specialization::query())->findOrFail($id);
+        $activeAnnexeId = $this->getActiveAnnexeId();
+
+        if (!$activeAnnexeId) {
+            return response()->json(['message' => 'Annexe active introuvable.'], 422);
+        }
+
+        $specialization = Specialization::query()
+            ->where('annexe_id', $activeAnnexeId)
+            ->findOrFail($id);
         $specialization->delete();
         
         return response()->json(['message' => 'Spécialisation supprimée avec succès']);

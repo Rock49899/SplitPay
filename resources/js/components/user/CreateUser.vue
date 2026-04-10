@@ -29,7 +29,7 @@
         <input v-model="form.phone" placeholder="Téléphone" class="px-3 py-2 rounded border border-slate-300 dark:border-slate-600 bg-transparent dark:bg-slate-700 text-slate-900 dark:text-white" />
 
         <div>
-          <label class="block text-sm mb-1 text-gray-700 dark:text-gray-400">Rôle</label>
+          <label class="block text-sm mb-1 text-gray-700 dark:text-gray-400">Rôle <span class="text-red-500">*</span></label>
           <select v-model="form.role_id" class="w-full rounded border border-slate-300 dark:border-slate-600 px-3 py-2 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
             <option value="">-- sélectionner un rôle --</option>
             <option v-for="r in rolesLocal" :key="r.id" :value="r.id">{{ labelForRole(r) }}</option>
@@ -37,7 +37,7 @@
         </div>
 
         <div>
-          <label class="block text-sm mb-1 text-gray-700 dark:text-gray-400">Annexes (choisissez-en une comme principale)</label>
+          <label class="block text-sm mb-1 text-gray-700 dark:text-gray-400">Annexes <span class="text-red-500">*</span> (première = principale)</label>
           <div class="space-y-1 max-h-40 overflow-auto p-2 border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-700/50">
             <div v-for="a in annexesLocal" :key="a.id" class="flex items-center gap-2">
               <input type="checkbox" :value="a.id" v-model="form.annexes" />
@@ -108,7 +108,7 @@ onMounted(async () => {
   if (!rolesLocal.value.length) {
     try {
       const r = await roleService.index();
-      rolesLocal.value = r.data?.data ?? r.data ?? [];
+      rolesLocal.value = (r.data?.data ?? r.data ?? []).filter(role => role?.code !== 'platform_admin');
     } catch (e) { /* ignore */ }
   }
   if (!annexesLocal.value.length) {
@@ -129,6 +129,18 @@ const submit = async () => {
     error.value = 'Le nom et l\'email sont obligatoires';
     return;
   }
+  
+  // Validate that at least one role and annexe are selected
+  if (!form.value.role_id) {
+    error.value = 'Un rôle doit être sélectionné';
+    return;
+  }
+  
+  if (!form.value.primary_annexe) {
+    error.value = 'Une annexe principale doit être sélectionnée';
+    return;
+  }
+  
   loading.value = true;
   try {
     // create user with primary annexe and role
@@ -161,21 +173,31 @@ const submit = async () => {
     
     const res = await userService.store(payload);
     const created = res.data?.user ?? res.data;
+    
+    if (!created?.id) {
+      throw new Error('Utilisateur créé mais ID manquant');
+    }
+    
     // assign other annexes
     const extras = (form.value.annexes || []).filter(a => a !== form.value.primary_annexe);
     for (const ann of extras) {
       try {
         await api.post(`admin/users/${created.id}/assign-role`, {
           annexe_id: ann,
-          role_id: form.value.role_id || null,
+          role_id: form.value.role_id, // Must be defined due to validation above
           is_primary: false,
         });
-      } catch (e) { /* continue */ }
+      } catch (e) {
+        console.warn(`Impossible d'assigner l'annexe supplémentaire ${ann}:`, e.response?.data?.message || e.message);
+        // Continue even if auxiliary annexes fail
+      }
     }
+    
     emit('created', created);
     close();
   } catch (e) {
-    error.value = e.response?.data?.message || e.message || 'Create failed';
+    error.value = e.response?.data?.message || e.message || 'La création a échoué';
+    console.error('Erreur lors de la création:', e);
   } finally {
     loading.value = false;
   }

@@ -14,7 +14,15 @@ class StudyLevelController extends Controller
 
     public function index(Request $request)
     {
-        $query = $this->scopeByUserAnnexes(StudyLevel::query())
+        $activeAnnexeId = $this->getActiveAnnexeId();
+
+        if (!$activeAnnexeId) {
+            return response()->json(['message' => 'Annexe active introuvable.'], 422);
+        }
+
+        $query = StudyLevel::query()
+            ->where('annexe_id', $activeAnnexeId)
+            ->with('annexe:id,name')
             ->orderBy('code');
         
         if ($request->filled('search')) {
@@ -57,13 +65,29 @@ class StudyLevelController extends Controller
 
     public function show($id)
     {
-        $studyLevel = $this->scopeByUserAnnexes(StudyLevel::query())->findOrFail($id);
+        $activeAnnexeId = $this->getActiveAnnexeId();
+
+        if (!$activeAnnexeId) {
+            return response()->json(['message' => 'Annexe active introuvable.'], 422);
+        }
+
+        $studyLevel = StudyLevel::query()
+            ->where('annexe_id', $activeAnnexeId)
+            ->findOrFail($id);
         return response()->json(['study_level' => $studyLevel]);
     }
 
     public function update(Request $request, $id)
     {
-        $studyLevel = $this->scopeByUserAnnexes(StudyLevel::query())->findOrFail($id);
+        $activeAnnexeId = $this->getActiveAnnexeId();
+
+        if (!$activeAnnexeId) {
+            return response()->json(['message' => 'Annexe active introuvable.'], 422);
+        }
+
+        $studyLevel = StudyLevel::query()
+            ->where('annexe_id', $activeAnnexeId)
+            ->findOrFail($id);
         
         $validated = $request->validate([
             'code'        => [
@@ -86,7 +110,15 @@ class StudyLevelController extends Controller
 
     public function destroy($id)
     {
-        $studyLevel = $this->scopeByUserAnnexes(StudyLevel::query())->findOrFail($id);
+        $activeAnnexeId = $this->getActiveAnnexeId();
+
+        if (!$activeAnnexeId) {
+            return response()->json(['message' => 'Annexe active introuvable.'], 422);
+        }
+
+        $studyLevel = StudyLevel::query()
+            ->where('annexe_id', $activeAnnexeId)
+            ->findOrFail($id);
         $studyLevel->delete();
         
         return response()->json(['message' => 'Niveau supprimé avec succès']);

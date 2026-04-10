@@ -77,12 +77,38 @@ class AnnexeController extends Controller
             if (method_exists($annexeModel, 'manager')) $with[] = 'manager';
             if (method_exists($annexeModel, 'user_annexes')) {
                 // nested relations are added only if pivot relation exists
+                $with['user_annexes'] = function ($q) {
+                    $q->whereNull('end_at')->orderByDesc('is_principal');
+                };
                 $with[] = 'user_annexes.role';
                 $with[] = 'user_annexes.user';
             }
             if (count($with)) $query = $query->with($with);
 
             $annexes = $query->orderBy('name')->paginate($perPage);
+
+            $annexes->getCollection()->transform(function ($annexe) {
+                $responsablePivot = collect($annexe->user_annexes ?? [])->first(function ($ua) {
+                    $roleCode = strtolower((string) ($ua->role->code ?? $ua->role_code ?? ''));
+                    $activeUser = !isset($ua->user) || $ua->user?->is_active !== false;
+                    return $roleCode === 'super_admin_annexe' && $activeUser;
+                });
+
+                if (!$responsablePivot) {
+                    $responsablePivot = collect($annexe->user_annexes ?? [])->first(function ($ua) {
+                        $activeUser = !isset($ua->user) || $ua->user?->is_active !== false;
+                        return (bool) ($ua->is_principal ?? false) && $activeUser;
+                    });
+                }
+
+                if ($responsablePivot && $responsablePivot->user) {
+                    $annexe->setAttribute('responsable_id', $responsablePivot->user->id);
+                    $annexe->setAttribute('responsable_name', $responsablePivot->user->name ?? null);
+                    $annexe->setAttribute('responsable_email', $responsablePivot->user->email ?? null);
+                }
+
+                return $annexe;
+            });
 
             return response()->json($annexes, 200);
         } catch (QueryException $e) {
