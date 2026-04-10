@@ -172,14 +172,15 @@ const loadUsersAndRoles = async () => {
 
 const startEdit = (a) => {
   editingId.value = a.id;
-  // find candidate super-admin from pivots if exists
+  // find candidate super admin annexe from pivots if exists
   const candidate = (Array.isArray(a.user_annexes) && a.user_annexes.length)
-    ? (a.user_annexes.find(ua => ua.is_primary)
-       || a.user_annexes.find(ua => {
-         const r = ua.role ?? {};
-         const rn = (r.name ?? r.code ?? ua.role_name ?? '').toString().toLowerCase();
-         return /super.*admin|admin.*super|super[_\s]?admin|annexe.*admin|superadmin/.test(rn);
+    ? (a.user_annexes.find(ua => {
+         const roleCode = (ua.role?.code ?? ua.role_code ?? '').toString().toLowerCase();
+         const activeAssignment = !ua.end_at;
+         const activeUser = ua.user?.is_active !== false;
+         return roleCode === 'super_admin_annexe' && activeAssignment && activeUser;
        })
+       || a.user_annexes.find(ua => ua.is_primary && !ua.end_at && (ua.user?.is_active !== false))
        || a.user_annexes[0])
     : null;
   editForm.value = {
@@ -224,15 +225,16 @@ const onCreated = async (created) => {
 };
 
 const managerName = (a) => {
-  // prefer pivot-based super-admin
+  // prefer explicit super_admin_annexe
   if (Array.isArray(a.user_annexes) && a.user_annexes.length) {
-    let candidate = a.user_annexes.find(ua => ua.is_primary);
+    let candidate = a.user_annexes.find(ua => {
+      const roleCode = (ua.role?.code ?? ua.role_code ?? '').toString().toLowerCase();
+      const activeAssignment = !ua.end_at;
+      const activeUser = ua.user?.is_active !== false;
+      return roleCode === 'super_admin_annexe' && activeAssignment && activeUser;
+    });
     if (!candidate) {
-      candidate = a.user_annexes.find(ua => {
-        const r = ua.role ?? {};
-        const rn = (r.name ?? r.code ?? ua.role_name ?? '').toString().toLowerCase();
-        return /super.*admin|admin.*super|super[_\s]?admin|annexe.*admin|superadmin/.test(rn);
-      });
+      candidate = a.user_annexes.find(ua => ua.is_primary && !ua.end_at && (ua.user?.is_active !== false));
     }
     if (!candidate) candidate = a.user_annexes.find(ua => ua.user) || a.user_annexes[0];
     if (candidate) return candidate.user?.name ?? candidate.user?.email ?? candidate.user?.id ?? '-';
@@ -243,8 +245,13 @@ const managerName = (a) => {
 
 const managerEmail = (a) => {
   if (Array.isArray(a.user_annexes) && a.user_annexes.length) {
-    let candidate = a.user_annexes.find(ua => ua.is_primary) 
-      || a.user_annexes.find(ua => (ua.role && ((ua.role.name ?? '').toLowerCase().includes('admin'))))
+    let candidate = a.user_annexes.find(ua => {
+      const roleCode = (ua.role?.code ?? ua.role_code ?? '').toString().toLowerCase();
+      const activeAssignment = !ua.end_at;
+      const activeUser = ua.user?.is_active !== false;
+      return roleCode === 'super_admin_annexe' && activeAssignment && activeUser;
+    })
+      || a.user_annexes.find(ua => ua.is_primary && !ua.end_at && (ua.user?.is_active !== false))
       || a.user_annexes.find(ua => ua.user);
     if (candidate) return candidate.user?.email ?? '';
   }

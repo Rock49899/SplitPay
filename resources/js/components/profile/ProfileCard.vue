@@ -36,94 +36,9 @@
           </div>
         </div>
 
-        <button @click="isProfileInfoModal = true" class="edit-button">Modifier</button>
+        <button @click="openUnifiedProfileModal" class="edit-button">Modifier</button>
       </div>
     </div>
-
-    <Modal v-if="isProfileInfoModal" @close="isProfileInfoModal = false">
-      <template #body>
-        <div class="no-scrollbar relative w-full max-w-[700px] overflow-y-auto rounded-3xl bg-white p-4 dark:bg-slate-800 border border-transparent dark:border-slate-700 lg:p-11 max-h-[80vh]">
-          <button @click="isProfileInfoModal = false" class="absolute right-5 top-5 z-999 flex h-11 w-11 items-center justify-center rounded-full bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600 dark:bg-gray-700 dark:bg-white/[0.05] dark:text-gray-400 dark:hover:bg-white/[0.07] dark:hover:text-gray-300">
-            <svg
-              class="fill-current"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                fill-rule="evenodd"
-                clip-rule="evenodd"
-                d="M6.04289 16.5418C5.65237 16.9323 5.65237 17.5655 6.04289 17.956C6.43342 18.3465 7.06658 18.3465 7.45711 17.956L11.9987 13.4144L16.5408 17.9565C16.9313 18.347 17.5645 18.347 17.955 17.9565C18.3455 17.566 18.3455 16.9328 17.955 16.5423L13.4129 12.0002L17.955 7.45808C18.3455 7.06756 18.3455 6.43439 17.955 6.04387C17.5645 5.65335 16.9313 5.65335 16.5408 6.04387L11.9987 10.586L7.45711 6.04439C7.06658 5.65386 6.43342 5.65386 6.04289 6.04439C5.65237 6.43491 5.65237 7.06808 6.04289 7.4586L10.5845 12.0002L6.04289 16.5418Z"
-                fill=""
-              />
-            </svg>
-          </button>
-
-          <div class="px-2 pr-14">
-            <h4 class="mb-2 text-2xl font-semibold text-gray-800 dark:text-white/90">Modifier le profil</h4>
-            <p class="mb-6 text-sm text-gray-500 dark:text-gray-400 lg:mb-7">Mettez à jour vos informations.</p>
-          </div>
-
-          <form @submit.prevent="saveProfile" class="flex flex-col">
-            <div class="custom-scrollbar overflow-y-auto p-2 max-h-[60vh]">
-              <div class="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
-
-                <!-- Photo de profil -->
-                <div class="col-span-2 flex flex-col items-center gap-2">
-                  <div class="relative w-24 h-24 group">
-                    <AvatarDisplay
-                      :src="avatarPreview || form.avatar_url"
-                      :label="form.name"
-                      :size="96"
-                    />
-                    <label class="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 group-hover:opacity-100 cursor-pointer transition">
-                      <svg class="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                      <input type="file" class="sr-only" accept="image/jpeg,image/jpg,image/png,image/webp" @change="onAvatarChangeModal" />
-                    </label>
-                  </div>
-                  <p class="text-xs text-gray-400 dark:text-gray-500">Survolez la photo et cliquez pour la modifier</p>
-                </div>
-
-                <div class="col-span-2">
-                  <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Nom</label>
-                  <input type="text" v-model="form.name" class="h-11 w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 dark:text-white dark:bg-slate-700 dark:border-slate-600" />
-                </div>
-
-                <div>
-                  <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Email</label>
-                  <input type="email" v-model="form.email" class="h-11 w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 dark:text-white dark:bg-slate-700 dark:border-slate-600" />
-                </div>
-
-                <div>
-                  <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Téléphone</label>
-                  <input type="text" v-model="form.phone" class="h-11 w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 dark:text-white dark:bg-slate-700 dark:border-slate-600" />
-                </div>
-
-                <div class="lg:col-span-2">
-                  <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Bio</label>
-                  <input type="text" v-model="form.bio" class="h-11 w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 dark:text-white dark:bg-slate-700 dark:border-slate-600" />
-                </div>
-
-                <div class="col-span-2">
-                  <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Rôle</label>
-                  <p class="h-11 flex items-center px-4 rounded-lg border border-slate-300 bg-slate-50 text-sm text-slate-700 dark:bg-slate-700 dark:text-slate-200 dark:border-slate-600">{{ roleLabel }}</p>
-                </div>
-              </div>
-            </div>
-
-            <div class="flex items-center gap-3 px-2 mt-6 lg:justify-end">
-              <button @click.prevent="isProfileInfoModal = false" type="button" class="flex w-full justify-center rounded-lg border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-200 px-4 py-2.5 text-sm sm:w-auto">Fermer</button>
-              <button type="submit" class="flex w-full justify-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm text-white sm:w-auto">Enregistrer</button>
-            </div>
-          </form>
-        </div>
-      </template>
-    </Modal>
 
     <!-- Modal pour agrandir l'avatar -->
     <ImageViewerModal
@@ -136,14 +51,12 @@
 
 <script setup>
 import { ref, reactive, onMounted, computed } from 'vue'
-import Modal from './Modal.vue'
 import AvatarDisplay from '@/components/shared/AvatarDisplay.vue'
 import ImageViewerModal from '@/components/shared/ImageViewerModal.vue'
 import api from '@/services/api'
 import { useAnnexeStore } from '@/stores/useAnnexeStore'
 
 const annexeStore = useAnnexeStore()
-const isProfileInfoModal = ref(false)
 const showImageModal = ref(false)
 
 // Avatar
@@ -159,12 +72,8 @@ const onAvatarChange = (e) => {
   saveAvatar(file)
 }
 
-// Picker inside the Edit modal → only preview, saved on "Save Changes"
-const onAvatarChangeModal = (e) => {
-  const file = e.target.files?.[0]
-  if (!file) return
-  avatarFile.value = file
-  avatarPreview.value = URL.createObjectURL(file)
+const openUnifiedProfileModal = () => {
+  window.dispatchEvent(new CustomEvent('open-profile-edit-modal'))
 }
 
 // form uses single name field (backend has "name")
@@ -229,34 +138,6 @@ const load = async () => {
     roleLabel.value = role || '—'
   } catch (e) {
     console.error('Failed to load profile', e)
-  }
-}
-
-const saveProfile = async () => {
-  try {
-    const fd = new FormData()
-    fd.append('name', form.name)
-    fd.append('email', form.email)
-    if (form.phone) fd.append('phone', form.phone)
-    if (form.bio) fd.append('bio', form.bio)
-    if (form.city) fd.append('city', form.city)
-    if (form.state) fd.append('state', form.state)
-    if (avatarFile.value) fd.append('avatar', avatarFile.value)
-
-    // POST with _method=PATCH for multipart
-    fd.append('_method', 'PATCH')
-    await api.post('admin/me', fd)
-
-    avatarFile.value = null
-    avatarPreview.value = null
-    isProfileInfoModal.value = false
-    await load()
-    
-    // Notifier UserMenu de se rafraîchir
-    window.dispatchEvent(new CustomEvent('user-profile-updated'))
-  } catch (e) {
-    console.error('Failed saving profile', e)
-    alert(e.response?.data?.message || e.message || 'Save failed')
   }
 }
 

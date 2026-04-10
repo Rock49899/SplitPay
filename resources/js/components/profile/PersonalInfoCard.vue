@@ -38,7 +38,7 @@
           </div>
         </div>
 
-        <button class="edit-button" @click="isProfileInfoModal = true">Modifier</button>
+        <button class="edit-button" @click="openModalFromAnywhere">Modifier</button>
       </div>
     </div>
 
@@ -110,7 +110,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import Modal from './Modal.vue'
 import AvatarDisplay from '@/components/shared/AvatarDisplay.vue'
 import api from '@/services/api'
@@ -140,6 +140,10 @@ const form = reactive({
 })
 const annexeName = ref('')
 const roleLabel = ref('')
+
+const openModalFromAnywhere = () => {
+  isProfileInfoModal.value = true
+}
 
 const tryUrls = ['admin/me', 'admin/user/me', 'api/admin/me', 'user', 'api/user']
 
@@ -213,7 +217,14 @@ const saveProfile = async () => {
   }
 }
 
-onMounted(load)
+onMounted(() => {
+  load()
+  window.addEventListener('open-profile-edit-modal', openModalFromAnywhere)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('open-profile-edit-modal', openModalFromAnywhere)
+})
 </script>
 
 <style></style>

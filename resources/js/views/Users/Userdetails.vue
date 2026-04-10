@@ -275,7 +275,7 @@ const load = async () => {
 
     // roles via store
     await roleStore.fetchRoles();
-    roles.value = roleStore.items;
+    roles.value = (roleStore.items ?? []).filter(r => r?.code !== 'platform_admin');
     // annexes via store
     await annexeStore.fetchAnnexes();
     annexes.value = annexeStore.items;

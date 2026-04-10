@@ -22,8 +22,8 @@ class UserPolicy
             $auth->load('annexes');
         }
 
-        // Super admin institution => full control
-        if ($auth->roles->contains('code', 'super_admin_institution')) {
+        // Platform admin / super admin institution => full control
+        if ((method_exists($auth, 'isPlatformAdmin') && $auth->isPlatformAdmin()) || $auth->roles->contains('code', 'super_admin_institution')) {
             return true;
         }
 
@@ -49,7 +49,7 @@ class UserPolicy
         }
 
         // same rules as assign
-        if ($auth->roles->contains('code', 'super_admin_institution')) {
+        if ((method_exists($auth, 'isPlatformAdmin') && $auth->isPlatformAdmin()) || $auth->roles->contains('code', 'super_admin_institution')) {
             return true;
         }
 

@@ -61,7 +61,7 @@
                   : 'justify-start',
               ]"
             >
-              <template v-if="isExpanded || isHovered || isMobileOpen">
+              <template v-if="isSidebarContentVisible">
                 {{ menuGroup.title }}
               </template>
               <HorizontalDots v-else />
@@ -70,12 +70,16 @@
               <li v-for="(item, index) in menuGroup.items" :key="item.name">
                 <button
                   v-if="item.subItems"
+                  :data-onboarding-target="getOnboardingTargetForItem(item)"
                   @click="toggleSubmenu(groupIndex, index)"
                   :class="[
                     'menu-item group w-full',
                     {
                       'menu-item-active': isSubmenuOpen(groupIndex, index),
                       'menu-item-inactive': !isSubmenuOpen(groupIndex, index),
+                    },
+                    {
+                      'onboarding-highlight': isHighlighted(getOnboardingTargetForItem(item)),
                     },
                     !isExpanded && !isHovered
                       ? 'lg:justify-center'
@@ -92,12 +96,12 @@
                     <component :is="item.icon" />
                   </span>
                   <span
-                    v-if="isExpanded || isHovered || isMobileOpen"
+                    v-if="isSidebarContentVisible"
                     class="menu-item-text"
                     >{{ item.name }}</span
                   >
                   <ChevronDownIcon
-                    v-if="isExpanded || isHovered || isMobileOpen"
+                    v-if="isSidebarContentVisible"
                     :class="[
                       'ml-auto w-5 h-5 transition-transform duration-200',
                       {
@@ -112,11 +116,15 @@
                 <router-link
                   v-else-if="item.path"
                   :to="item.path"
+                  :data-onboarding-target="getOnboardingTargetForItem(item)"
                   :class="[
                     'menu-item group',
                     {
                       'menu-item-active': isActive(item.path),
                       'menu-item-inactive': !isActive(item.path),
+                    },
+                    {
+                      'onboarding-highlight': isHighlighted(getOnboardingTargetForItem(item)),
                     },
                   ]"
                 >
@@ -130,7 +138,7 @@
                     <component :is="item.icon" />
                   </span>
                   <span
-                    v-if="isExpanded || isHovered || isMobileOpen"
+                    v-if="isSidebarContentVisible"
                     class="menu-item-text"
                     >{{ item.name }}</span
                   >
@@ -144,13 +152,14 @@
                   <div
                     v-show="
                       isSubmenuOpen(groupIndex, index) &&
-                      (isExpanded || isHovered || isMobileOpen)
+                      isSidebarContentVisible
                     "
                   >
                     <ul class="mt-2 space-y-1 ml-9">
                       <li v-for="subItem in item.subItems" :key="subItem.name">
                         <router-link
                           :to="subItem.path"
+                          :data-onboarding-target="getOnboardingTargetForSubItem(subItem)"
                           :class="[
                             'menu-dropdown-item',
                             {
@@ -160,6 +169,9 @@
                               'menu-dropdown-item-inactive': !isActive(
                                 subItem.path
                               ),
+                            },
+                            {
+                              'onboarding-highlight': isHighlighted(getOnboardingTargetForSubItem(subItem)),
                             },
                           ]"
                         >
@@ -244,6 +256,11 @@ const route = useRoute();
 const { hasPermission, isGestionnaire, isComptable, user } = usePermissions();
 
 const { isExpanded, isMobileOpen, isHovered, openSubmenu } = useSidebar();
+const forceExpandForOnboarding = ref(false)
+const onboardingHighlightTarget = ref(null)
+const isSidebarContentVisible = computed(() =>
+  isExpanded.value || isHovered.value || isMobileOpen.value || forceExpandForOnboarding.value
+)
 
 // Variables pour le logo et le nom de l'institution
 const institutionLogo = ref(null)
@@ -255,10 +272,14 @@ const fetchInstitutionInfo = async () => {
     // Récupérer l'utilisateur actuel
     const meResponse = await api.get('/admin/me').catch(() => api.get('/me'))
     const currentUser = meResponse.data?.user ?? meResponse.data
-    
-    if (currentUser?.annexe_id) {
+
+    const principalAnnexeId = currentUser?.annexes?.find?.((a) => a?.is_principal)?.id
+    const firstAnnexeId = currentUser?.annexes?.[0]?.id
+    const activeAnnexeId = currentUser?.annexe_id || principalAnnexeId || firstAnnexeId
+
+    if (activeAnnexeId) {
       // Récupérer l'annexe
-      const annexeResponse = await api.get(`/admin/annexes/${currentUser.annexe_id}`)
+      const annexeResponse = await api.get(`/admin/annexes/${activeAnnexeId}`)
       const annexe = annexeResponse.data?.annexe ?? annexeResponse.data
       
       if (annexe?.institution_id) {
@@ -268,10 +289,18 @@ const fetchInstitutionInfo = async () => {
         
         institutionName.value = institution.name ?? ''
         institutionLogo.value = institution.logo ? `/storage/${institution.logo}` : null
+      } else {
+        institutionName.value = ''
+        institutionLogo.value = null
       }
+    } else {
+      institutionName.value = ''
+      institutionLogo.value = null
     }
   } catch (error) {
     console.error('Error fetching institution info:', error)
+    institutionName.value = ''
+    institutionLogo.value = null
   }
 }
 
@@ -279,13 +308,55 @@ const handleBrandUpdated = () => {
   fetchInstitutionInfo()
 }
 
+const getOnboardingTargetForItem = (item) => {
+  if (!item) return null
+  if (item.name === 'Académique') return 'academic'
+  if (item.path === '/admin/annexes') return 'annexes'
+  if (item.path === '/admin/users') return 'users'
+  if (item.path === '/admin/students') return 'students'
+  return null
+}
+
+const getOnboardingTargetForSubItem = (subItem) => {
+  if (!subItem?.path) return null
+  if (subItem.path === '/admin/specializations') return 'specializations'
+  if (subItem.path === '/admin/study-levels') return 'study-levels'
+  return null
+}
+
+const isHighlighted = (target) => !!target && onboardingHighlightTarget.value === target
+
+const openAcademicMenu = () => {
+  const groupIndex = menuGroups.value.findIndex((group) =>
+    group.items.some((item) => item.name === 'Académique')
+  )
+  if (groupIndex < 0) return
+
+  const itemIndex = menuGroups.value[groupIndex].items.findIndex((item) => item.name === 'Académique')
+  if (itemIndex < 0) return
+
+  openSubmenu.value = `${groupIndex}-${itemIndex}`
+}
+
+const handleOnboardingFocus = (event) => {
+  const payload = event?.detail ?? {}
+  onboardingHighlightTarget.value = payload.target ?? null
+  forceExpandForOnboarding.value = !!payload.forceExpand
+
+  if (payload.openAcademic) {
+    openAcademicMenu()
+  }
+}
+
 onMounted(() => {
   fetchInstitutionInfo()
   window.addEventListener('institution-brand-updated', handleBrandUpdated)
+  window.addEventListener('onboarding:focus-target', handleOnboardingFocus)
 })
 
 onUnmounted(() => {
   window.removeEventListener('institution-brand-updated', handleBrandUpdated)
+  window.removeEventListener('onboarding:focus-target', handleOnboardingFocus)
 })
 
 const baseMenuGroups = [
@@ -442,3 +513,46 @@ const endTransition = (el) => {
   el.style.height = "";
 };
 </script>
+
+<style scoped>
+.onboarding-highlight {
+  position: relative;
+  outline: 2px solid rgba(59, 130, 246, 0.9);
+  border-radius: 10px;
+  animation: onboardingPulse 1.2s infinite ease-in-out;
+  z-index: 5;
+}
+
+.onboarding-highlight::after {
+  content: '➜';
+  position: absolute;
+  right: -18px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  color: rgb(59 130 246 / 1);
+  animation: onboardingNudge 0.9s infinite ease-in-out;
+}
+
+@keyframes onboardingPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.45);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(59, 130, 246, 0.1);
+  }
+}
+
+@keyframes onboardingNudge {
+  0%,
+  100% {
+    transform: translateY(-50%) translateX(0);
+    opacity: 0.7;
+  }
+  50% {
+    transform: translateY(-50%) translateX(-4px);
+    opacity: 1;
+  }
+}
+</style>

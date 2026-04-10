@@ -20,6 +20,10 @@ class CheckPermission
 
         $user = auth()->user();
 
+        if (method_exists($user, 'isPlatformAdmin') && $user->isPlatformAdmin()) {
+            return $next($request);
+        }
+
         // Recuperer toutes les permissions de l'utilisateur via ses roles
         $userPermissions = collect();
         

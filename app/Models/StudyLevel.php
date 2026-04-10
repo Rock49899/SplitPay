@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Models\LevelFee;
 
@@ -13,15 +14,23 @@ class StudyLevel extends Model
      */
     public function nextLevel(): ?self
     {
-        return self::where('order', $this->order + 1)->first();
+        return self::where('annexe_id', $this->annexe_id)
+            ->where('order', $this->order + 1)
+            ->first();
     }
 
     protected $fillable = [
+        'annexe_id',
         'code',
         'order',
         'label',
         'description',
     ];
+
+    public function annexe(): BelongsTo
+    {
+        return $this->belongsTo(Annexe::class);
+    }
 
     public function students(): HasMany
     {

@@ -152,7 +152,8 @@ class StudentController extends Controller
             $fee = LevelFee::resolve(
                 (int) $studyLevelId,
                 $student->specialization_id ? (int) $student->specialization_id : null,
-                $schoolYear
+                $schoolYear,
+                (string) $student->annexe_id
             );
 
             Enrollment::create([
@@ -332,7 +333,8 @@ class StudentController extends Controller
             $fee = LevelFee::resolve(
                 (int) $studyLevelId,
                 $student->specialization_id ? (int) $student->specialization_id : null,
-                $schoolYear
+                $schoolYear,
+                (string) $student->annexe_id
             );
 
             Enrollment::updateOrCreate(

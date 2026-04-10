@@ -1,8 +1,13 @@
 import axios from 'axios';
 
+const defaultApiBaseUrl =
+	typeof window !== 'undefined' && ['127.0.0.1', 'localhost'].includes(window.location.hostname)
+		? 'http://127.0.0.1:8001/api'
+		: '/api';
+
 const api = axios.create({
 	// prefer Vite env variable; fallback to /api
-	baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
+	baseURL: import.meta.env.VITE_API_BASE_URL || defaultApiBaseUrl,
 	headers: {
 		Accept: 'application/json',
 		'Content-Type': 'application/json',

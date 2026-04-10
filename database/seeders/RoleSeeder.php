@@ -26,6 +26,12 @@ class RoleSeeder extends Seeder
                 'scope' => 'annexe',
             ],
             [
+                'code' => 'platform_admin',
+                'label' => 'Administrateur Plateforme',
+                'description' => 'Accès global à toute la plateforme. Peut gérer toutes les institutions, annexes, utilisateurs et statistiques.',
+                'scope' => 'platform',
+            ],
+            [
                 'code' => 'gestionnaire',
                 'label' => 'Gestionnaire',
                 'description' => 'Peut gérer les étudiants, créer des liens de paiement et envoyer des rappels dans son/ses annexes.',
@@ -41,12 +47,15 @@ class RoleSeeder extends Seeder
 
         $count = 0;
         foreach ($roles as $roleData) {
-            $role = Role::create($roleData);
+            $role = Role::updateOrCreate(
+                ['code' => $roleData['code']],
+                $roleData
+            );
             $count++;
-            dump("Role cree: {$role->code}");
+            dump("Role cree/mis a jour: {$role->code}");
         }
 
-        dump("Total roles crees: {$count}");
-        $this->command->info('4 rôles créés avec succès !');
+        dump("Total roles traites: {$count}");
+        $this->command->info('5 rôles créés/mis à jour avec succès !');
     }
 }

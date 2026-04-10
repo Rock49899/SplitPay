@@ -7,13 +7,25 @@ use App\Http\Controllers\Traits\FiltersByAnnexe;
 use App\Models\Annexe;
 use App\Models\Enrollment;
 use App\Models\Payment;
+use App\Models\PaymentLink;
+use App\Models\SchoolYear;
 use App\Models\Student;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class DashboardController extends Controller
 {
     use FiltersByAnnexe;
+
+    private function ensurePlatformAdmin(): void
+    {
+        $user = auth()->user();
+
+        if (! $user || ! method_exists($user, 'isPlatformAdmin') || ! $user->isPlatformAdmin()) {
+            abort(403, 'Accès réservé aux administrateurs plateforme.');
+        }
+    }
 
     // ─── Helpers year ──────────────────────────────────────────────────────────
 
@@ -38,6 +50,36 @@ class DashboardController extends Controller
         ];
     }
 
+    private function schoolYearMonths(string $schoolYear): array
+    {
+        [$startY, $endY] = explode('-', $schoolYear);
+
+        $months = [];
+        for ($m = 9; $m <= 12; $m++) {
+            $months[] = sprintf('%04d-%02d', (int) $startY, $m);
+        }
+        for ($m = 1; $m <= 8; $m++) {
+            $months[] = sprintf('%04d-%02d', (int) $endY, $m);
+        }
+
+        return $months;
+    }
+
+    private function schoolYearLabels(string $schoolYear): array
+    {
+        $months = $this->schoolYearMonths($schoolYear);
+        $monthNames = [
+            1 => 'Jan', 2 => 'Fév', 3 => 'Mar', 4 => 'Avr',
+            5 => 'Mai', 6 => 'Juin', 7 => 'Juil', 8 => 'Août',
+            9 => 'Sep', 10 => 'Oct', 11 => 'Nov', 12 => 'Déc',
+        ];
+
+        return array_map(function ($ym) use ($monthNames) {
+            $month = (int) explode('-', $ym)[1];
+            return $monthNames[$month] ?? $ym;
+        }, $months);
+    }
+
     /**
      * Build a Payment query scoped to role + optional date range.
      */
@@ -46,7 +88,10 @@ class DashboardController extends Controller
         $q = Payment::query();
 
         if (!$this->isSuperAdminInstitution()) {
-            $ids = $this->getUserAnnexeIds();
+            $ids = $this->getAccessibleAnnexeIds();
+            $q->whereHas('student', fn($s) => $s->whereIn('annexe_id', $ids));
+        } else {
+            $ids = $this->getAccessibleAnnexeIds();
             $q->whereHas('student', fn($s) => $s->whereIn('annexe_id', $ids));
         }
 
@@ -64,9 +109,7 @@ class DashboardController extends Controller
         $q = Enrollment::where('school_year', $schoolYear)
             ->whereHas('student', function ($s) {
                 $s->where('status', 'active');
-                if (!$this->isSuperAdminInstitution()) {
-                    $s->whereIn('annexe_id', $this->getUserAnnexeIds());
-                }
+                $s->whereIn('annexe_id', $this->getAccessibleAnnexeIds());
             });
 
         return $q;
@@ -124,8 +167,8 @@ class DashboardController extends Controller
 
         // ── Annexes count ─────────────────────────────────────────────────────
         $annexesCount = $this->isSuperAdminInstitution()
-            ? Annexe::where('is_active', true)->count()
-            : count($this->getUserAnnexeIds());
+            ? count($this->getAccessibleAnnexeIds())
+            : count($this->getAccessibleAnnexeIds());
 
         return response()->json([
             'school_year'     => $schoolYear,
@@ -242,10 +285,8 @@ class DashboardController extends Controller
 
         // Determine which annexes to include
         $annexeQuery = Annexe::where('is_active', true);
-        if (!$this->isSuperAdminInstitution()) {
-            $ids = $this->getUserAnnexeIds();
-            $annexeQuery->whereIn('id', $ids);
-        }
+        $ids = $this->getAccessibleAnnexeIds();
+        $annexeQuery->whereIn('id', $ids);
         $annexes = $annexeQuery->get(['id', 'name']);
 
         // Enrollment sums per annexe for the given school year
@@ -258,8 +299,8 @@ class DashboardController extends Controller
             ->join('students', 'students.id', '=', 'enrollments.student_id')
             ->where('enrollments.school_year', $schoolYear)
             ->where('students.status', 'active')
-            ->when(!$this->isSuperAdminInstitution(), function ($q) {
-                $ids = $this->getUserAnnexeIds();
+            ->when(true, function ($q) {
+                $ids = $this->getAccessibleAnnexeIds();
                 $q->whereIn('students.annexe_id', $ids);
             })
             ->groupBy('students.annexe_id')
@@ -274,8 +315,8 @@ class DashboardController extends Controller
             ->join('students', 'students.id', '=', 'payments.student_id')
             ->where('payments.status', 'success')
             ->whereBetween('payments.paid_at', [$from, $to])
-            ->when(!$this->isSuperAdminInstitution(), function ($q) {
-                $ids = $this->getUserAnnexeIds();
+            ->when(true, function ($q) {
+                $ids = $this->getAccessibleAnnexeIds();
                 $q->whereIn('students.annexe_id', $ids);
             })
             ->groupBy('students.annexe_id')
@@ -306,6 +347,161 @@ class DashboardController extends Controller
             'collected'     => $collected,
             'recovery_rate' => $recoveryRate,
             'unpaid'        => $unpaid,
+        ]);
+    }
+
+    /**
+     * GET /admin/dashboard/platform-overview
+     *
+     * KPI + séries dédiés au tableau de bord plateforme.
+     */
+    public function platformOverview(Request $request)
+    {
+        $this->ensurePlatformAdmin();
+
+        $schoolYear = $request->get('school_year', $this->currentSchoolYear());
+        [$from, $to] = $this->schoolYearRange($schoolYear);
+
+        $availableYears = SchoolYear::query()
+            ->whereIn('status', ['active', 'closed'])
+            ->orderByDesc('year')
+            ->pluck('year')
+            ->values();
+
+        if ($availableYears->isEmpty()) {
+            $availableYears = collect([$schoolYear]);
+        }
+
+        $annexeIds = $this->getAccessibleAnnexeIds();
+        $labels = $this->schoolYearLabels($schoolYear);
+        $months = $this->schoolYearMonths($schoolYear);
+
+        if (empty($annexeIds)) {
+            return response()->json([
+                'school_year' => $schoolYear,
+                'available_years' => $availableYears,
+                'kpis' => [
+                    'recovery_rate' => 0,
+                    'links_created' => 0,
+                    'links_used' => 0,
+                    'total_paid' => 0,
+                    'total_remaining' => 0,
+                ],
+                'charts' => [
+                    'labels' => $labels,
+                    'recovery_rate' => array_fill(0, count($labels), 0),
+                    'links_created' => array_fill(0, count($labels), 0),
+                    'links_used' => array_fill(0, count($labels), 0),
+                    'paid' => array_fill(0, count($labels), 0),
+                    'remaining' => array_fill(0, count($labels), 0),
+                ],
+            ]);
+        }
+
+        $enrollmentQ = Enrollment::query()
+            ->join('students', 'students.id', '=', 'enrollments.student_id')
+            ->whereIn('students.annexe_id', $annexeIds)
+            ->where('students.status', 'active');
+
+        if (Schema::hasColumn('enrollments', 'school_year')) {
+            $enrollmentQ->where('enrollments.school_year', $schoolYear);
+        }
+
+        $totalTuition = (float) (clone $enrollmentQ)->sum('enrollments.tuition_amount');
+        $totalPaidFromEnrollments = (float) (clone $enrollmentQ)->sum('enrollments.amount_paid');
+        $totalRemaining = max(0, $totalTuition - $totalPaidFromEnrollments);
+
+        $linksQ = PaymentLink::query()
+            ->join('students', 'students.id', '=', 'payment_links.student_id')
+            ->whereIn('students.annexe_id', $annexeIds)
+            ->whereBetween('payment_links.created_at', [$from, $to]);
+
+        if (Schema::hasColumn('payment_links', 'school_year')) {
+            $linksQ->where('payment_links.school_year', $schoolYear);
+        }
+
+        $linksCreated = (int) (clone $linksQ)->count('payment_links.id');
+        $linksUsed = (int) (clone $linksQ)->where('payment_links.status', 'used')->count('payment_links.id');
+
+        $paymentsMonthly = Payment::query()
+            ->join('students', 'students.id', '=', 'payments.student_id')
+            ->whereIn('students.annexe_id', $annexeIds)
+            ->whereBetween('payments.paid_at', [$from, $to])
+            ->where('payments.status', 'success')
+            ->select(
+                DB::raw("DATE_FORMAT(payments.paid_at, '%Y-%m') as ym"),
+                DB::raw('SUM(payments.amount) as total')
+            )
+            ->groupBy('ym')
+            ->get()
+            ->pluck('total', 'ym');
+
+        $linksCreatedMonthly = (clone $linksQ)
+            ->select(
+                DB::raw("DATE_FORMAT(payment_links.created_at, '%Y-%m') as ym"),
+                DB::raw('COUNT(payment_links.id) as total')
+            )
+            ->groupBy('ym')
+            ->get()
+            ->pluck('total', 'ym');
+
+        $linksUsedMonthly = (clone $linksQ)
+            ->where('payment_links.status', 'used')
+            ->select(
+                DB::raw("DATE_FORMAT(payment_links.created_at, '%Y-%m') as ym"),
+                DB::raw('COUNT(payment_links.id) as total')
+            )
+            ->groupBy('ym')
+            ->get()
+            ->pluck('total', 'ym');
+
+        $paidSeries = [];
+        $remainingSeries = [];
+        $linksCreatedSeries = [];
+        $linksUsedSeries = [];
+        $recoverySeries = [];
+
+        $cumulativePaid = 0.0;
+        foreach ($months as $ym) {
+            $monthPaid = (float) ($paymentsMonthly[$ym] ?? 0);
+            $monthLinksCreated = (int) ($linksCreatedMonthly[$ym] ?? 0);
+            $monthLinksUsed = (int) ($linksUsedMonthly[$ym] ?? 0);
+
+            $cumulativePaid += $monthPaid;
+            $remaining = max(0, $totalTuition - $cumulativePaid);
+            $monthRecovery = $totalTuition > 0
+                ? round(($cumulativePaid / $totalTuition) * 100, 1)
+                : 0;
+
+            $paidSeries[] = round($cumulativePaid, 2);
+            $remainingSeries[] = round($remaining, 2);
+            $linksCreatedSeries[] = $monthLinksCreated;
+            $linksUsedSeries[] = $monthLinksUsed;
+            $recoverySeries[] = $monthRecovery;
+        }
+
+        $recoveryRate = $totalTuition > 0
+            ? round(($totalPaidFromEnrollments / $totalTuition) * 100, 1)
+            : 0;
+
+        return response()->json([
+            'school_year' => $schoolYear,
+            'available_years' => $availableYears,
+            'kpis' => [
+                'recovery_rate' => $recoveryRate,
+                'links_created' => $linksCreated,
+                'links_used' => $linksUsed,
+                'total_paid' => round($totalPaidFromEnrollments, 2),
+                'total_remaining' => round($totalRemaining, 2),
+            ],
+            'charts' => [
+                'labels' => $labels,
+                'recovery_rate' => $recoverySeries,
+                'links_created' => $linksCreatedSeries,
+                'links_used' => $linksUsedSeries,
+                'paid' => $paidSeries,
+                'remaining' => $remainingSeries,
+            ],
         ]);
     }
 }

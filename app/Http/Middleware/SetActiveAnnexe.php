@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Annexe;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -16,26 +17,33 @@ class SetActiveAnnexe
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // Récupérer l'ID de l'annexe active depuis le header
         $activeAnnexeId = $request->header('X-Active-Annexe-Id');
-        
+
         if ($activeAnnexeId) {
             $user = $request->user();
-            
-            // Vérifier que l'utilisateur a bien accès à cette annexe
+
             if ($user) {
                 try {
-                    // Super admin institution a accès à toutes les annexes
-                    if ($user->scope === 'institution') {
+                    // Vérifier que l'annexe existe réellement
+                    if (! Annexe::whereKey($activeAnnexeId)->exists()) {
+                        // Au lieu de retourner 404 (qui expose des infos), retourner 403
+                        // Le header peut contenir un ID invalide du localStorage
+                        return response()->json([
+                            'message' => 'Accès refusé à cette annexe',
+                            'error' => 'invalid_active_annexe'
+                        ], 403);
+                    }
+
+                    if (method_exists($user, 'isPlatformAdmin') && $user->isPlatformAdmin()) {
+                        $request->attributes->set('active_annexe_id', $activeAnnexeId);
+                    } elseif ($user->scope === 'institution') {
                         $request->attributes->set('active_annexe_id', $activeAnnexeId);
                     } else {
-                        // Vérifier que l'utilisateur est assigné à cette annexe
                         $hasAccess = $user->annexes()->where('annexes.id', $activeAnnexeId)->exists();
-                        
+
                         if ($hasAccess) {
                             $request->attributes->set('active_annexe_id', $activeAnnexeId);
                         } else {
-                            // L'utilisateur n'a pas accès à cette annexe
                             return response()->json([
                                 'message' => 'Accès non autorisé à cette annexe',
                                 'error' => 'unauthorized_annexe_access'
@@ -43,13 +51,11 @@ class SetActiveAnnexe
                         }
                     }
                 } catch (\Exception $e) {
-                    // Log l'erreur mais ne pas bloquer la requête
                     Log::error('SetActiveAnnexe middleware error: ' . $e->getMessage());
-                    // Continuer sans définir l'annexe active
                 }
             }
         }
-        
+
         return $next($request);
     }
 }

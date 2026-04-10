@@ -1,49 +1,50 @@
 <template>
   <AdminLayout>
     <PageBreadcrumb :pageTitle="currentPageTitle" />
-    <div class="flex items-center gap-3 mb-4">
-      <button @click="showCreateModal = true" class="px-4 py-2 bg-brand-500 text-white rounded hover:bg-brand-600">Ajouter un étudiant</button>
-      <button @click="showImportModal = true" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+    <div class="mb-4 flex flex-wrap items-stretch gap-2 sm:gap-3">
+      <button @click="showCreateModal = true" class="w-full sm:w-auto px-4 py-2 bg-brand-500 text-white rounded hover:bg-brand-600">Ajouter un étudiant</button>
+      <button @click="showImportModal = true" class="w-full sm:w-auto px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
         <svg class="w-4 h-4 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
         </svg>
         Importer
       </button>
-      <button @click="exportStudents" :disabled="exporting" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50">
+      <button @click="exportStudents" :disabled="exporting" class="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50">
         <svg class="w-4 h-4 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
         </svg>
         {{ exporting ? 'Exportation...' : 'Exporter' }}
       </button>
-      <button @click="showCols = true" class="px-3 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-100 rounded hover:bg-slate-50 dark:hover:bg-slate-600">Colonnes</button>
+      <button @click="showCols = true" class="w-full sm:w-auto px-3 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-100 rounded hover:bg-slate-50 dark:hover:bg-slate-700">Colonnes</button>
     </div>
 
     <!-- Filtres : Annexe / Niveau d'étude / Spécialisation / Appliquer / Réinitialiser -->
-    <div class="flex flex-wrap gap-3 items-end mb-4">
-      <div class="w-56">
-        <label class="block text-xs text-slate-500 dark:text-slate-300 mb-1">Annexe</label>
-        <select v-model="filters.annexe_id" class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white px-3 py-2">
+    <div class="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 items-end">
+      <div class="w-full">
+        <label class="block text-xs font-semibold text-slate-800 dark:text-slate-100 mb-1">Annexe</label>
+        <select v-model="filters.annexe_id" class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-3 py-2">
           <option :value="null">Toutes les annexes</option>
           <option v-for="a in annexes" :key="a.id" :value="a.id">{{ a.name }}</option>
         </select>
       </div>
-      <div class="w-40">
-        <label class="block text-xs text-slate-500 dark:text-slate-300 mb-1">Niveau d'étude</label>
-        <select v-model="filters.study_level_id" class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white px-3 py-2">
+      <div class="w-full">
+
+        <label class="block text-xs font-semibold text-slate-800 dark:text-slate-100 mb-1">Niveau d'étude</label>
+        <select v-model="filters.study_level_id" class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-3 py-2">
           <option :value="null">Tous les niveaux</option>
           <option v-for="level in studyLevels" :key="level.id" :value="level.id">{{ level.label }}</option>
         </select>
       </div>
-      <div class="w-40">
-        <label class="block text-xs text-slate-500 dark:text-slate-300 mb-1">Spécialisation</label>
-        <select v-model="filters.specialization_id" class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white px-3 py-2">
+      <div class="w-full">
+        <label class="block text-xs font-semibold text-slate-800 dark:text-slate-100 mb-1">Spécialisation</label>
+        <select v-model="filters.specialization_id" class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-3 py-2">
           <option :value="null">Toutes les spécialisations</option>
           <option v-for="spec in specializations" :key="spec.id" :value="spec.id">{{ spec.label }}</option>
         </select>
       </div>
-      <div class="flex items-center gap-2">
-        <button @click="applyFilters" class="px-3 py-2 bg-brand-500 text-white rounded">Appliquer</button>
-        <button @click="clearFilters" class="px-3 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-100 rounded hover:bg-slate-50 dark:hover:bg-slate-600">Réinitialiser</button>
+      <div class="flex flex-wrap items-center gap-2">
+        <button @click="applyFilters" class="w-full sm:w-auto px-3 py-2 bg-brand-500 text-white rounded">Appliquer</button>
+        <button @click="clearFilters" class="w-full sm:w-auto px-3 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-100 rounded hover:bg-slate-50 dark:hover:bg-slate-700">Réinitialiser</button>
       </div>
     </div>
 
@@ -125,12 +126,14 @@
         </div>
       </ComponentCard>
 
-      <div class="flex items-center justify-between">
-        <div></div>
-        <div class="flex items-center gap-2">
-          <button @click="prevPage" :disabled="students.page <= 1" class="px-3 py-1 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-100 rounded disabled:opacity-50">Précédent</button>
-          <span class="text-slate-700 dark:text-slate-200">Page {{ students.page }}</span>
-          <button @click="nextPage" :disabled="students.meta && students.page >= students.meta.last_page" class="px-3 py-1 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-100 rounded disabled:opacity-50">Suivant</button>
+      <div class="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div class="text-xs text-slate-500 dark:text-slate-300">
+          Total: {{ students.meta?.total ?? (students.items?.length ?? 0) }} étudiant(s)
+        </div>
+        <div class="flex items-center justify-center sm:justify-end gap-2">
+          <button @click="prevPage" :disabled="students.page <= 1" class="px-3 py-1.5 border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-100 rounded hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed">Précédent</button>
+          <span class="px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700">Page {{ students.page }}</span>
+          <button @click="nextPage" :disabled="students.meta && students.page >= students.meta.last_page" class="px-3 py-1.5 border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-100 rounded hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed">Suivant</button>
         </div>
       </div>
     </div>
@@ -441,8 +444,4 @@ const loadStudents = async (page = 1) => {
 </script>
 
 <style scoped>
-select option {
-  color: #f8fafc;
-  background-color: #334155;
-}
 </style>

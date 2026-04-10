@@ -13,24 +13,35 @@ class RolePermissionSeeder extends Seeder
     {
         // Récupérer tous les rôles créés précédemment
         $superAdminInstitution = Role::where('code', 'super_admin_institution')->first();
+        $platformAdmin = Role::where('code', 'platform_admin')->first();
         $superAdminAnnexe = Role::where('code', 'super_admin_annexe')->first();
         $gestionnaire = Role::where('code', 'gestionnaire')->first();
         $comptable = Role::where('code', 'comptable')->first();
 
         // sup admin institution, il a toutes les permissions
         $allPermissions = Permission::all()->pluck('id')->toArray();
-        $superAdminInstitution->permissions()->sync($allPermissions);
-        $this->command->info('Super Admin Institution : ' . count($allPermissions) . ' permissions');
+        if ($superAdminInstitution) {
+            $superAdminInstitution->permissions()->sync($allPermissions);
+            $this->command->info('Super Admin Institution : ' . count($allPermissions) . ' permissions');
+        }
+
+        if ($platformAdmin) {
+            $platformAdmin->permissions()->sync($allPermissions);
+            $this->command->info('Administrateur Plateforme : ' . count($allPermissions) . ' permissions');
+        }
 
         // sup admin annexe peut tout, sauf la gestion des annexes..
+        // MAIS peut assigner des rôles dans leur annexe (user.manage_roles)
         $superAdminAnnexePermissions = Permission::whereNotIn('code', [
             'annexe.create',   
             'annexe.delete',   
             'dashboard.multi_annexe', 
         ])->pluck('id')->toArray();
         
-        $superAdminAnnexe->permissions()->sync($superAdminAnnexePermissions);
-        $this->command->info('Super Admin Annexe : ' . count($superAdminAnnexePermissions) . ' permissions');
+        if ($superAdminAnnexe) {
+            $superAdminAnnexe->permissions()->sync($superAdminAnnexePermissions);
+            $this->command->info('Super Admin Annexe : ' . count($superAdminAnnexePermissions) . ' permissions');
+        }
 
         // gestionnaire: uniquement gérer les étudiants et liens de paiementsn et rappels
         $gestionnairePermissions = Permission::whereIn('code', [
@@ -62,8 +73,10 @@ class RolePermissionSeeder extends Seeder
             'dashboard.statistics',
         ])->pluck('id')->toArray();
         
-        $gestionnaire->permissions()->sync($gestionnairePermissions);
-        $this->command->info('Gestionnaire : ' . count($gestionnairePermissions) . ' permissions');
+        if ($gestionnaire) {
+            $gestionnaire->permissions()->sync($gestionnairePermissions);
+            $this->command->info('Gestionnaire : ' . count($gestionnairePermissions) . ' permissions');
+        }
 
         // comptable: consulte les paiement, voit étudiants et exporte données
         $comptablePermissions = Permission::whereIn('code', [
@@ -84,8 +97,10 @@ class RolePermissionSeeder extends Seeder
             'dashboard.statistics',
         ])->pluck('id')->toArray();
         
-        $comptable->permissions()->sync($comptablePermissions);
-        $this->command->info('Comptable : ' . count($comptablePermissions) . ' permissions');
+        if ($comptable) {
+            $comptable->permissions()->sync($comptablePermissions);
+            $this->command->info('Comptable : ' . count($comptablePermissions) . ' permissions');
+        }
 
         // Message final
         $this->command->info('');

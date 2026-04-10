@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('annexes', function (Blueprint $table) { 
             $table->uuid('id')->primary();
-            $table->foreignUuid('institution_id')->constrained('institutions')->onDelete('cascade');
+            $table->uuid('institution_id');
             $table->string('name', 150);
             $table->text('address')->nullable();
             $table->string('city', 100)->nullable();

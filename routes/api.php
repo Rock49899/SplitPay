@@ -27,23 +27,18 @@ Route::post('test', function () {
 Route::get('ping', fn () => response('pong'));
 
 Route::get('check-institution', function () {
-    $institution = \App\Models\Institution::query()->orderBy('created_at')->first();
-
-    if (! $institution) {
-        return response()->json([
-            'exists' => false,
-            'institution' => null,
-        ]);
-    }
-
     return response()->json([
-        'exists' => true,
-        'institution' => [
-            'id' => $institution->id,
-            'name' => $institution->name,
-            'logo' => $institution->logo,
-            'logo_url' => $institution->logo ? asset('storage/' . $institution->logo) : null,
-        ],
+        'exists' => \App\Models\Institution::query()->exists(),
+        'count' => \App\Models\Institution::query()->count(),
+        'institutions' => \App\Models\Institution::query()
+            ->orderBy('created_at')
+            ->get(['id', 'name', 'logo'])
+            ->map(fn ($institution) => [
+                'id' => $institution->id,
+                'name' => $institution->name,
+                'logo' => $institution->logo,
+                'logo_url' => $institution->logo ? asset('storage/' . $institution->logo) : null,
+            ]),
     ]);
 });
 
@@ -59,7 +54,7 @@ Route::post('admin/request-otp', [\App\Http\Controllers\Api\AuthController::clas
 Route::post('admin/verify-otp', [\App\Http\Controllers\Api\AuthController::class, 'verifyOtp']);
 
 //sanctum
-Route::middleware(['auth:sanctum', 'active.annexe', 'active.school_year', 'school_year.lock'])->prefix('admin')->group(function () {
+Route::middleware(['auth:sanctum', 'active.account', 'active.annexe', 'active.school_year', 'school_year.lock'])->prefix('admin')->group(function () {
     Route::match(['get','post'], 'logout', [\App\Http\Controllers\Api\AuthController::class, 'logout']);
     Route::get('me', [\App\Http\Controllers\Api\AuthController::class, 'me']);
     Route::get('me/annexe/{annexeId}', [\App\Http\Controllers\Api\AuthController::class, 'meForAnnexe']);
@@ -183,6 +178,7 @@ Route::middleware(['auth:sanctum', 'active.annexe', 'active.school_year', 'schoo
         Route::get('kpis',                [\App\Http\Controllers\Api\DashboardController::class, 'kpis']);
         Route::get('monthly-collections', [\App\Http\Controllers\Api\DashboardController::class, 'monthlyCollections']);
         Route::get('annexe-stats',        [\App\Http\Controllers\Api\DashboardController::class, 'annexeStats']);
+        Route::get('platform-overview',   [\App\Http\Controllers\Api\DashboardController::class, 'platformOverview']);
     });
 });
 // public: accessible sans authentification

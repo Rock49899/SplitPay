@@ -19,6 +19,16 @@ class CheckAnnexeActive
         }
 
         $user = auth()->user();
+
+        if (method_exists($user, 'isPlatformAdmin') && $user->isPlatformAdmin()) {
+            return $next($request);
+        }
+
+        if (method_exists($user, 'isAccountActive') && ! $user->isAccountActive()) {
+            return response()->json([
+                'message' => 'Votre compte est actuellement bloqué. Contactez l\'administrateur.'
+            ], 403);
+        }
         
         // Recuperer toutes les annexes accessibles par l'utilisateur
         $annexes = $user->annexes;

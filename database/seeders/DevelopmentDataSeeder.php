@@ -11,6 +11,8 @@ use App\Models\StudyLevel;
 use App\Models\Specialization;
 use App\Models\LevelFee;
 use App\Models\Enrollment;
+use App\Models\PaymentLink;
+use App\Models\Payment;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -22,45 +24,63 @@ class DevelopmentDataSeeder extends Seeder
         $this->command->info('Création des données de test...');
 
         // ── Institution + Annexes ──────────────────────────────────────────
-        $institution = Institution::create([
-            'name'      => 'Institut Supérieur de Technologie',
-            'email'     => 'contact@ist-edu.com',
-            'phone'     => '+229 97 00 00 00',
-            'address'   => 'Avenue de la République',
-            'city'      => 'Cotonou',
-            'is_active' => true,
-        ]);
+        $institution = Institution::updateOrCreate(
+            ['email' => 'contact@ist-edu.com'],
+            [
+                'name'      => 'Institut Supérieur de Technologie',
+                'phone'     => '+229 97 00 00 00',
+                'address'   => 'Avenue de la République',
+                'city'      => 'Cotonou',
+                'is_active' => true,
+            ]
+        );
 
-        $annexeNord = Annexe::create([
-            'institution_id' => $institution->id,
-            'name'      => 'Campus Nord',
-            'address'   => 'Quartier Akpakpa',
-            'city'      => 'Cotonou',
-            'is_active' => true,
-        ]);
+        $annexeNord = Annexe::updateOrCreate(
+            ['institution_id' => $institution->id, 'name' => 'Campus Nord'],
+            [
+                'address'   => 'Quartier Akpakpa',
+                'city'      => 'Cotonou',
+                'is_active' => true,
+            ]
+        );
 
-        $annexeSud = Annexe::create([
-            'institution_id' => $institution->id,
-            'name'      => 'Campus Sud',
-            'address'   => 'Quartier Fidjrossè',
-            'city'      => 'Cotonou',
-            'is_active' => true,
-        ]);
+        $annexeSud = Annexe::updateOrCreate(
+            ['institution_id' => $institution->id, 'name' => 'Campus Sud'],
+            [
+                'address'   => 'Quartier Fidjrossè',
+                'city'      => 'Cotonou',
+                'is_active' => true,
+            ]
+        );
         $this->command->info('1 institution + 2 annexes créées');
 
         // ── Utilisateurs ───────────────────────────────────────────────────
         $roleSuperAdmin   = Role::where('code', 'super_admin_institution')->first();
         $roleGestionnaire = Role::where('code', 'gestionnaire')->first();
 
-        $superAdmin = User::create([
-            'annexe_id' => $annexeNord->id,
-            'name'      => 'Admin Principal',
-            'email'     => 'admin@ist-edu.com',
-            'password'  => Hash::make('password'),
-            'phone'     => '+229 97 11 11 11',
-            'is_active' => true,
-            'scope'     => 'institution',
-        ]);
+        User::updateOrCreate(
+            ['email' => 'platform@splitpay.test'],
+            [
+                'annexe_id' => null,
+                'name'      => 'SplitPay Platform Admin',
+                'password'  => Hash::make('password'),
+                'phone'     => '+229 90 00 00 00',
+                'is_active' => true,
+                'scope'     => 'platform',
+            ]
+        );
+
+        $superAdmin = User::updateOrCreate(
+            ['email' => 'admin@ist-edu.com'],
+            [
+                'annexe_id' => $annexeNord->id,
+                'name'      => 'Admin Principal',
+                'password'  => Hash::make('password'),
+                'phone'     => '+229 97 11 11 11',
+                'is_active' => true,
+                'scope'     => 'institution',
+            ]
+        );
         $superAdmin->annexes()->attach($annexeNord->id, [
             'role_id'      => $roleSuperAdmin->id,
             'is_principal' => true,
@@ -71,15 +91,17 @@ class DevelopmentDataSeeder extends Seeder
             ['name' => 'Marie Dupont', 'email' => 'marie@ist-edu.com', 'annexe' => $annexeNord, 'phone' => '+229 97 22 22 22'],
             ['name' => 'Jean Martin',  'email' => 'jean@ist-edu.com',  'annexe' => $annexeSud,  'phone' => '+229 97 33 33 33'],
         ] as $g) {
-            $user = User::create([
-                'annexe_id' => $g['annexe']->id,
-                'name'      => $g['name'],
-                'email'     => $g['email'],
-                'password'  => Hash::make('password'),
-                'phone'     => $g['phone'],
-                'is_active' => true,
-                'scope'     => 'annexe',
-            ]);
+            $user = User::updateOrCreate(
+                ['email' => $g['email']],
+                [
+                    'annexe_id' => $g['annexe']->id,
+                    'name'      => $g['name'],
+                    'password'  => Hash::make('password'),
+                    'phone'     => $g['phone'],
+                    'is_active' => true,
+                    'scope'     => 'annexe',
+                ]
+            );
             $user->annexes()->attach($g['annexe']->id, [
                 'role_id'      => $roleGestionnaire->id,
                 'is_principal' => true,
@@ -120,12 +142,17 @@ class DevelopmentDataSeeder extends Seeder
         $this->seedStudents($nordStudents, $annexeNord, $specs['INFO'],    $levels, '2024-2025');
         $this->seedStudents($sudStudents,  $annexeSud,  $specs['GESTION'], $levels, '2024-2025');
 
+        // ── Liens de paiement et paiements de test ───────────────────────────
+        $this->seedPaymentLinksAndPayments('2024-2025');
+
         $this->command->newLine();
         $this->command->info('RÉSUMÉ :');
         $this->command->info('  - 1 institution, 2 annexes');
-        $this->command->info('  - 3 utilisateurs (1 Super Admin + 2 Gestionnaires)');
+        $this->command->info('  - 4 utilisateurs (1 Admin Plateforme + 1 Super Admin + 2 Gestionnaires)');
         $this->command->info('  - 10 étudiants avec enrollments 2024-2025 + paiements partiels');
+        $this->command->info('  - Liens de paiement (+8) avec transactions de test');
         $this->command->info('  Connexion : admin@ist-edu.com | password');
+        $this->command->info('  Connexion plateforme : platform@splitpay.test | password');
     }
 
     private function seedStudents(array $list, Annexe $annexe, Specialization $spec, $levels, string $year): void
@@ -138,17 +165,19 @@ class DevelopmentDataSeeder extends Seeder
                 continue;
             }
 
-            $student = Student::create([
-                'id'                => (string) Str::uuid(),
-                'annexe_id'         => $annexe->id,
-                'matricule'         => $data['matricule'],
-                'first_name'        => $data['first_name'],
-                'last_name'         => $data['last_name'],
-                'email'             => Str::lower(iconv('UTF-8', 'ASCII//TRANSLIT', $data['first_name'])) . '@etudiant.com',
-                'phone'             => '+229 97 ' . rand(40, 59) . ' ' . rand(10, 99) . ' ' . rand(10, 99),
-                'specialization_id' => $spec->id,
-                'status'            => 'active',
-            ]);
+            $student = Student::updateOrCreate(
+                ['matricule' => $data['matricule']],
+                [
+                    'id'                => (string) Str::uuid(),
+                    'annexe_id'         => $annexe->id,
+                    'first_name'        => $data['first_name'],
+                    'last_name'         => $data['last_name'],
+                    'email'             => Str::lower(iconv('UTF-8', 'ASCII//TRANSLIT', $data['first_name'])) . '@etudiant.com',
+                    'phone'             => '+229 97 ' . rand(40, 59) . ' ' . rand(10, 99) . ' ' . rand(10, 99),
+                    'specialization_id' => $spec->id,
+                    'status'            => 'active',
+                ]
+            );
 
             // Résoudre le barème : d'abord filière spécifique, sinon générique
             $fee = LevelFee::resolve($level->id, $spec->id, $year);
@@ -161,15 +190,80 @@ class DevelopmentDataSeeder extends Seeder
             $tuition    = (int) $fee->tuition_amount;
             $amountPaid = rand(0, $tuition);
 
-            Enrollment::create([
-                'student_id'     => $student->id,
-                'level_fee_id'   => $fee->id,
-                'tuition_amount' => $tuition,
-                'amount_paid'    => $amountPaid,
-                'school_year'    => $year,
-                'status'         => 'active',
-            ]);
+            Enrollment::updateOrCreate(
+                [
+                    'student_id'  => $student->id,
+                    'school_year' => $year,
+                ],
+                [
+                    'level_fee_id'   => $fee->id,
+                    'tuition_amount' => $tuition,
+                    'amount_paid'    => $amountPaid,
+                    'status'         => 'active',
+                ]
+            );
         }
         $this->command->info('  ' . count($list) . ' étudiants créés → ' . $annexe->name . ' (' . $spec->label . ')');
+    }
+
+    private function seedPaymentLinksAndPayments(string $year): void
+    {
+        // Récupérer quelques students pour créer des liens de paiement
+        $students = Student::limit(8)->get();
+        $linksCount = 0;
+        $paymentsCount = 0;
+
+        foreach ($students as $student) {
+            // Créer 1 lien de paiement par étudiant
+            $link = PaymentLink::updateOrCreate(
+                [
+                    'student_id' => $student->id,
+                    'school_year' => $year,
+                ],
+                [
+                    'id'              => (string) Str::uuid(),
+                    'token'           => (string) Str::random(32),
+                    'type'            => 'tuition',
+                    'currency'        => 'XOF',
+                    'amount'          => 0,
+                    'status'          => 'active',
+                    'school_year'     => $year,
+                    'expire_at'       => now()->addMonths(3),
+                ]
+            );
+            $linksCount++;
+
+            // Créer 1-2 paiements par lien (pour tester partial et completed)
+            $enrollment = Enrollment::where('student_id', $student->id)
+                ->where('school_year', $year)
+                ->first();
+
+            if ($enrollment) {
+                $tuition = $enrollment->tuition_amount;
+                $link->update(['amount' => $tuition]);
+                $amountToCreate = rand(1, 2); // 1 ou 2 paiements
+
+                for ($i = 0; $i < $amountToCreate; $i++) {
+                    $partialAmount = $amountToCreate === 1 
+                        ? rand((int)($tuition * 0.3), (int)($tuition * 0.7))
+                        : rand((int)($tuition * 0.1), (int)($tuition * 0.4));
+
+                    Payment::create([
+                        'id'              => (string) Str::uuid(),
+                        'payment_link_id' => $link->id,
+                        'student_id'      => $student->id,
+                        'amount'          => $partialAmount,
+                        'reference'       => 'REF_' . Str::upper(Str::random(12)),
+                        'payplus_transaction_id' => 'PPL_' . Str::upper(Str::random(20)),
+                        'status'          => 'success',
+                        'method'          => ['mtn', 'moov', 'payplus'][rand(0, 2)],
+                        'paid_at'         => now()->subDays(rand(1, 20)),
+                    ]);
+                    $paymentsCount++;
+                }
+            }
+        }
+
+        $this->command->info("  {$linksCount} liens de paiement créés avec {$paymentsCount} transactions");
     }
 }

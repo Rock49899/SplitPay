@@ -10,6 +10,7 @@ use App\Models\Specialization;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -237,6 +238,26 @@ class StudentImportController extends Controller
             
             $imported = 0;
             $failed = [];
+
+            // Précharger le catalogue académique de l'annexe active
+            // et indexer avec des clés normalisées (insensible à la casse / espaces)
+            $studyLevelsByNormalizedLabel = StudyLevel::where('annexe_id', $activeAnnexeId)
+                ->get()
+                ->mapWithKeys(function (StudyLevel $level) {
+                    return [
+                        $this->normalizeAcademicLabel($level->label) => $level,
+                        $this->normalizeAcademicLabel($level->code)  => $level,
+                    ];
+                });
+
+            $specializationsByNormalizedLabel = Specialization::where('annexe_id', $activeAnnexeId)
+                ->get()
+                ->mapWithKeys(function (Specialization $specialization) {
+                    return [
+                        $this->normalizeAcademicLabel($specialization->label) => $specialization,
+                        $this->normalizeAcademicLabel($specialization->code)  => $specialization,
+                    ];
+                });
             
             DB::beginTransaction();
             
@@ -271,7 +292,9 @@ class StudentImportController extends Controller
                     // Chercher le niveau d'étude par libellé (si fourni)
                     $studyLevelId = null;
                     if (!empty($studentData['study_level_label'])) {
-                        $studyLevel = \App\Models\StudyLevel::where('label', $studentData['study_level_label'])->first();
+                        $studyLevel = $studyLevelsByNormalizedLabel->get(
+                            $this->normalizeAcademicLabel($studentData['study_level_label'])
+                        );
                         
                         if (!$studyLevel) {
                             $failed[] = [
@@ -288,7 +311,9 @@ class StudentImportController extends Controller
                     // Chercher la spécialisation par libellé (si fourni)
                     $specializationId = null;
                     if (!empty($studentData['specialization_label'])) {
-                        $specialization = Specialization::where('label', $studentData['specialization_label'])->first();
+                        $specialization = $specializationsByNormalizedLabel->get(
+                            $this->normalizeAcademicLabel($studentData['specialization_label'])
+                        );
                         
                         if (!$specialization) {
                             $failed[] = [
@@ -329,7 +354,8 @@ class StudentImportController extends Controller
                         $fee = \App\Models\LevelFee::resolve(
                             $studyLevelId,
                             $specializationId,
-                            $schoolYear
+                            $schoolYear,
+                            (string) $activeAnnexeId
                         );
                         
                         // Créer l'inscription
@@ -453,6 +479,7 @@ class StudentImportController extends Controller
             'last_name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:students,email',
             'phone' => 'required|string|max:50',
+            'study_level_label' => 'nullable|string|max:255',
             'specialization_label' => 'nullable|string|max:255',
         ], [
             'matricule.required' => "Le matricule est obligatoire (ligne $rowNumber)",
@@ -464,5 +491,17 @@ class StudentImportController extends Controller
             'email.unique' => "L'email existe déjà en base de données (ligne $rowNumber)",
             'phone.required' => "Le téléphone est obligatoire (ligne $rowNumber)",
         ]);
+    }
+
+    /**
+     * Normalise un libellé académique pour comparaison robuste:
+     * - trim
+     * - collapse des espaces multiples
+     * - minuscules
+     */
+    private function normalizeAcademicLabel(?string $value): string
+    {
+        $collapsed = preg_replace('/\s+/u', ' ', trim((string) $value)) ?? '';
+        return Str::lower($collapsed);
     }
 }
