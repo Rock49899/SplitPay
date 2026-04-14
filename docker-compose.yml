@@ -1,4 +1,29 @@
 services:
+  init:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: app
+    container_name: saas-init
+    restart: "no"
+    working_dir: /var/www
+    env_file: .env
+    environment:
+      DB_HOST: saas-db-prod
+      DB_PORT: 3306
+      DB_DATABASE: ${DB_DATABASE}
+      DB_USERNAME: ${DB_USERNAME:-saas_user}
+      DB_PASSWORD: ${DB_PASSWORD}
+      APP_RUN_INIT: "true"
+      APP_CACHE_ROUTES: "false"
+    volumes:
+      - app-storage:/var/www/storage
+    networks:
+      - saas-network
+    depends_on:
+      saas-db-prod:
+        condition: service_healthy
+
   app:
     build:
       context: .
@@ -8,11 +33,20 @@ services:
     restart: unless-stopped
     working_dir: /var/www
     env_file: .env
+    environment:
+      DB_HOST: saas-db-prod
+      DB_PORT: 3306
+      DB_DATABASE: ${DB_DATABASE}
+      DB_USERNAME: ${DB_USERNAME:-saas_user}
+      DB_PASSWORD: ${DB_PASSWORD}
+      APP_RUN_INIT: "false"
     volumes:
       - app-storage:/var/www/storage
     networks:
       - saas-network
     depends_on:
+      init:
+        condition: service_completed_successfully
       saas-db-prod:
         condition: service_healthy
       redis:
@@ -21,25 +55,32 @@ services:
   background-tasks:
     build:
       context: .
-      dockerfile: Dockerfile # Précise le dockerfile ici aussi
+      dockerfile: Dockerfile
       target: app
     container_name: saas-worker-scheduler
     restart: unless-stopped
     env_file: .env
-    # On lance Supervisor pour gérer le worker + le scheduler
+    environment:
+      DB_HOST: saas-db-prod
+      DB_PORT: 3306
+      DB_DATABASE: ${DB_DATABASE}
+      DB_USERNAME: ${DB_USERNAME:-saas_user}
+      DB_PASSWORD: ${DB_PASSWORD}
+      APP_RUN_INIT: "false"
     command: ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisor/conf.d/worker.conf"]
     volumes:
       - app-storage:/var/www/storage
     networks:
       - saas-network
     depends_on:
+      init:
+        condition: service_completed_successfully
       saas-db-prod:
         condition: service_healthy
       redis:
         condition: service_started
 
   nginx:
-
     build:
       context: .
       dockerfile: Dockerfile
@@ -65,9 +106,9 @@ services:
       MYSQL_DATABASE: ${DB_DATABASE}
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
       MYSQL_PASSWORD: ${DB_PASSWORD}
-      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_USER: ${DB_USERNAME:-saas_user}
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u${DB_USERNAME} -p${DB_PASSWORD} --silent"]
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u$${DB_USERNAME:-saas_user} -p$${DB_PASSWORD} --silent"]
       interval: 10s
       timeout: 5s
       retries: 12
