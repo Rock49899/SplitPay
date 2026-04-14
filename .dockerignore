@@ -12,7 +12,6 @@ node_modules
 vendor
 
 # Build artifacts
-public/build
 public/hot
 public/storage
 dist
