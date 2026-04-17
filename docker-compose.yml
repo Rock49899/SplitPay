@@ -5,7 +5,7 @@ services:
       dockerfile: Dockerfile
       target: app
     container_name: saas-init
-    restart: "no"
+    restart: on-failure
     working_dir: /var/www
     env_file: .env
     environment:
@@ -45,8 +45,6 @@ services:
     networks:
       - saas-network
     depends_on:
-      init:
-        condition: service_completed_successfully
       saas-db-prod:
         condition: service_healthy
       redis:
@@ -73,8 +71,6 @@ services:
     networks:
       - saas-network
     depends_on:
-      init:
-        condition: service_completed_successfully
       saas-db-prod:
         condition: service_healthy
       redis:
