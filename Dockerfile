@@ -1,9 +1,9 @@
-# --- IMAGE APP (PHP + Supervisor) ---
+# --- IMAGE APP (PHP + Node.js + Supervisor) ---
 FROM php:8.4-fpm-alpine AS app
 
 WORKDIR /var/www
 
-# Dépendances système + PHP extensions + outils runtime (netcat pour wait DB)
+# Dépendances système + PHP extensions + Node.js + outils runtime
 RUN apk add --no-cache \
     bash \
     curl \
@@ -15,6 +15,8 @@ RUN apk add --no-cache \
     $PHPIZE_DEPS \
     supervisor \
     netcat-openbsd \
+    nodejs \
+    npm \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j"$(nproc)" pdo_mysql bcmath gd zip \
     && pecl install redis \
@@ -22,12 +24,16 @@ RUN apk add --no-cache \
 
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Copie du code source, y compris les assets Vite déjà compilés dans public/build
+# Copie du code source
 COPY . .
 
 # Installation des dépendances PHP
 RUN composer install --no-dev --optimize-autoloader --prefer-dist --no-interaction \
     && php artisan package:discover --ansi
+
+# Installation des dépendances Node.js et compilation Vite
+RUN npm install --prefer-offline --no-audit \
+    && npm run build
 
 # Runtime scripts/config
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh

@@ -16,18 +16,22 @@ until nc -z -v -w30 "$DB_HOST" "${DB_PORT:-3306}"; do
 done
 
 if [ "${APP_RUN_INIT:-false}" = "true" ]; then
-  # 2. Lancer les migrations
+  # 2. Compiler les assets Vite
+  echo "📦 Compilation des assets Vite..."
+  npm run build
+
+  # 3. Lancer les migrations
   echo "Exécution des migrations..."
   php artisan migrate --force
 
-  # 3. Lancer uniquement les seeders essentiels de prod
+  # 4. Lancer uniquement les seeders essentiels de prod
   echo "Chargement des données initiales essentielles..."
   php artisan db:seed --class=RoleSeeder --force
   php artisan db:seed --class=PermissionSeeder --force
   php artisan db:seed --class=RolePermissionSeeder --force
   php artisan db:seed --class=PlatformAdminSeeder --force
 
-  # 4. Optimisation du cache pour la prod
+  # 5. Optimisation du cache pour la prod
   echo "⚡ Optimisation du cache..."
   php artisan optimize:clear
   php artisan config:cache

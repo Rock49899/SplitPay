@@ -11,9 +11,7 @@
 node_modules
 vendor
 
-# Build artifacts
-public/hot
-public/storage
+# Build artifac/storage
 dist
 npm-debug.log
 yarn-error.log
