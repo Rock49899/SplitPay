@@ -94,7 +94,12 @@ const formatCurrency = (value) => {
   }
 }
 
-const formatPercent = (value) => `${Number(value || 0).toFixed(1)}%`
+const formatPercent = (value) => `${new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 1 }).format(Number(value || 0))} %`
+
+const formatCompactCurrency = (value) =>
+  new Intl.NumberFormat('fr-FR', {
+    style: 'currency', currency: 'XOF', notation: 'compact', maximumFractionDigits: 1,
+  }).format(Number(value || 0))
 
 const kpis = computed(() => {
   const values = dashboard.value.kpis || {}
@@ -153,34 +158,65 @@ const linksSeries = computed(() => [
   },
 ])
 
+const axisLabelStyle = { colors: '#88938e' }
+
 const baseOptions = computed(() => ({
   chart: {
     toolbar: { show: false },
     foreColor: '#bdc9c4',
+    fontFamily: "'SplitPay Espaces', 'Plus Jakarta Sans', sans-serif",
     animations: { enabled: !loading.value },
   },
+  dataLabels: { enabled: false },
   xaxis: {
     categories: dashboard.value.charts?.labels ?? [],
-    labels: { style: { colors: '#88938e' } },
-  },
-  yaxis: {
-    labels: { style: { colors: '#88938e' } },
+    labels: { style: axisLabelStyle },
+    axisBorder: { show: false },
+    axisTicks: { show: false },
   },
   grid: {
     borderColor: '#2a2a2a',
+    strokeDashArray: 4,
   },
   legend: {
     labels: { colors: '#bdc9c4' },
+    markers: { radius: 99 },
   },
   tooltip: {
     theme: 'dark',
   },
 }))
 
+// Montants (axe de gauche) et taux en % (axe de droite) n'ont pas la même échelle
 const recoveryChartOptions = computed(() => ({
   ...baseOptions.value,
-  stroke: { width: [3, 3, 3], curve: 'smooth' },
+  stroke: { width: [3, 3, 3], curve: 'smooth', dashArray: [5, 0, 0] },
   colors: ['#7bd7bd', '#0E7C66', '#f59e0b'],
+  yaxis: [
+    {
+      seriesName: 'Taux de recouvrement (%)',
+      opposite: true,
+      min: 0,
+      max: 100,
+      tickAmount: 4,
+      labels: { style: axisLabelStyle, formatter: (v) => `${Math.round(v)} %` },
+    },
+    {
+      seriesName: 'Montant payé (cumul)',
+      labels: { style: axisLabelStyle, formatter: formatCompactCurrency },
+    },
+    {
+      seriesName: 'Montant payé (cumul)',
+      show: false,
+      labels: { formatter: formatCompactCurrency },
+    },
+  ],
+  tooltip: {
+    theme: 'dark',
+    y: {
+      formatter: (value, { seriesIndex }) => (seriesIndex === 0 ? formatPercent(value) : formatCurrency(value)),
+    },
+  },
 }))
 
 const linksChartOptions = computed(() => ({
@@ -190,6 +226,9 @@ const linksChartOptions = computed(() => ({
       borderRadius: 6,
       columnWidth: '45%',
     },
+  },
+  yaxis: {
+    labels: { style: axisLabelStyle, formatter: (v) => Math.round(v) },
   },
   colors: ['#0E7C66', '#22d3ee'],
 }))
@@ -260,8 +299,10 @@ const cards = ref([
 ])
 
 onMounted(async () => {
-  schoolYear.value = guessCurrentSchoolYear()
-  availableYears.value = [schoolYear.value]
+  // L'API choisit l'année ouverte la plus récente si aucune n'est précisée
   await loadDashboard()
+  if (!availableYears.value.length) {
+    availableYears.value = [schoolYear.value || guessCurrentSchoolYear()]
+  }
 })
 </script>

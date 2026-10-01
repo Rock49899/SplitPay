@@ -85,21 +85,18 @@ class DashboardController extends Controller
      */
     private function paymentsQuery(?string $from = null, ?string $to = null)
     {
-        $q = Payment::query();
+        $ids = $this->getAccessibleAnnexeIds();
+        $q = Payment::query()->whereHas('student', fn($s) => $s->whereIn('annexe_id', $ids));
 
-        if (!$this->isSuperAdminInstitution()) {
-            $ids = $this->getAccessibleAnnexeIds();
-            $q->whereHas('student', fn($s) => $s->whereIn('annexe_id', $ids));
-        } else {
-            $ids = $this->getAccessibleAnnexeIds();
-            $q->whereHas('student', fn($s) => $s->whereIn('annexe_id', $ids));
-        }
-
-        if ($from) $q->where('paid_at', '>=', $from);
-        if ($to)   $q->where('paid_at', '<=', $to);
+        // Un paiement en attente n'a pas encore de paid_at : on se base alors sur sa date de création
+        if ($from) $q->whereRaw(self::PAYMENT_DATE . ' >= ?', [$from]);
+        if ($to)   $q->whereRaw(self::PAYMENT_DATE . ' <= ?', [$to]);
 
         return $q;
     }
+
+    /** Date de référence d'un paiement : encaissement, sinon création */
+    private const PAYMENT_DATE = 'COALESCE(payments.paid_at, payments.created_at)';
 
     /**
      * Build an Enrollment query scoped to role + school_year.
@@ -197,56 +194,35 @@ class DashboardController extends Controller
                 'school_year' => $schoolYear,
                 'labels' => [],
                 'series' => [
-                    ['name' => 'Collected', 'data' => []],
-                    ['name' => 'Pending', 'data' => []],
+                    ['name' => 'Encaissé', 'data' => []],
+                    ['name' => 'En attente', 'data' => []],
                 ],
             ]);
         }
 
         [$from, $to] = $this->schoolYearRange($schoolYear);
 
-        // Base query with role scope
-        $baseQ = Payment::query()
-            ->whereBetween('paid_at', [$from, $to]);
-
-        if (!$this->isSuperAdminInstitution()) {
-            $ids = $this->getUserAnnexeIds();
-            $baseQ->whereHas('student', fn($s) => $s->whereIn('annexe_id', $ids));
-        }
-
-        // Group by year-month, split by status
-        $rows = (clone $baseQ)
+        // Paiements de l'année (scope rôle), groupés par mois et par statut
+        $rows = $this->paymentsQuery($from, $to)
             ->select(
-                DB::raw("DATE_FORMAT(paid_at, '%Y-%m') as ym"),
+                DB::raw("DATE_FORMAT(" . self::PAYMENT_DATE . ", '%Y-%m') as ym"),
                 'status',
                 DB::raw('SUM(amount) as total')
             )
             ->groupBy('ym', 'status')
             ->get();
 
-        // Build month labels: Sep(year1)…Aug(year2)
-        [$startY, $endY] = explode('-', $schoolYear);
-        $months = [];
-        for ($m = 9; $m <= 12; $m++) {
-            $months[] = sprintf('%04d-%02d', (int) $startY, $m);
-        }
-        for ($m = 1; $m <= 8; $m++) {
-            $months[] = sprintf('%04d-%02d', (int) $endY, $m);
-        }
+        // Mois de l'année scolaire : septembre → août
+        $months = $this->schoolYearMonths($schoolYear);
+        $labels = $this->schoolYearLabels($schoolYear);
 
         $collectedMap = $rows->where('status', 'success')->pluck('total', 'ym');
         $pendingMap   = $rows->where('status', 'pending')->pluck('total', 'ym');
 
-        $labels    = [];
         $collected = [];
         $pending   = [];
 
-        $monthNames = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-                       'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
         foreach ($months as $ym) {
-            $month       = (int) explode('-', $ym)[1];
-            $labels[]    = $monthNames[$month];
             $collected[] = (float) ($collectedMap[$ym] ?? 0);
             $pending[]   = (float) ($pendingMap[$ym]   ?? 0);
         }
@@ -255,8 +231,8 @@ class DashboardController extends Controller
             'school_year' => $schoolYear,
             'labels'      => $labels,
             'series' => [
-                ['name' => 'Collected', 'data' => $collected],
-                ['name' => 'Pending',   'data' => $pending],
+                ['name' => 'Encaissé',   'data' => $collected],
+                ['name' => 'En attente', 'data' => $pending],
             ],
         ]);
     }
@@ -359,14 +335,22 @@ class DashboardController extends Controller
     {
         $this->ensurePlatformAdmin();
 
-        $schoolYear = $request->get('school_year', $this->currentSchoolYear());
-        [$from, $to] = $this->schoolYearRange($schoolYear);
-
+        // Vue plateforme : union des calendriers de toutes les institutions
         $availableYears = SchoolYear::query()
             ->whereIn('status', ['active', 'closed'])
             ->orderByDesc('year')
+            ->distinct()
             ->pluck('year')
             ->values();
+
+        // Année affichée : celle demandée si elle existe, sinon la plus récente année ouverte
+        $schoolYear = $request->get('school_year');
+        if (!$schoolYear || ($availableYears->isNotEmpty() && !$availableYears->contains($schoolYear))) {
+            $schoolYear = SchoolYear::where('status', 'active')->orderByDesc('year')->value('year')
+                ?? $availableYears->first()
+                ?? $this->currentSchoolYear();
+        }
+        [$from, $to] = $this->schoolYearRange($schoolYear);
 
         if ($availableYears->isEmpty()) {
             $availableYears = collect([$schoolYear]);
