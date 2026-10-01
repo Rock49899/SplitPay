@@ -177,19 +177,20 @@ class UserController extends Controller
             $v['avatar'] = $request->file('avatar')->store('avatars', 'public');
         }
 
-        if (!empty($v['role_id'])) {
-            $selectedRole = Role::find($v['role_id']);
-            if ($selectedRole && $selectedRole->code === 'platform_admin') {
-                return response()->json([
-                    'message' => 'Le rôle platform_admin est réservé au compte plateforme et ne peut pas être assigné.',
-                ], 403);
-            }
+        $selectedRole = !empty($v['role_id']) ? Role::find($v['role_id']) : null;
+        if ($denied = $this->denyUnassignableRole($selectedRole)) {
+            return $denied;
         }
 
         $plainPassword = $v['password'] ?? \Illuminate\Support\Str::password(12);
 
-        if ($platformAdmin && empty($v['scope'])) {
-            $v['scope'] = 'platform';
+        if ($platformAdmin) {
+            if (empty($v['scope'])) {
+                $v['scope'] = 'platform';
+            }
+        } else {
+            // Le scope n'est jamais choisi par le client : il découle du rôle attribué
+            $v['scope'] = $selectedRole?->code === 'super_admin_institution' ? 'institution' : 'annexe';
         }
 
         $user = User::create(array_merge($v, [
@@ -230,6 +231,16 @@ class UserController extends Controller
 
         $user = $query->findOrFail($id);
         $v = $request->validated();
+
+        if (! $platformAdmin && !empty($v['annexe_id'])) {
+            $annexeAllowed = \App\Models\Annexe::where('id', $v['annexe_id'])
+                ->where('institution_id', $institutionId)
+                ->exists();
+
+            if (! $annexeAllowed) {
+                return response()->json(['message' => 'Annexe hors de votre institution.'], 403);
+            }
+        }
 
         if ($request->hasFile('avatar')) {
             if ($user->avatar) {
@@ -293,29 +304,34 @@ class UserController extends Controller
 
         // IMPORTANT: Also search by ID directly in case user has no annexes yet
         $user = User::findOrFail($id);
-        
-        // Verify authorization: caller must be from same institution (unless platform admin)
+
+        // Verify authorization: caller must be from same institution (unless platform admin).
+        // Un utilisateur sans aucune annexe (tout juste créé) peut être rattaché ;
+        // un utilisateur d'une AUTRE institution ne peut jamais l'être.
         if (! $platformAdmin) {
-            $hasInstitutionAccess = $user->annexes()
-                ->where('annexes.institution_id', $institutionId)
-                ->exists();
-            
-            if (!$hasInstitutionAccess && $user->scope !== 'annexe') {
+            $belongsToOtherInstitution = $user->annexes()
+                ->where('annexes.institution_id', '!=', $institutionId)
+                ->exists()
+                || ($user->annexe && $user->annexe->institution_id !== $institutionId);
+
+            if ($belongsToOtherInstitution || $user->scope === 'platform') {
                 return response()->json(['message' => 'Utilisateur hors de votre institution.'], 403);
             }
         }
 
         $role = Role::find($data['role_id']);
-        if ($role && $role->code === 'platform_admin') {
-            return response()->json([
-                'message' => 'Le rôle platform_admin est réservé au compte plateforme et ne peut pas être assigné.',
-            ], 403);
+        if ($denied = $this->denyUnassignableRole($role)) {
+            return $denied;
         }
 
         // Autoriser via la policy UserPolicy::assignRole (vérifie que l'appelant a le droit)
         $this->authorize('assignRole', [$user, $data['annexe_id']]);
 
         $user->assignToAnnexe($data['annexe_id'], $data['role_id'], $data['is_primary'] ?? false);
+
+        if (! $platformAdmin && $role?->code === 'super_admin_institution' && $user->scope !== 'institution') {
+            $user->update(['scope' => 'institution']);
+        }
 
         // Recharger les relations pour retourner l'utilisateur à jour
         $user->load([
@@ -369,6 +385,32 @@ class UserController extends Controller
         ]);
 
         return response()->json(['message'=>'Role removed', 'user'=>$user], 200);
+    }
+
+    /**
+     * Rôles non attribuables par l'appelant :
+     * - platform_admin : jamais via cette API ;
+     * - super_admin_institution : uniquement par un super admin institution / admin plateforme.
+     */
+    private function denyUnassignableRole(?Role $role)
+    {
+        if (! $role) {
+            return null;
+        }
+
+        if ($role->code === 'platform_admin') {
+            return response()->json([
+                'message' => 'Le rôle platform_admin est réservé au compte plateforme et ne peut pas être assigné.',
+            ], 403);
+        }
+
+        if ($role->code === 'super_admin_institution' && ! auth()->user()->isSuperAdminInstitution()) {
+            return response()->json([
+                'message' => 'Seul un super administrateur institution peut attribuer ce rôle.',
+            ], 403);
+        }
+
+        return null;
     }
 
     // Retourne l'utilisateur actuellement authentifié

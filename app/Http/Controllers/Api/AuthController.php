@@ -105,6 +105,7 @@ class AuthController extends Controller
 
         $otp = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
         Cache::put("user_otp_{$user->id}", $otp, now()->addMinutes(10));
+        Cache::forget("user_otp_{$user->id}_attempts");
 
         try {
             Mail::to($user->email)->send(new UserOtpMail($otp, $user));
@@ -147,12 +148,21 @@ class AuthController extends Controller
             return response()->json(['message' => 'Votre compte est désactivé. Contactez un administrateur.'], 403);
         }
 
-        $cached = Cache::get("user_otp_{$user->id}");
+        $key = "user_otp_{$user->id}";
+        $cached = Cache::get($key);
         if (! $cached || ! hash_equals((string) $cached, $otp)) {
+            // Après 5 essais erronés, le code est invalidé (il faut en redemander un)
+            Cache::add("{$key}_attempts", 0, now()->addMinutes(10));
+            if (Cache::increment("{$key}_attempts") >= 5) {
+                Cache::forget($key);
+                Cache::forget("{$key}_attempts");
+            }
+
             return response()->json(['message' => 'OTP invalide ou expiré'], 401);
         }
 
-        Cache::forget("user_otp_{$user->id}");
+        Cache::forget($key);
+        Cache::forget("{$key}_attempts");
 
         $activeAnnexes = $this->accessibleActiveAnnexes($user);
         if (! $user->isPlatformAdmin() && $activeAnnexes->isEmpty()) {

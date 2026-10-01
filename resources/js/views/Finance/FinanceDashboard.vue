@@ -391,7 +391,7 @@
             </div>
 
             <!-- Update Status -->
-            <div v-if="selectedPayment.status !== 'success'" class="border-t border-slate-200 dark:border-slate-700 pt-6">
+            <div v-if="selectedPayment.status !== 'success' && hasPermission('payment.manage')" class="border-t border-slate-200 dark:border-slate-700 pt-6">
               <h4 class="text-sm font-medium text-slate-900 dark:text-white mb-4">Modifier le statut</h4>
               <div class="space-y-4">
                 <div>
@@ -601,6 +601,9 @@ import paymentService from '@/services/paymentService';
 import paymentLinkService from '@/services/paymentLinkService';
 import annexeService from '@/services/annexeService';
 import { useActiveYearStore } from '@/stores/useActiveYearStore';
+import { usePermissions } from '@/composables/usePermissions';
+
+const { hasPermission } = usePermissions();
 
 const activeYearStore = useActiveYearStore();
 

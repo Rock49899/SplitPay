@@ -45,17 +45,9 @@ class PaymentLinkController extends Controller
         }
 
         $perPage = (int)$request->get('per_page', 15);
+        // Le scope global de PaymentLink restreint aux annexes accessibles (institution incluse)
         $query = PaymentLink::query();
 
-        // IMPORTANT: Filtrer par annexe de l'utilisateur via la relation student
-        if (!$this->isSuperAdminInstitution()) {
-            $annexeIds = $this->getUserAnnexeIds();
-            if (empty($annexeIds)) {
-                return response()->json(['data' => [], 'total' => 0], 200);
-            }
-            $query->whereHas('student', fn ($q) => $q->whereIn('annexe_id', $annexeIds));
-        }
-       
         if ($studentId = $request->get('student_id')) {
             $query->where(function($q) use ($studentId) {
                 // direct student_id sur la table payment_links
@@ -219,13 +211,28 @@ class PaymentLinkController extends Controller
         ->where('status', 'active')
         ->firstOrFail();
 
-    return response()->json($link->load(['student.annexe.institution', 'installments.payments', 'payments']), 200);
+    // Page publique : n'exposer que les paiements confirmés et les champs utiles à l'affichage
+    // (jamais le token PayPlus ni les métadonnées de transaction).
+    $publicPaymentColumns = ['id', 'installment_id', 'payment_link_id', 'amount', 'status', 'method', 'reference', 'paid_at'];
+
+    $link->load([
+        'student:id,annexe_id,first_name,last_name,matricule',
+        'student.annexe:id,institution_id,name',
+        'student.annexe.institution:id,name,logo',
+        'installments',
+        'installments.payments' => fn ($q) => $q->where('status', 'success')->select($publicPaymentColumns),
+        'payments' => fn ($q) => $q->where('status', 'success')->select($publicPaymentColumns),
+    ]);
+
+    return response()->json($link, 200);
     }
 
 
 
-    public function update(Request $request, PaymentLink $paymentLink)
+    public function update(Request $request, $id)
 {
+    $paymentLink = PaymentLink::findOrFail($id);
+
     $validated = $request->validate([
         'amount'      => 'sometimes|numeric|min:0',
         'currency'    => 'sometimes|string|max:10',

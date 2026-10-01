@@ -31,16 +31,14 @@ class StudentAuthController extends Controller
         $otp = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
         $key = "student_otp_{$student->id}";
         Cache::put($key, $otp, now()->addMinutes(10));
+        Cache::forget("{$key}_attempts");
 
         // Envoi email — on capture les erreurs SMTP pour ne pas bloquer le login
         try {
             Mail::to($student->email)->send(new StudentOtpMail($otp, $student));
         } catch (\Throwable $e) {
-            // En dev : voir le code OTP dans les logs Laravel
             \Log::error('StudentAuthController: échec envoi OTP email', [
                 'student_id' => $student->id,
-                'email'      => $student->email,
-                'otp'        => $otp,   // retirer en production
                 'error'      => $e->getMessage(),
             ]);
 
@@ -71,10 +69,12 @@ class StudentAuthController extends Controller
         $key = "student_otp_{$student->id}";
         $cached = Cache::get($key);
         if (! $cached || ! hash_equals((string)$cached, (string)$otp)) {
+            $this->registerFailedOtpAttempt($key);
             return response()->json(['message' => 'OTP invalide ou expiré'], 401);
         }
 
         Cache::forget($key);
+        Cache::forget("{$key}_attempts");
 
         // creer token de session  
         $token = Str::random(60);
@@ -86,6 +86,20 @@ class StudentAuthController extends Controller
             'token' => $token,
             'expires_in_minutes' => 60,
         ], 200);
+    }
+
+    /**
+     * Après 5 essais erronés, le code OTP est invalidé (il faut en redemander un).
+     */
+    private function registerFailedOtpAttempt(string $key): void
+    {
+        $attemptsKey = "{$key}_attempts";
+        Cache::add($attemptsKey, 0, now()->addMinutes(10));
+
+        if (Cache::increment($attemptsKey) >= 5) {
+            Cache::forget($key);
+            Cache::forget($attemptsKey);
+        }
     }
 
     // vérifier SI token en cache

@@ -52,6 +52,12 @@ class PermissionSeeder extends Seeder
                 'module' => 'payments',
             ],
             [
+                'code' => 'payment.manage',
+                'label' => 'Corriger le statut des paiements',
+                'description' => 'Peut forcer manuellement le statut d\'un paiement (réussi, échoué, en attente)',
+                'module' => 'payments',
+            ],
+            [
                 'code' => 'payment.export',
                 'label' => 'Exporter les paiements',
                 'description' => 'Peut exporter les paiements en Excel',

@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Traits\FiltersByAnnexe;
+use App\Models\Annexe;
 use App\Models\Enrollment;
 use App\Models\LevelFee;
 use App\Models\SchoolYear;
+use App\Support\SchoolYearContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -20,16 +22,41 @@ class PromotionController extends Controller
      * Fusionne les années présentes en DB avec une plage générée autour de l'année courante.
      * GET admin/school-years
      */
-    public function schoolYears(): JsonResponse
+    public function schoolYears(Request $request): JsonResponse
     {
-        $years = SchoolYear::query()
+        return response()->json(['years' => $this->availableYears($request)]);
+    }
+
+    /**
+     * Années ouvertes ou clôturées de l'institution courante.
+     */
+    private function availableYears(Request $request): array
+    {
+        return SchoolYear::forInstitution(SchoolYearContext::institutionId($request))
             ->whereIn('status', ['active', 'closed'])
             ->orderByDesc('year')
+            ->distinct()
             ->pluck('year')
             ->values()
             ->all();
+    }
 
-        return response()->json(['years' => $years]);
+    /**
+     * Annexes concernées par une promotion : celles de l'institution courante
+     * auxquelles l'utilisateur a accès.
+     */
+    private function promotionAnnexeIds(?string $institutionId): array
+    {
+        $accessible = array_values(array_filter($this->getAccessibleAnnexeIds()));
+
+        if (!$institutionId) {
+            return $accessible;
+        }
+
+        return Annexe::where('institution_id', $institutionId)
+            ->whereIn('id', $accessible)
+            ->pluck('id')
+            ->all();
     }
 
     /**
@@ -39,12 +66,8 @@ class PromotionController extends Controller
      */
     public function context(Request $request): JsonResponse
     {
-        $years = SchoolYear::query()
-            ->whereIn('status', ['active', 'closed'])
-            ->orderByDesc('year')
-            ->pluck('year')
-            ->values()
-            ->all();
+        $institutionId = SchoolYearContext::institutionId($request);
+        $years = $this->availableYears($request);
 
         $requested = $request->attributes->get('requested_school_year')
             ?: ($request->query('school_year') ?: $request->input('school_year'));
@@ -54,7 +77,7 @@ class PromotionController extends Controller
 
         $status = null;
         if (!empty($effective)) {
-            $status = SchoolYear::where('year', $effective)->value('status');
+            $status = SchoolYear::forInstitution($institutionId)->where('year', $effective)->value('status');
         }
 
         return response()->json([
@@ -80,7 +103,7 @@ class PromotionController extends Controller
 
         $fromYear = $request->from_year;
         $toYear   = $request->to_year;
-        $allowedAnnexeIds = array_values(array_filter($this->getAccessibleAnnexeIds()));
+        $allowedAnnexeIds = $this->promotionAnnexeIds(SchoolYearContext::institutionId($request));
 
         if (empty($allowedAnnexeIds)) {
             return response()->json([
@@ -172,7 +195,22 @@ class PromotionController extends Controller
         $fromYear   = $validated['from_year'];
         $toYear     = $validated['to_year'];
         $filterIds  = $validated['student_ids'] ?? null;
-        $allowedAnnexeIds = array_values(array_filter($this->getAccessibleAnnexeIds()));
+
+        // La clôture d'année s'applique à toute l'institution : réservée au super admin institution
+        if (!$this->isSuperAdminInstitution()) {
+            return response()->json([
+                'message' => "Seul le super administrateur de l'institution peut clôturer l'année scolaire.",
+            ], 403);
+        }
+
+        $institutionId = SchoolYearContext::institutionId($request);
+        if (!$institutionId) {
+            return response()->json([
+                'message' => 'Sélectionnez une annexe de l\'institution concernée avant de clôturer l\'année.',
+            ], 422);
+        }
+
+        $allowedAnnexeIds = $this->promotionAnnexeIds($institutionId);
 
         if (empty($allowedAnnexeIds)) {
             return response()->json([
@@ -181,7 +219,7 @@ class PromotionController extends Controller
         }
 
         $fromSchoolYear = SchoolYear::firstOrCreate(
-            ['year' => $fromYear],
+            ['institution_id' => $institutionId, 'year' => $fromYear],
             ['status' => 'active', 'opened_at' => now()]
         );
 
@@ -192,7 +230,7 @@ class PromotionController extends Controller
         }
 
         $toSchoolYear = SchoolYear::firstOrCreate(
-            ['year' => $toYear],
+            ['institution_id' => $institutionId, 'year' => $toYear],
             ['status' => 'draft']
         );
 
@@ -278,8 +316,9 @@ class PromotionController extends Controller
                 }
             }
 
-            // Cycle de vie des années scolaires
-            SchoolYear::where('status', 'active')
+            // Cycle de vie des années scolaires (institution courante uniquement)
+            SchoolYear::where('institution_id', $toSchoolYear->institution_id)
+                ->where('status', 'active')
                 ->where('year', '!=', $toSchoolYear->year)
                 ->update([
                     'status' => 'closed',

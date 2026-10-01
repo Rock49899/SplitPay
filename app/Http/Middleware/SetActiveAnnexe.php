@@ -34,21 +34,16 @@ class SetActiveAnnexe
                         ], 403);
                     }
 
-                    if (method_exists($user, 'isPlatformAdmin') && $user->isPlatformAdmin()) {
-                        $request->attributes->set('active_annexe_id', $activeAnnexeId);
-                    } elseif ($user->scope === 'institution') {
+                    // Admin plateforme : toutes les annexes.
+                    // Super admin institution : annexes de son institution uniquement.
+                    // Autres : annexes assignées.
+                    if ($user->canAccessAnnexe((string) $activeAnnexeId)) {
                         $request->attributes->set('active_annexe_id', $activeAnnexeId);
                     } else {
-                        $hasAccess = $user->annexes()->where('annexes.id', $activeAnnexeId)->exists();
-
-                        if ($hasAccess) {
-                            $request->attributes->set('active_annexe_id', $activeAnnexeId);
-                        } else {
-                            return response()->json([
-                                'message' => 'Accès non autorisé à cette annexe',
-                                'error' => 'unauthorized_annexe_access'
-                            ], 403);
-                        }
+                        return response()->json([
+                            'message' => 'Accès non autorisé à cette annexe',
+                            'error' => 'unauthorized_annexe_access'
+                        ], 403);
                     }
                 } catch (\Exception $e) {
                     Log::error('SetActiveAnnexe middleware error: ' . $e->getMessage());

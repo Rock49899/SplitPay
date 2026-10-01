@@ -18,40 +18,33 @@ use App\Http\Controllers\Api\PaymentLinkController;
 //     ]);
 // });
 
-//test
-Route::post('test', function () {
-    return response()->json(['ok' => true]);
-});
-
-
 Route::get('ping', fn () => response('pong'));
 
+// Public : indique seulement si la plateforme a déjà des institutions
+// (ne divulgue jamais la liste des tenants).
 Route::get('check-institution', function () {
     return response()->json([
         'exists' => \App\Models\Institution::query()->exists(),
-        'count' => \App\Models\Institution::query()->count(),
-        'institutions' => \App\Models\Institution::query()
-            ->orderBy('created_at')
-            ->get(['id', 'name', 'logo'])
-            ->map(fn ($institution) => [
-                'id' => $institution->id,
-                'name' => $institution->name,
-                'logo' => $institution->logo,
-                'logo_url' => $institution->logo ? asset('storage/' . $institution->logo) : null,
-            ]),
     ]);
 });
 
 Route::post('register', [\App\Http\Controllers\Api\RegistrationController::class, 'register'])
     ->middleware('throttle:5,1');
 
-Route::post('students/login', [\App\Http\Controllers\Api\StudentAuthController::class, 'requestOtp']);
-Route::post('students/verify-otp', [\App\Http\Controllers\Api\StudentAuthController::class, 'verifyOtp']);
-Route::post('students/me-by-token', [\App\Http\Controllers\Api\StudentAuthController::class, 'meByToken']);
+// Authentification : limitation de débit contre la force brute (mots de passe / OTP)
+Route::middleware('throttle:5,1')->group(function () {
+    Route::post('students/login', [\App\Http\Controllers\Api\StudentAuthController::class, 'requestOtp']);
+    Route::post('admin/request-otp', [\App\Http\Controllers\Api\AuthController::class, 'requestOtp']);
+});
 
-Route::match(['post','get'], 'admin/login', [\App\Http\Controllers\Api\AuthController::class, 'login']);
-Route::post('admin/request-otp', [\App\Http\Controllers\Api\AuthController::class, 'requestOtp']);
-Route::post('admin/verify-otp', [\App\Http\Controllers\Api\AuthController::class, 'verifyOtp']);
+Route::middleware('throttle:10,1')->group(function () {
+    Route::post('students/verify-otp', [\App\Http\Controllers\Api\StudentAuthController::class, 'verifyOtp']);
+    Route::post('admin/verify-otp', [\App\Http\Controllers\Api\AuthController::class, 'verifyOtp']);
+    Route::match(['post','get'], 'admin/login', [\App\Http\Controllers\Api\AuthController::class, 'login']);
+});
+
+Route::post('students/me-by-token', [\App\Http\Controllers\Api\StudentAuthController::class, 'meByToken'])
+    ->middleware('throttle:30,1');
 
 //sanctum
 Route::middleware(['auth:sanctum', 'active.account', 'active.annexe', 'active.school_year', 'school_year.lock'])->prefix('admin')->group(function () {
@@ -134,7 +127,7 @@ Route::middleware(['auth:sanctum', 'active.account', 'active.annexe', 'active.sc
     Route::get('payments', [PaymentController::class, 'index'])->middleware('permission:payment.view');
     Route::get('payments/recent', [PaymentController::class, 'recent'])->middleware('permission:payment.view');
     Route::get('payments/{id}', [PaymentController::class, 'show'])->middleware('permission:payment.view');
-    Route::patch('payments/{id}/status', [PaymentController::class, 'updateStatus'])->middleware('permission:payment.view');
+    Route::patch('payments/{id}/status', [PaymentController::class, 'updateStatus'])->middleware('permission:payment.manage');
 
     // Payment links management
     Route::post('payment-links/{id}/send', [PaymentLinkController::class, 'sendByEmail'])->middleware('permission:link.send');
@@ -191,7 +184,7 @@ Route::middleware(['auth:sanctum', 'active.account', 'active.annexe', 'active.sc
 
 // Routes publiques sans auth
 Route::prefix('payments')->group(function () {
-    Route::post('public/checkout', [PaymentController::class, 'publicCheckout']);
+    Route::post('public/checkout', [PaymentController::class, 'publicCheckout'])->middleware('throttle:10,1');
     // Vérification du statut d'un paiement (polling depuis le front)
     Route::get('check/{reference}', [PaymentController::class, 'checkStatus']);
 });

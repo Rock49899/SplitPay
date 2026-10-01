@@ -36,9 +36,26 @@ class InstitutionController extends Controller
     {
         $user = auth()->user();
 
-        if (! $user || (! $user->hasRole('super_admin_institution') && ! (method_exists($user, 'isPlatformAdmin') && $user->isPlatformAdmin()))) {
+        if (! $user || ! $user->isSuperAdminInstitution()) {
             abort(403, 'Accès réservé au super administrateur institution.');
         }
+    }
+
+    /**
+     * Retrouve une institution en vérifiant que l'utilisateur y a accès :
+     * admin plateforme → toutes ; super admin institution → la sienne uniquement.
+     */
+    private function findAccessibleInstitution($id, array $with = []): Institution
+    {
+        $this->ensureInstitutionSuperAdmin();
+
+        $query = Institution::with($with);
+
+        if (! auth()->user()->isPlatformAdmin()) {
+            $query->whereKey($this->getCurrentInstitutionId());
+        }
+
+        return $query->findOrFail($id);
     }
 
     // NOTE: in this SaaS instance the first registration creates the institution + default annexe + super-admin.
@@ -99,23 +116,13 @@ class InstitutionController extends Controller
         // Backward compatibility for existing non-platform UIs:
         // return plain institution payload unless detailed mode is explicitly requested.
         if (! $detailed) {
-            $institution = Institution::findOrFail($id);
+            $institution = $this->findAccessibleInstitution($id);
             return response()->json($institution, 200);
         }
 
         $schoolYear = (string) $request->get('school_year', $this->currentSchoolYear());
 
-        $availableYears = SchoolYear::query()
-            ->whereIn('status', ['active', 'closed'])
-            ->orderByDesc('year')
-            ->pluck('year')
-            ->values();
-
-        if ($availableYears->isEmpty()) {
-            $availableYears = collect([$schoolYear]);
-        }
-
-        $institution = Institution::with([
+        $institution = $this->findAccessibleInstitution($id, [
             'annexes' => function ($query) {
                 $query
                     ->orderBy('name')
@@ -124,7 +131,18 @@ class InstitutionController extends Controller
                         'user_annexes.role:id,label,code',
                     ]);
             },
-        ])->findOrFail($id);
+        ]);
+
+        $availableYears = SchoolYear::query()
+            ->forInstitution($institution->id)
+            ->whereIn('status', ['active', 'closed'])
+            ->orderByDesc('year')
+            ->pluck('year')
+            ->values();
+
+        if ($availableYears->isEmpty()) {
+            $availableYears = collect([$schoolYear]);
+        }
 
         $annexeIds = $institution->annexes->pluck('id')->all();
 
@@ -240,10 +258,13 @@ class InstitutionController extends Controller
     // PUT/PATCH /api/admin/institutions/{id}
     public function update(UpdateInstitutionRequest $request, $id)
     {
-        $this->ensureInstitutionSuperAdmin();
-
-        $institution = Institution::findOrFail($id);
+        $institution = $this->findAccessibleInstitution($id);
         $v = $request->validated();
+
+        // Seul l'admin plateforme peut (dés)activer une institution
+        if (! auth()->user()->isPlatformAdmin()) {
+            unset($v['is_active']);
+        }
 
         if ($request->boolean('remove_logo')) {
             if ($institution->logo) {
@@ -267,8 +288,7 @@ class InstitutionController extends Controller
     // DELETE /api/admin/institutions/{id}
     public function destroy($id)
     {
-        $this->ensureInstitutionSuperAdmin();
-        $institution = Institution::findOrFail($id);
+        $institution = $this->findAccessibleInstitution($id);
         $institution->delete();
         return response()->json(['message' => 'Institution deleted'], 200);
     }
@@ -276,9 +296,7 @@ class InstitutionController extends Controller
     // GET /api/admin/institutions/{id}/annexes
     public function annexes($id)
     {
-        $this->ensureInstitutionSuperAdmin();
-
-        $institution = Institution::with('annexes')->findOrFail($id);
+        $institution = $this->findAccessibleInstitution($id, ['annexes']);
         return response()->json($institution->annexes, 200);
     }
 }

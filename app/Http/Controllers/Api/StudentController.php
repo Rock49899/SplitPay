@@ -13,6 +13,7 @@ use App\Models\Enrollment;
 use App\Models\LevelFee;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\QueryException;
 
 class StudentController extends Controller
@@ -218,6 +219,8 @@ class StudentController extends Controller
             ];
 
             return response()->json(['student' => $student, 'finance' => $finance], 200);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['message' => 'Étudiant introuvable.'], 404);
         } catch (\Throwable $e) {
             \Log::error('StudentController@show failed', [
                 'error' => $e->getMessage(),
@@ -291,6 +294,8 @@ class StudentController extends Controller
                     ]),
                 ],
             ], 200);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['message' => 'Étudiant introuvable.'], 404);
         } catch (\Throwable $e) {
             \Log::error('StudentController@financials failed', [
                 'error' => $e->getMessage(),

@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use App\Models\Enrollment;
 use App\Models\Installment;
+use App\Models\Notification;
 use App\Models\Payment;
 use App\Models\PaymentLink;
 use App\Models\Student;
@@ -18,7 +19,7 @@ use App\Services\PayPlusService;
 class PaymentController extends Controller
 {
     use FiltersByAnnexe;
-    
+
     protected $payplusService;
 
     public function __construct(PayPlusService $payplusService)
@@ -45,7 +46,14 @@ class PaymentController extends Controller
             return $payment->installment;
         }
 
-        return $payment->paymentLink?->installments()->first();
+        // Paiements historiques sans échéance : rattacher à la première échéance du lien
+        $installment = $payment->paymentLink?->installments()->orderBy('tranche_number')->first();
+
+        if ($installment) {
+            $payment->update(['installment_id' => $installment->id]);
+        }
+
+        return $installment;
     }
 
     private function syncInstallmentAmountPaid(Payment $payment): void
@@ -55,9 +63,22 @@ class PaymentController extends Controller
             return;
         }
 
+        $isFirstInstallment = !Installment::query()
+            ->where('payment_link_id', $installment->payment_link_id)
+            ->where('tranche_number', '<', $installment->tranche_number ?? 1)
+            ->exists();
+
         $paid = (float) Payment::query()
-            ->where('installment_id', $installment->id)
             ->where('status', 'success')
+            ->where(function ($q) use ($installment, $isFirstInstallment) {
+                $q->where('installment_id', $installment->id);
+
+                // Paiements historiques non rattachés : comptés sur la première échéance
+                if ($isFirstInstallment) {
+                    $q->orWhere(fn ($q2) => $q2->whereNull('installment_id')
+                        ->where('payment_link_id', $installment->payment_link_id));
+                }
+            })
             ->sum('amount');
 
         $installment->update([
@@ -74,18 +95,21 @@ class PaymentController extends Controller
         }
 
         if ($link->installments()->exists()) {
-            $link->refreshStatus();
-            return;
+            $fullyPaid = $link->isFullyPaid();
+        } else {
+            $paid = (float) Payment::query()
+                ->where('payment_link_id', $link->id)
+                ->where('status', 'success')
+                ->sum('amount');
+            $fullyPaid = $paid >= (float) $link->amount;
         }
 
-        $paid = (float) Payment::query()
-            ->where('payment_link_id', $link->id)
-            ->where('status', 'success')
-            ->sum('amount');
-
-        $link->update([
-            'status' => $paid >= (float) $link->amount ? 'used' : 'active',
-        ]);
+        if ($fullyPaid) {
+            $link->update(['status' => 'used']);
+        } elseif ($link->status === 'used') {
+            // Un paiement annulé rouvre le lien (un lien expiré reste expiré)
+            $link->update(['status' => 'active']);
+        }
     }
 
     /**
@@ -135,6 +159,69 @@ class PaymentController extends Controller
     }
 
     /**
+     * Applique le statut CONFIRMÉ par l'API PayPlus (jamais celui envoyé par un tiers).
+     * Idempotent : un paiement déjà réussi n'est jamais modifié.
+     *
+     * @return string statut final du paiement (success|failed|pending)
+     */
+    private function applyVerifiedPayPlusStatus(Payment $payment, object $response, string $via): string
+    {
+        $payplusStatus = $response->status ?? $response->response_text ?? null;
+
+        return DB::transaction(function () use ($payment, $response, $payplusStatus, $via) {
+            $payment = Payment::query()->whereKey($payment->id)->lockForUpdate()->firstOrFail();
+
+            if ($payment->status === 'success') {
+                return 'success';
+            }
+
+            if ($payplusStatus === 'completed') {
+                $payment->update([
+                    'status'   => 'success',
+                    'paid_at'  => now(),
+                    'metadata' => array_merge((array) ($payment->metadata ?? []), [
+                        'verified_via' => $via,
+                        'payplus_response' => (array) $response,
+                    ]),
+                ]);
+
+                $this->syncDerivedAmounts($payment);
+
+                if ($payment->student) {
+                    Notification::paymentReceived($payment);
+                }
+
+                Log::info('Payment completed', [
+                    'payment_id' => $payment->id,
+                    'reference' => $payment->reference,
+                    'verified_via' => $via,
+                ]);
+
+                return 'success';
+            }
+
+            if ($payplusStatus === 'notcompleted' && $payment->status === 'pending') {
+                $payment->update([
+                    'status'   => 'failed',
+                    'metadata' => array_merge((array) ($payment->metadata ?? []), [
+                        'verified_via' => $via,
+                        'error' => $response->response_text ?? 'Paiement non complété',
+                        'payplus_response' => (array) $response,
+                    ]),
+                ]);
+
+                if ($payment->student) {
+                    Notification::paymentFailed($payment);
+                }
+
+                return 'failed';
+            }
+
+            return $payment->status;
+        });
+    }
+
+    /**
      * List all payments (admin)
      * Route: GET /api/payments
      */
@@ -150,17 +237,9 @@ class PaymentController extends Controller
             ], 200);
         }
 
+        // Le scope global de Payment restreint aux annexes accessibles (institution incluse)
         $query = Payment::with(['student.annexe', 'paymentLink', 'installment'])
             ->orderByDesc('created_at');
-
-        // IMPORTANT: Filtrer par annexe de l'utilisateur via la relation student
-        if (!$this->isSuperAdminInstitution()) {
-            $annexeIds = $this->getUserAnnexeIds();
-            if (empty($annexeIds)) {
-                return response()->json(['data' => [], 'total' => 0], 200);
-            }
-            $query->whereHas('student', fn ($q) => $q->whereIn('annexe_id', $annexeIds));
-        }
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
@@ -248,17 +327,9 @@ class PaymentController extends Controller
             return response()->json(['data' => []], 200);
         }
 
+        // Même scope que index() (scope global Payment)
         $query = Payment::with(['student.annexe', 'paymentLink', 'installment'])
             ->orderByDesc('created_at');
-
-        // Même scope que index()
-        if (!$this->isSuperAdminInstitution()) {
-            $annexeIds = $this->getUserAnnexeIds();
-            if (empty($annexeIds)) {
-                return response()->json(['data' => []], 200);
-            }
-            $query->whereHas('student', fn ($q) => $q->whereIn('annexe_id', $annexeIds));
-        }
 
         // Filtres
         if ($request->filled('status')) {
@@ -293,11 +364,13 @@ class PaymentController extends Controller
 
     /**
      * Show a single payment (admin)
-     * Route: GET /api/payments/{payment}
+     * Route: GET /api/admin/payments/{id}
      */
-    public function show(Payment $payment)
+    public function show($id)
     {
-        return response()->json($payment->load(['student', 'paymentLink', 'installment']));
+        $payment = Payment::with(['student', 'paymentLink', 'installment'])->findOrFail($id);
+
+        return response()->json($payment);
     }
 
     /**
@@ -327,8 +400,21 @@ class PaymentController extends Controller
             return response()->json(['message' => 'payment_link_id ou token requis'], 422);
         }
 
-        if ($link->status !== 'active') {
-            return response()->json(['message' => 'Ce lien de paiement est inactif ou a déjà été utilisé.'], 422);
+        if (!$link->isValid()) {
+            return response()->json(['message' => 'Ce lien de paiement est inactif, expiré ou a déjà été utilisé.'], 422);
+        }
+
+        // Le montant ne peut pas dépasser le restant dû sur le lien
+        $alreadyPaid = (float) Payment::query()
+            ->where('payment_link_id', $link->id)
+            ->where('status', 'success')
+            ->sum('amount');
+        $remaining = max(0, (float) $link->amount - $alreadyPaid);
+
+        if ((float) $validated['amount'] > $remaining) {
+            return response()->json([
+                'message' => 'Le montant dépasse le restant dû sur ce lien (' . $remaining . ').',
+            ], 422);
         }
 
         // Déterminer l'étudiant associé
@@ -341,10 +427,19 @@ class PaymentController extends Controller
             $studentId = $student->id;
         }
 
+        // Échéance ciblée : la première tranche non soldée du lien
+        $installment = $link->installments()
+            ->where('status', 'active')
+            ->whereRaw('amount_paid < amount')
+            ->orderBy('tranche_number')
+            ->first()
+            ?? $link->installments()->orderBy('tranche_number')->first();
+
         // Créer l'enregistrement Payment (status pending)
         $payment = Payment::create([
             'student_id'     => $studentId,
             'payment_link_id'=> $link->id,
+            'installment_id' => $installment?->id,
             'amount'         => $validated['amount'],
             'method'         => $validated['method'],
             'payer_name'     => trim(($validated['payer_first_name'] ?? '') . ' ' . ($validated['payer_last_name'] ?? '')) ?: null,
@@ -405,31 +500,12 @@ class PaymentController extends Controller
 
             Log::info('PayPlus verify response', [
                 'reference' => $reference,
-                'response' => is_object($response) ? (array) $response : $response,
+                'response' => (array) $response,
             ]);
 
-            $payplusStatus = $response->status ?? $response->response_text ?? null;
+            $status = $this->applyVerifiedPayPlusStatus($payment, $response, 'polling');
 
-            if ($payplusStatus === 'completed') {
-                DB::transaction(function () use ($payment) {
-                    if ($payment->status === 'success') return; // déjà traité
-
-                    $payment->update([
-                        'status'  => 'success',
-                        'paid_at' => now(),
-                        'metadata' => array_merge((array)($payment->metadata ?? []), ['verified_via' => 'polling']),
-                    ]);
-
-                    $this->syncDerivedAmounts($payment);
-
-                    // CRÉER NOTIFICATION DE SUCCÈS
-                    \App\Models\Notification::paymentReceived($payment);
-                });
-
-                return response()->json(['status' => 'success', 'reference' => $reference]);
-            }
-
-            return response()->json(['status' => 'pending', 'reference' => $reference]);
+            return response()->json(['status' => $status, 'reference' => $reference]);
 
         } catch (\Exception $e) {
             Log::error('checkStatus error', ['reference' => $reference, 'error' => $e->getMessage()]);
@@ -445,66 +521,28 @@ class PaymentController extends Controller
     {
         try {
             $token = $request->get('token');
-            
+
             if (!$token) {
                 return redirect(env('FRONT_FAILED_URL') . '?error=missing_token');
             }
 
             // Retrouver le paiement par token PayPlus
             $payment = Payment::where('payplus_transaction_id', $token)->first();
-            
+
             if (!$payment) {
                 Log::error('Payment not found for PayPlus token: ' . $token);
                 return redirect(env('FRONT_FAILED_URL') . '?error=payment_not_found');
             }
 
             // Vérifier le statut auprès de PayPlus
-            $response = $this->payplusService->verify($token);
-
-            DB::transaction(function () use ($payment, $response) {
-                if ($payment->status === 'success') {
-                    return;
-                }
-                
-                if (isset($response->status) && $response->status === 'completed') {
-                    
-                    // Paiement réussi
-                    $payment->update([
-                        'status' => 'success',
-                        'paid_at' => now(),
-                        'metadata' => (array) $response,
-                    ]);
-
-                    $this->syncDerivedAmounts($payment);
-
-                    Log::info('Payment completed successfully', [
-                        'payment_id' => $payment->id,
-                        'reference' => $payment->reference,
-                        'amount' => $payment->amount
-                    ]);
-
-                } else {
-                    
-                    // Paiement échoué
-                    $payment->update([
-                        'status' => 'failed',
-                        'metadata' => ['error' => $response->response_text ?? 'Paiement non complété', 'response' => (array) $response],
-                    ]);
-
-                    Log::warning('Payment failed', [
-                        'payment_id' => $payment->id,
-                        'reference' => $payment->reference,
-                        'response' => $response
-                    ]);
-                }
-            });
+            $status = $this->applyVerifiedPayPlusStatus($payment, $this->payplusService->verify($token), 'return_url');
 
             // Redirection selon le statut
-            if ($payment->status === 'success') {
+            if ($status === 'success') {
                 return redirect(env('FRONT_SUCCESS_URL') . '?reference=' . $payment->reference);
-            } else {
-                return redirect(env('FRONT_FAILED_URL') . '?reference=' . $payment->reference);
             }
+
+            return redirect(env('FRONT_FAILED_URL') . '?reference=' . $payment->reference . '&status=' . $status);
 
         } catch (\Exception $e) {
             Log::error('PayPlus return error: ' . $e->getMessage(), [
@@ -519,63 +557,46 @@ class PaymentController extends Controller
     /**
      * Webhook PayPlus (callback_url)
      * Route: POST /api/payplus/webhook
-     * IMPORTANT: Désactiver CSRF pour cette route
+     *
+     * Le contenu du webhook n'est PAS considéré comme fiable (aucune signature) :
+     * il sert uniquement de déclencheur. Le statut réel est toujours re-vérifié
+     * auprès de l'API PayPlus avant toute modification.
      */
     public function payplusWebhook(Request $request)
     {
+        Log::info('PayPlus webhook received', $request->all());
+
+        $token = $request->input('token');
+
+        if (!$token || !is_string($token)) {
+            return response()->json(['message' => 'Token missing'], 400);
+        }
+
+        $payment = Payment::where('payplus_transaction_id', $token)->first();
+
+        if (!$payment) {
+            Log::error('Payment not found for webhook token: ' . $token);
+            return response()->json(['message' => 'Payment not found'], 404);
+        }
+
         try {
-            Log::info('PayPlus webhook received', $request->all());
+            $response = $this->payplusService->verify($token);
+        } catch (\Throwable $e) {
+            Log::error('PayPlus webhook: verification failed', [
+                'token' => $token,
+                'error' => $e->getMessage(),
+            ]);
 
-            $token = $request->input('token');
-            $responseCode = $request->input('response_code');
+            // Code 5xx pour que PayPlus retente l'envoi plus tard
+            return response()->json(['message' => 'Verification unavailable'], 502);
+        }
 
-            if (!$token) {
-                return response()->json(['message' => 'Token missing'], 400);
-            }
+        try {
+            $status = $this->applyVerifiedPayPlusStatus($payment, $response, 'webhook');
 
-            // Retrouver le paiement
-            $payment = Payment::where('payplus_transaction_id', $token)->first();
+            return response()->json(['message' => 'Webhook processed', 'status' => $status], 200);
 
-            if (!$payment) {
-                Log::error('Payment not found for webhook token: ' . $token);
-                return response()->json(['message' => 'Payment not found'], 404);
-            }
-
-            DB::transaction(function () use ($payment, $responseCode, $request) {
-                if ($payment->status === 'success' && $responseCode == '00') {
-                    return;
-                }
-                
-                if ($responseCode == '00') {
-                    
-                    // Paiement réussi
-                    $payment->update([
-                        'status' => 'success',
-                        'paid_at' => now(),
-                        'metadata' => $request->all(),
-                    ]);
-
-                    $this->syncDerivedAmounts($payment);
-
-                    // CRÉER NOTIFICATION DE SUCCÈS
-                    \App\Models\Notification::paymentReceived($payment);
-
-                } else {
-                    
-                    // Paiement échoué
-                    $payment->update([
-                        'status' => 'failed',
-                        'metadata' => ['error' => $request->input('response_text', 'Échec paiement'), 'response' => $request->all()],
-                    ]);
-
-                    // CRÉER NOTIFICATION D'ÉCHEC
-                    \App\Models\Notification::paymentFailed($payment);
-                }
-            });
-
-            return response()->json(['message' => 'Webhook processed'], 200);
-
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error('PayPlus webhook error: ' . $e->getMessage(), [
                 'request' => $request->all(),
                 'trace' => $e->getTraceAsString()

@@ -57,6 +57,10 @@ class ReminderController extends Controller
             'is_active' => 'boolean',
         ]);
 
+        if (! auth()->user()->canAccessAnnexe($validated['annexe_id'])) {
+            return response()->json(['message' => 'Annexe hors de votre périmètre.'], 403);
+        }
+
         // Vérifier si un rappel existe déjà pour cette annexe et ce délai
         $exists = Reminder::where('annexe_id', $validated['annexe_id'])
             ->where('days_before', $validated['days_before'])

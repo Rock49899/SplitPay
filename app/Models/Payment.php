@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\ScopedByAnnexe;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -9,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Payment extends Model
 {
-    use HasFactory, HasUuids;
+    use HasFactory, HasUuids, ScopedByAnnexe;
 
     public $incrementing = false;
     protected $keyType = 'string';
@@ -52,4 +54,13 @@ class Payment extends Model
         return $this->belongsTo(\App\Models\Student::class);
     }
 
+    /**
+     * Chaque utilisateur ne voit que les paiements des étudiants de ses annexes
+     */
+    protected static function booted()
+    {
+        static::addGlobalScope('annexe', function (Builder $query) {
+            static::scopeToTenantAnnexesThroughStudent($query);
+        });
+    }
 }

@@ -12,6 +12,7 @@ use App\Models\Institution;
 use App\Models\Annexe;
 use App\Models\User;
 use App\Models\Role;
+use App\Models\SchoolYear;
 
 class RegistrationController extends Controller
 {
@@ -80,8 +81,11 @@ class RegistrationController extends Controller
             // Assign super admin institution role if exists
             $role = Role::where('code', 'super_admin_institution')->first();
             if ($role) {
-                $user->assignToAnnexe($annexe->id, $role->id, true); 
+                $user->assignToAnnexe($annexe->id, $role->id, true);
             }
+
+            // Calendrier scolaire propre à la nouvelle institution
+            SchoolYear::ensureForInstitution($institution->id);
 
             return compact('institution', 'annexe', 'user');
         });

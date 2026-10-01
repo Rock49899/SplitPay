@@ -168,9 +168,14 @@ class User extends Authenticatable
      */
     public function isSuperAdminInstitution(): bool
     {
-        return $this->isPlatformAdmin()
+        return $this->roleFlagsCache['super_admin_institution'] ??= $this->isPlatformAdmin()
             || ($this->scope === 'institution' && $this->hasRole('super_admin_institution'));
     }
+
+    /**
+     * Cache (durée de la requête) des vérifications de rôle coûteuses
+     */
+    protected array $roleFlagsCache = [];
 
     /**
      * Vérifier si l'utilisateur est super admin annexe
@@ -185,18 +190,9 @@ class User extends Authenticatable
      */
     public function isPlatformAdmin(): bool
     {
-        return $this->scope === 'platform' || $this->hasRole('platform_admin');
+        return $this->roleFlagsCache['platform_admin'] ??= $this->scope === 'platform' || $this->hasRole('platform_admin');
     }
 
-    /**
-     * Vérifier si l'utilisateur peut ignorer le scope tenant
-     */
-    public function canBypassTenantScope(): bool
-    {
-        return $this->isPlatformAdmin() || $this->isSuperAdminInstitution();
-    }
-
-   
     /**
      * Assigner l'utilisateur à une annexe 
      */
@@ -219,6 +215,8 @@ class User extends Authenticatable
     if ($isPrincipal) {
         $this->update(['annexe_id' => $annexeId]);
     }
+
+    $this->flushAccessibleAnnexeIds();
 }
 
 
@@ -233,6 +231,8 @@ class User extends Authenticatable
         if ($this->annexe_id === $annexeId) {
             $this->update(['annexe_id' => null]);
         }
+
+        $this->flushAccessibleAnnexeIds();
     }
 
     // Changer l'annexe principale de l'utilisateur 
@@ -263,14 +263,25 @@ class User extends Authenticatable
             return true;
         }
 
-        // Super Admin Institution a accès à toutes les annexes
-        if ($this->isSuperAdminInstitution()) {
-            return true;
+        return in_array($annexeId, $this->getAccessibleAnnexeIds(), true);
+    }
+
+    /**
+     * Institution de rattachement de l'utilisateur (null pour l'admin plateforme sans annexe)
+     */
+    public function institutionId(): ?string
+    {
+        if ($this->annexe?->institution_id) {
+            return $this->annexe->institution_id;
         }
 
-        // Vérifier si l'utilisateur est assigné à cette annexe
-        return $this->annexes()->where('annexes.id', $annexeId)->exists();
+        return $this->annexes()->value('annexes.institution_id');
     }
+
+    /**
+     * Cache (durée de la requête) des annexes accessibles
+     */
+    protected ?array $accessibleAnnexeIdsCache = null;
 
     /**
      * Récupérer les IDs de toutes les annexes accessibles
@@ -278,17 +289,33 @@ class User extends Authenticatable
      */
     public function getAccessibleAnnexeIds(): array
     {
+        if ($this->accessibleAnnexeIdsCache !== null) {
+            return $this->accessibleAnnexeIdsCache;
+        }
+
         if ($this->isPlatformAdmin()) {
-            return Annexe::query()->pluck('id')->toArray();
+            $ids = Annexe::query()->pluck('id')->toArray();
+        } elseif ($this->isSuperAdminInstitution()) {
+            // Super Admin Institution : toutes les annexes de SON institution uniquement
+            $institutionId = $this->institutionId();
+            $ids = $institutionId
+                ? Annexe::where('institution_id', $institutionId)->pluck('id')->toArray()
+                : [];
+        } else {
+            // Autres utilisateurs : uniquement leurs annexes assignées
+            $ids = $this->annexes()->pluck('annexes.id')->toArray();
         }
 
-        // Super Admin Institution voit toutes les annexes de son institution
-        if ($this->isSuperAdminInstitution()) {
-            return $this->annexe?->institution->annexes->pluck('id')->toArray() ?? [];
-        }
+        return $this->accessibleAnnexeIdsCache = array_values(array_map('strval', $ids));
+    }
 
-        // Autres utilisateurs : uniquement leurs annexes assignées
-        return $this->annexes->pluck('id')->toArray();
+    /**
+     * Invalider le cache des annexes accessibles (après changement d'affectation)
+     */
+    public function flushAccessibleAnnexeIds(): void
+    {
+        $this->accessibleAnnexeIdsCache = null;
+        $this->roleFlagsCache = [];
     }
 
     /**

@@ -2,83 +2,80 @@
 
 namespace Tests\Feature;
 
+use App\Models\Annexe;
+use App\Models\Institution;
+use App\Models\Permission;
+use App\Models\Role;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
-use Illuminate\Support\Str;
-use App\Models\User;
-use App\Models\Role;
-use App\Models\Annexe;
 
 class RolePolicyTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_assign_and_remove_role_authorization()
+    public function test_assign_and_remove_role_authorization(): void
     {
-        if (! class_exists(User::class) || ! class_exists(Role::class) || ! class_exists(Annexe::class)) {
-            $this->markTestSkipped('User/Role/Annexe models missing.');
-        }
+        $institution = Institution::create(['name' => 'Ecole Roles', 'email' => 'roles@example.com', 'is_active' => true]);
+        $annexe = Annexe::create(['institution_id' => $institution->id, 'name' => 'Campus Roles', 'is_active' => true]);
 
-        // create annexe and role
-        $annexe = Annexe::create(['id' => (string) Str::uuid(), 'institution_id' => (string) Str::uuid(), 'name' => 'A', 'is_active' => true]);
-        $role = Role::create(['id' => (string) Str::uuid(), 'name' => 'Manager', 'code' => 'manager']);
+        $manageRoles = Permission::create(['code' => 'user.manage_roles', 'label' => 'Gérer les rôles', 'module' => 'users']);
 
-        // create super-admin institution user
+        $superRole = Role::create(['code' => 'super_admin_institution', 'label' => 'Super admin institution', 'scope' => 'institution']);
+        $superRole->permissions()->attach($manageRoles->id);
+
+        $managerRole = Role::create(['code' => 'gestionnaire', 'label' => 'Gestionnaire', 'scope' => 'annexe']);
+
+        // Super admin de l'institution, rattaché à son annexe principale
         $super = User::create([
-            'id' => (string) Str::uuid(),
             'name' => 'Super',
-            'email' => 'super@local',
-            'password' => bcrypt('secret'),
+            'email' => 'super@example.com',
+            'password' => 'secret-password',
             'scope' => 'institution',
             'is_active' => true,
         ]);
+        $super->assignToAnnexe($annexe->id, $superRole->id, true);
 
-        // create normal user
+        // Nouvel utilisateur, pas encore affecté
         $target = User::create([
-            'id' => (string) Str::uuid(),
             'name' => 'Target',
-            'email' => 'target@local',
-            'password' => bcrypt('secret'),
+            'email' => 'target@example.com',
+            'password' => 'secret-password',
             'scope' => 'annexe',
             'is_active' => true,
         ]);
 
-        // act as super-admin (assume method assignRole allowed)
         $this->actingAs($super, 'sanctum');
 
-        $assignResp = $this->postJson("/api/admin/users/{$target->id}/assign-role", [
+        $this->postJson("/api/admin/users/{$target->id}/assign-role", [
             'annexe_id' => $annexe->id,
-            'role_id' => $role->id,
+            'role_id' => $managerRole->id,
             'is_primary' => true,
-        ]);
+        ])->assertOk();
 
-        // either 200 or 501 if role system not implemented
-        $this->assertContains($assignResp->status(), [200, 501]);
+        $this->assertTrue($target->fresh()->annexes()->where('annexes.id', $annexe->id)->exists());
 
-        $removeResp = $this->postJson("/api/admin/users/{$target->id}/remove-role", [
+        $this->postJson("/api/admin/users/{$target->id}/remove-role", [
             'annexe_id' => $annexe->id,
-            'role_id' => $role->id,
-        ]);
+        ])->assertOk();
 
-        $this->assertContains($removeResp->status(), [200, 501]);
+        $this->assertFalse($target->fresh()->annexes()->where('annexes.id', $annexe->id)->exists());
 
-        // unauthorized user attempt
-        $unauth = User::create([
-            'id' => (string) Str::uuid(),
-            'name' => 'NoPerm',
-            'email' => 'noperm@local',
-            'password' => bcrypt('secret'),
+        // Un gestionnaire (sans la permission user.manage_roles) ne peut pas attribuer de rôle
+        $manager = User::create([
+            'name' => 'Gestionnaire',
+            'email' => 'gestionnaire@example.com',
+            'password' => 'secret-password',
             'scope' => 'annexe',
             'is_active' => true,
         ]);
+        $manager->assignToAnnexe($annexe->id, $managerRole->id, true);
 
-        $this->actingAs($unauth, 'sanctum');
-        $resp = $this->postJson("/api/admin/users/{$target->id}/assign-role", [
+        $this->actingAs($manager, 'sanctum');
+
+        $this->postJson("/api/admin/users/{$target->id}/assign-role", [
             'annexe_id' => $annexe->id,
-            'role_id' => $role->id,
-        ]);
-
-        // expect 403 or 501 depending on implementation
-        $this->assertTrue(in_array($resp->status(), [403, 501]));
+            'role_id' => $managerRole->id,
+        ])->assertForbidden();
     }
 }

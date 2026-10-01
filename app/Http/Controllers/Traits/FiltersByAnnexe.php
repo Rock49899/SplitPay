@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Traits;
 
-use App\Models\Role;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -23,24 +22,7 @@ trait FiltersByAnnexe
             return [];
         }
 
-        if (method_exists($user, 'isPlatformAdmin') && $user->isPlatformAdmin()) {
-            try {
-                return \App\Models\Annexe::query()->pluck('id')->toArray();
-            } catch (\Throwable $e) {
-                Log::error('Error fetching platform annexes: ' . $e->getMessage());
-            }
-        }
-
-        if (method_exists($user, 'getAccessibleAnnexeIds')) {
-            try {
-                return array_values(array_filter($user->getAccessibleAnnexeIds()));
-            } catch (\Throwable $e) {
-                Log::error('Error fetching accessible annexes: ' . $e->getMessage());
-            }
-        }
-
-        // fallback défensif
-        return $this->getUserAnnexeIds();
+        return array_values(array_filter($user->getAccessibleAnnexeIds()));
     }
 
     /**
@@ -103,67 +85,22 @@ trait FiltersByAnnexe
      */
     protected function getCurrentInstitutionId(): ?string
     {
-        $user = auth()->user();
-
-        if (!$user) {
-            return null;
-        }
-
-        try {
-            if ($user->annexe?->institution_id) {
-                return $user->annexe->institution_id;
-            }
-
-            $firstAnnexe = $user->annexes()->with('institution')->first();
-            return $firstAnnexe?->institution_id;
-        } catch (
-            \Exception $e
-        ) {
-            Log::error('Error fetching current institution: ' . $e->getMessage());
-            return null;
-        }
+        return auth()->user()?->institutionId();
     }
 
     /**
-     * Vérifie si l'utilisateur est super admin institution
+     * Vérifie si l'utilisateur est super admin institution (ou admin plateforme)
      */
     protected function isSuperAdminInstitution(): bool
     {
-        $user = auth()->user();
-        
-        if (!$user) {
-            return false;
-        }
-        
-         // Vérifier d'abord par la colonne scope (plus simple et direct)
-        if (isset($user->scope) && $user->scope === 'platform') {
-            return true;
-        }
-
-        if (isset($user->scope) && $user->scope === 'institution') {
-            return true;
-        }
-        
-        // Fallback: vérifier par rôle (pour compatibilité)
-        try {
-            foreach ($user->annexes()->get() as $annexe) {
-                $role = Role::find($annexe->pivot->role_id);
-                if ($role && $role->code === 'super_admin_institution') {
-                    return true;
-                }
-            }
-        } catch (\Exception $e) {
-            Log::error('Error checking super admin status: ' . $e->getMessage());
-        }
-        
-        return false;
+        return (bool) auth()->user()?->isSuperAdminInstitution();
     }
 
     /**
      * Applique un filtre par annexe active sur une query
-     * 
-     * IMPORTANT: 
-     * - Super admin institution → AUCUN filtre (voit toutes les annexes)
+     *
+     * IMPORTANT:
+     * - Super admin institution → toutes les annexes de SON institution
      * - Users multi-annexe → Filtre uniquement sur l'annexe ACTIVE
      * 
      * @param Builder $query

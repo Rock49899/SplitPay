@@ -8,11 +8,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Builder;
+use App\Models\Concerns\ScopedByAnnexe;
 use App\Models\Enrollment;
 
 class Student extends Model
 {
-    use HasFactory, HasUuids;
+    use HasFactory, HasUuids, ScopedByAnnexe;
 
     /**
      * Indicates if the model's ID is auto-incrementing.
@@ -254,21 +255,13 @@ class Student extends Model
 
 
     /**
-     * chaque utilisateur ne voit que les étudiants de ses annexes
-     * Sauf Super Admin Institution qui voit tout
+     * Chaque utilisateur ne voit que les étudiants de ses annexes
+     * (super admin institution : toutes les annexes de son institution).
      */
     protected static function booted()
     {
         static::addGlobalScope('annexe', function (Builder $query) {
-            if (auth()->check() && !auth()->user()->isSuperAdminInstitution()) {
-                $annexeIds = auth()->user()->getAccessibleAnnexeIds();
-                if (!empty($annexeIds)) {
-                    $query->whereIn('annexe_id', $annexeIds);
-                } else {
-                    // Si l'utilisateur n'a accès à aucune annexe, ne rien retourner
-                    $query->whereRaw('1 = 0');
-                }
-            }
+            static::scopeToTenantAnnexes($query);
         });
     }
 

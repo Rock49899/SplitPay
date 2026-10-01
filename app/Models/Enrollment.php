@@ -2,11 +2,25 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\ScopedByAnnexe;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Enrollment extends Model
 {
+    use ScopedByAnnexe;
+
+    /**
+     * Chaque utilisateur ne voit que les inscriptions des étudiants de ses annexes
+     */
+    protected static function booted()
+    {
+        static::addGlobalScope('annexe', function (Builder $query) {
+            static::scopeToTenantAnnexesThroughStudent($query);
+        });
+    }
+
     protected $fillable = [
         'student_id',
         'level_fee_id',

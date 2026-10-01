@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\ScopedByAnnexe;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -10,7 +11,7 @@ use Illuminate\Database\Eloquent\Builder;
 
 class Notification extends Model
 {
-    use HasFactory, HasUuids;
+    use HasFactory, HasUuids, ScopedByAnnexe;
 
     /**
      * Indicates if the model's ID is auto-incrementing.
@@ -209,14 +210,7 @@ class Notification extends Model
     protected static function booted()
     {
         static::addGlobalScope('annexe', function (Builder $query) {
-            if (auth()->check() && !auth()->user()->isSuperAdminInstitution()) {
-                $annexeIds = auth()->user()->getAccessibleAnnexeIds();
-                if (!empty($annexeIds)) {
-                    $query->whereIn('annexe_id', $annexeIds);
-                } else {
-                    $query->whereRaw('1 = 0');
-                }
-            }
+            static::scopeToTenantAnnexes($query);
         });
     }
 }

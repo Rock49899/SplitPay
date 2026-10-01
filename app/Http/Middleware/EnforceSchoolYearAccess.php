@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\SchoolYear;
+use App\Support\SchoolYearContext;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -21,20 +22,28 @@ class EnforceSchoolYearAccess
         $request->attributes->set('school_year_available', true);
         $request->attributes->set('school_year_read_only', false);
 
-        if (!$selectedYear) {
+        // Calendrier scolaire de l'institution concernée par la requête
+        $institutionId = SchoolYearContext::institutionId($request);
+
+        if ($institutionId) {
+            SchoolYear::ensureForInstitution($institutionId);
+        }
+
+        // Admin plateforme hors contexte institution : pas de calendrier à appliquer
+        if (!$selectedYear || !$institutionId) {
             $response = $next($request);
 
             return $this->withSchoolYearHeaders($response, $request);
         }
 
-        $schoolYear = SchoolYear::where('year', $selectedYear)->first();
+        $schoolYear = SchoolYear::forInstitution($institutionId)->where('year', $selectedYear)->first();
 
         // Année inconnue = pas de données + interdit en écriture
         if (!$schoolYear) {
             // Compatibilité: si l'année vient uniquement du header (localStorage obsolète),
             // on bascule vers la première année valide (active puis closed) pour éviter l'UI vide.
             if (!$explicitSchoolYear) {
-                $fallback = SchoolYear::query()
+                $fallback = SchoolYear::forInstitution($institutionId)
                     ->whereIn('status', ['active', 'closed'])
                     ->orderByRaw("CASE WHEN status = 'active' THEN 0 ELSE 1 END")
                     ->orderByDesc('year')
