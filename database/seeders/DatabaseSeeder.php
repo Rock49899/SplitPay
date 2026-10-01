@@ -17,7 +17,7 @@ class DatabaseSeeder extends Seeder
             PermissionSeeder::class,
             RolePermissionSeeder::class,
             PlatformAdminSeeder::class,
-            AcademicSeeder::class,
+            // Crée l'établissement de démo, son catalogue académique (AcademicSeeder) et ses paiements
             DevelopmentDataSeeder::class,
         ]);
         

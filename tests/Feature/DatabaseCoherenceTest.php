@@ -32,7 +32,7 @@ class DatabaseCoherenceTest extends TestCase
         
         dump("Roles crees: {$count}");
         
-        $this->assertEquals(4, $count, "Il devrait y avoir 4 roles");
+        $this->assertEquals(5, $count, "Il devrait y avoir 5 roles");
     }
 
     
@@ -44,7 +44,7 @@ class DatabaseCoherenceTest extends TestCase
         
         dump("Permissions creees: {$count}");
         
-        $this->assertEquals(29, $count, "Il devrait y avoir 29 permissions");
+        $this->assertEquals(32, $count, "Il devrait y avoir 32 permissions");
     }
 
     //  Test 3: Verifier que chaque role a ses permissions
@@ -59,22 +59,22 @@ class DatabaseCoherenceTest extends TestCase
         // Super Admin Institution doit avoir toutes les permissions
         $countSuperAdmin = $superAdminInstitution->permissions()->count();
         dump("Super Admin Institution a {$countSuperAdmin} permissions");
-        $this->assertEquals(29, $countSuperAdmin);
+        $this->assertEquals(32, $countSuperAdmin);
 
-        // Super Admin Annexe doit avoir 26 permissions (29 - 3 exclues)
+        // Super Admin Annexe doit avoir 29 permissions (32 - 3 exclues)
         $countSuperAnnexe = $superAdminAnnexe->permissions()->count();
         dump("Super Admin Annexe a {$countSuperAnnexe} permissions");
-        $this->assertEquals(26, $countSuperAnnexe);
+        $this->assertEquals(29, $countSuperAnnexe);
 
-        // Gestionnaire doit avoir 16 permissions
+        // Gestionnaire doit avoir 19 permissions
         $countGestionnaire = $gestionnaire->permissions()->count();
         dump("Gestionnaire a {$countGestionnaire} permissions");
-        $this->assertEquals(16, $countGestionnaire);
+        $this->assertEquals(19, $countGestionnaire);
 
-        // Comptable doit avoir 7 permissions
+        // Comptable doit avoir 10 permissions
         $countComptable = $comptable->permissions()->count();
         dump("Comptable a {$countComptable} permissions");
-        $this->assertEquals(7, $countComptable);
+        $this->assertEquals(10, $countComptable);
     }
 
     
@@ -86,7 +86,7 @@ class DatabaseCoherenceTest extends TestCase
         
         dump("Utilisateurs crees: {$count}");
         
-        $this->assertEquals(3, $count, "Il devrait y avoir 3 utilisateurs");
+        $this->assertEquals(4, $count, "Il devrait y avoir 4 utilisateurs (dont l'admin plateforme)");
     }
 
    
@@ -130,7 +130,7 @@ class DatabaseCoherenceTest extends TestCase
         
         dump("Etudiants crees: {$count}");
         
-        $this->assertEquals(10, $count, "Il devrait y avoir 10 etudiants");
+        $this->assertEquals(22, $count, "Il devrait y avoir 22 etudiants");
     }
 
     //  test 8: Verifier que chaque annexe a ses etudiants
@@ -146,8 +146,8 @@ class DatabaseCoherenceTest extends TestCase
         dump("Campus Nord: {$nordCount} etudiants");
         dump("Campus Sud: {$sudCount} etudiants");
 
-        $this->assertEquals(5, $nordCount, "Campus Nord devrait avoir 5 etudiants");
-        $this->assertEquals(5, $sudCount, "Campus Sud devrait avoir 5 etudiants");
+        $this->assertEquals(12, $nordCount, "Campus Nord devrait avoir 12 etudiants");
+        $this->assertEquals(10, $sudCount, "Campus Sud devrait avoir 10 etudiants");
     }
 
     //  Test 9: Verifier que les relations fonctionnent
@@ -155,7 +155,7 @@ class DatabaseCoherenceTest extends TestCase
     public function test_relations_work()
     {
         // Tester relation User -> Annexe principale
-        $user = User::first();
+        $user = User::where('email', 'admin@ist-edu.com')->first();
         $this->assertNotNull($user->annexe);
         dump("User a une annexe principale: " . $user->annexe->name);
 
@@ -179,12 +179,12 @@ class DatabaseCoherenceTest extends TestCase
         // Se connecter en tant que Super Admin (simuler)
         $this->actingAs($superAdmin);
         
-        // Le Super Admin devrait voir tous les etudiants (10)
+        // Le Super Admin devrait voir tous les etudiants de son institution (22)
         // global Scope sera teste plus tard avec l'authentification
         $count = Student::count();
         
         dump("Super Admin voit {$count} etudiants");
         
-        $this->assertEquals(10, $count);
+        $this->assertEquals(22, $count);
     }
 }
