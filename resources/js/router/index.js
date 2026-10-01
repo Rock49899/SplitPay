@@ -250,7 +250,7 @@ function getRoleDashboard(user) {
 }
 
 router.beforeEach(async (to, from, next) => {
-  document.title = `Vue.js ${to.meta.title ?? ''} | SplitPay`;
+  document.title = to.meta.title ? `${to.meta.title} · SplitPay` : 'SplitPay';
 
   let token = localStorage.getItem('api_token');
   if (token && !isSessionStillValid()) {

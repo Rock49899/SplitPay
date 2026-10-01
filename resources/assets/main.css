@@ -1,13 +1,27 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap')
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300..800&display=swap')
 layer(base);
 
 @import 'tailwindcss';
+
+/*
+  Les montants formatés en français (Intl, ex. « 8 985 000 FCFA ») utilisent l'espace fine
+  insécable U+202F comme séparateur de milliers, que Plus Jakarta Sans n'affiche pas.
+  Cette police ne sert qu'à ce caractère : elle le fait dessiner par une police système.
+*/
+@font-face {
+  font-family: 'SplitPay Espaces';
+  src: local('Arial'), local('Helvetica'), local('Segoe UI'), local('DejaVu Sans'), local('Liberation Sans');
+  unicode-range: U+202F;
+}
 
 @custom-variant dark (&:is(.dark *));
 
 @theme {
   --font-*: initial;
-  --font-outfit: Outfit, sans-serif;
+  /* Police de l'interface (le nom de variable est conservé pour ne pas toucher aux classes existantes) */
+  --font-outfit: 'SplitPay Espaces', 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'SplitPay Espaces', 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
   --breakpoint-*: initial;
   --breakpoint-2xsm: 375px;
@@ -41,18 +55,44 @@ layer(base);
   --color-white: #ffffff;
   --color-black: #101828;
 
-  --color-brand-25: #f2f7ff;
-  --color-brand-50: #ecf3ff;
-  --color-brand-100: #dde9ff;
-  --color-brand-200: #c2d6ff;
-  --color-brand-300: #9cb9ff;
-  --color-brand-400: #7592ff;
-  --color-brand-500: #465fff;
-  --color-brand-600: #3641f5;
-  --color-brand-700: #2a31d8;
-  --color-brand-800: #252dae;
-  --color-brand-900: #262e89;
-  --color-brand-950: #161950;
+  /* Couleur de marque SplitPay : vert-teal (identité déjà utilisée par l'espace plateforme) */
+  --color-brand-25: #f3faf8;
+  --color-brand-50: #e7f5f1;
+  --color-brand-100: #c9e9e0;
+  --color-brand-200: #9ad6c6;
+  --color-brand-300: #62bca5;
+  --color-brand-400: #2f9f86;
+  --color-brand-500: #0e7c66;
+  --color-brand-600: #0b6b58;
+  --color-brand-700: #0b5849;
+  --color-brand-800: #0c473c;
+  --color-brand-900: #0c3b33;
+  --color-brand-950: #05211c;
+
+  /* Les accents "blue" et "indigo" des écrans pointent vers la marque : une seule couleur d'action */
+  --color-blue-50: var(--color-brand-50);
+  --color-blue-100: var(--color-brand-100);
+  --color-blue-200: var(--color-brand-200);
+  --color-blue-300: var(--color-brand-300);
+  --color-blue-400: var(--color-brand-400);
+  --color-blue-500: var(--color-brand-500);
+  --color-blue-600: var(--color-brand-500);
+  --color-blue-700: var(--color-brand-600);
+  --color-blue-800: var(--color-brand-700);
+  --color-blue-900: var(--color-brand-800);
+  --color-blue-950: var(--color-brand-950);
+
+  --color-indigo-50: var(--color-brand-50);
+  --color-indigo-100: var(--color-brand-100);
+  --color-indigo-200: var(--color-brand-200);
+  --color-indigo-300: var(--color-brand-300);
+  --color-indigo-400: var(--color-brand-400);
+  --color-indigo-500: var(--color-brand-500);
+  --color-indigo-600: var(--color-brand-500);
+  --color-indigo-700: var(--color-brand-600);
+  --color-indigo-800: var(--color-brand-700);
+  --color-indigo-900: var(--color-brand-800);
+  --color-indigo-950: var(--color-brand-950);
 
   --color-blue-light-25: #f5fbff;
   --color-blue-light-50: #f0f9ff;
@@ -67,19 +107,33 @@ layer(base);
   --color-blue-light-900: #0b4a6f;
   --color-blue-light-950: #062c41;
 
-  --color-gray-25: #fcfcfd;
-  --color-gray-50: #f9fafb;
-  --color-gray-100: #f2f4f7;
-  --color-gray-200: #e4e7ec;
-  --color-gray-300: #d0d5dd;
-  --color-gray-400: #98a2b3;
-  --color-gray-500: #667085;
-  --color-gray-600: #475467;
-  --color-gray-700: #344054;
-  --color-gray-800: #1d2939;
-  --color-gray-900: #101828;
-  --color-gray-950: #0c111d;
-  --color-gray-dark: #1a2231;
+  /* Gris neutres, légèrement teintés de vert pour s'accorder à la marque */
+  --color-gray-25: #fbfcfc;
+  --color-gray-50: #f6f8f7;
+  --color-gray-100: #eef1f0;
+  --color-gray-200: #e1e6e4;
+  --color-gray-300: #cdd4d1;
+  --color-gray-400: #98a39f;
+  --color-gray-500: #68736f;
+  --color-gray-600: #4b5552;
+  --color-gray-700: #353d3a;
+  --color-gray-800: #1f2624;
+  --color-gray-900: #131816;
+  --color-gray-950: #0b0f0e;
+  --color-gray-dark: #1a201e;
+
+  /* "slate" est utilisé par de nombreux écrans : on l'aligne sur les mêmes gris */
+  --color-slate-50: var(--color-gray-50);
+  --color-slate-100: var(--color-gray-100);
+  --color-slate-200: var(--color-gray-200);
+  --color-slate-300: var(--color-gray-300);
+  --color-slate-400: var(--color-gray-400);
+  --color-slate-500: var(--color-gray-500);
+  --color-slate-600: var(--color-gray-600);
+  --color-slate-700: var(--color-gray-700);
+  --color-slate-800: var(--color-gray-800);
+  --color-slate-900: var(--color-gray-900);
+  --color-slate-950: var(--color-gray-950);
 
   --color-orange-25: #fffaf5;
   --color-orange-50: #fff6ed;
@@ -137,15 +191,15 @@ layer(base);
 
   --color-theme-purple-500: #7a5af8;
 
-  --shadow-theme-md: 0px 4px 8px -2px rgba(16, 24, 40, 0.1), 0px 2px 4px -2px rgba(16, 24, 40, 0.06);
-  --shadow-theme-lg: 0px 12px 16px -4px rgba(16, 24, 40, 0.08),
-    0px 4px 6px -2px rgba(16, 24, 40, 0.03);
-  --shadow-theme-sm: 0px 1px 3px 0px rgba(16, 24, 40, 0.1), 0px 1px 2px 0px rgba(16, 24, 40, 0.06);
-  --shadow-theme-xs: 0px 1px 2px 0px rgba(16, 24, 40, 0.05);
-  --shadow-theme-xl: 0px 20px 24px -4px rgba(16, 24, 40, 0.08),
-    0px 8px 8px -4px rgba(16, 24, 40, 0.03);
+  --shadow-theme-md: 0px 4px 12px -4px rgba(19, 24, 22, 0.08), 0px 2px 4px -2px rgba(19, 24, 22, 0.04);
+  --shadow-theme-lg: 0px 12px 24px -8px rgba(19, 24, 22, 0.1),
+    0px 4px 8px -4px rgba(19, 24, 22, 0.04);
+  --shadow-theme-sm: 0px 1px 3px 0px rgba(19, 24, 22, 0.06), 0px 1px 2px 0px rgba(19, 24, 22, 0.04);
+  --shadow-theme-xs: 0px 1px 2px 0px rgba(19, 24, 22, 0.04);
+  --shadow-theme-xl: 0px 24px 40px -12px rgba(19, 24, 22, 0.14),
+    0px 8px 12px -6px rgba(19, 24, 22, 0.05);
   --shadow-datepicker: -5px 0 0 #262d3c, 5px 0 0 #262d3c;
-  --shadow-focus-ring: 0px 0px 0px 4px rgba(70, 95, 255, 0.12);
+  --shadow-focus-ring: 0px 0px 0px 4px rgba(14, 124, 102, 0.14);
   --shadow-slider-navigation: 0px 1px 2px 0px rgba(16, 24, 40, 0.1),
     0px 1px 3px 0px rgba(16, 24, 40, 0.1);
   --shadow-tooltip: 0px 4px 6px -2px rgba(16, 24, 40, 0.05),
@@ -184,16 +238,46 @@ layer(base);
     cursor: pointer;
   }
   body {
-    @apply relative font-normal font-outfit z-1 bg-gray-50;
+    @apply relative font-normal font-outfit z-1 bg-gray-50 text-gray-800;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+  h1,
+  h2,
+  h3 {
+    letter-spacing: -0.015em;
+  }
+  /* Montants et dates alignés dans les tableaux */
+  table {
+    font-variant-numeric: tabular-nums;
+  }
+  ::selection {
+    @apply bg-brand-100 text-brand-900;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-brand-400);
+    outline-offset: 2px;
+  }
+  input:focus,
+  select:focus,
+  textarea:focus {
+    outline: none;
+  }
+  /* Options des listes déroulantes lisibles en mode sombre (Windows les affiche sinon en blanc sur blanc) */
+  .dark select option {
+    background-color: var(--color-gray-800);
+    color: var(--color-gray-100);
   }
 }
 
 @utility menu-item {
-  @apply relative flex items-center w-full gap-3 px-3 py-2 font-medium rounded-lg text-theme-sm;
+  @apply relative flex items-center w-full gap-3 px-3 py-2.5 font-medium rounded-xl text-theme-sm transition-colors duration-150;
 }
 
 @utility menu-item-active {
-  @apply bg-brand-50 text-brand-500 dark:bg-brand-500/[0.12] dark:text-brand-400;
+  @apply bg-brand-50 text-brand-700 dark:bg-brand-500/[0.14] dark:text-brand-300;
+  box-shadow: inset 3px 0 0 var(--color-brand-500);
 }
 
 @utility menu-item-inactive {
@@ -205,7 +289,7 @@ layer(base);
 }
 
 @utility menu-item-icon-active {
-  @apply text-brand-500 dark:text-brand-400;
+  @apply text-brand-600 dark:text-brand-300;
 }
 
 @utility menu-item-icon-inactive {
@@ -225,11 +309,11 @@ layer(base);
 }
 
 @utility menu-dropdown-item {
-  @apply relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-theme-sm font-medium;
+  @apply relative flex items-center gap-3 rounded-lg px-3 py-2 text-theme-sm font-medium transition-colors duration-150;
 }
 
 @utility menu-dropdown-item-active {
-  @apply bg-brand-50 text-brand-500 dark:bg-brand-500/[0.12] dark:text-brand-400;
+  @apply text-brand-700 dark:text-brand-300;
 }
 
 @utility menu-dropdown-item-inactive {

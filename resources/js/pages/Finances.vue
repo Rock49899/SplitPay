@@ -229,7 +229,7 @@ const formatDate = (d) => {
 }
 const formatAmount = (a) =>
   a != null
-    ? new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XAF', maximumFractionDigits: 0 }).format(a)
+    ? new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF', maximumFractionDigits: 0 }).format(a)
     : '–'
 
 const STATUS_MAP = {

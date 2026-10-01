@@ -1,26 +1,22 @@
 <template>
   <FullScreenLayout>
-    <div class="relative p-6 z-1 bg-gray-50 dark:bg-gray-900 sm:p-0">
+    <div class="relative z-1 bg-white dark:bg-gray-900">
       <div
-        class="relative flex flex-col justify-start lg:justify-center w-full min-h-screen lg:h-screen lg:flex-row bg-gray-50 dark:bg-gray-900 overflow-y-auto"
+        class="relative flex flex-col justify-start lg:justify-center w-full min-h-screen lg:h-screen lg:flex-row overflow-y-auto"
       >
         <div class="flex flex-col flex-1 w-full lg:w-1/2">
-          <div class="flex flex-col justify-center flex-1 w-full max-w-md mx-auto px-5 sm:px-6 lg:px-0 py-6 lg:py-0">
-            <div class="mb-8 block text-center lg:hidden">
-              <router-link to="/" class="inline-block">
-                <span class="text-4xl font-extrabold tracking-tight text-brand-600 dark:text-brand-300">SplitPay</span>
-                <p class="mt-2 text-xs text-gray-600 dark:text-gray-300">Plateforme de gestion de scolarité multi-établissements</p>
-              </router-link>
-            </div>
+          <div class="flex flex-col justify-center flex-1 w-full max-w-md mx-auto px-6 py-10 lg:px-0 lg:py-0">
+            <router-link to="/" class="mb-10 inline-flex items-center gap-2.5 self-start">
+              <span class="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-brand-500 text-sm font-bold text-white">SP</span>
+              <span class="text-lg font-bold text-gray-900 dark:text-white">SplitPay</span>
+            </router-link>
             <div>
-              <div class="mb-5 sm:mb-8">
-                <h1
-                  class="mb-2 font-semibold text-gray-800 text-title-sm dark:text-white/90 sm:text-title-md"
-                >
-                  Connexion
+              <div class="mb-7">
+                <h1 class="mb-2 text-3xl font-bold text-gray-900 dark:text-white">
+                  Bon retour
                 </h1>
                 <p class="text-sm text-gray-500 dark:text-gray-400">
-                  Entrez votre email pour recevoir un OTP, ou utilisez votre mot de passe.
+                  Connectez-vous à l'espace de gestion de votre établissement.
                 </p>
               </div>
 
@@ -40,26 +36,26 @@
                 <form @submit.prevent="handleSubmit">
                   <div class="space-y-5">
                     <!-- Auth mode switch -->
-                    <div class="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 p-1 dark:border-gray-700 dark:bg-gray-800">
-                      <button
-                        type="button"
-                        @click="authMode = 'otp'"
-                        :class="[
-                          'flex-1 rounded-md px-3 py-2 text-xs font-medium transition',
-                          authMode === 'otp' ? 'bg-brand-500 text-white' : 'text-gray-600 dark:text-gray-300 hover:bg-white/60 dark:hover:bg-gray-700'
-                        ]"
-                      >
-                        Connexion OTP
-                      </button>
+                    <div class="grid grid-cols-2 gap-1 rounded-xl bg-gray-100 p-1 dark:bg-gray-800">
                       <button
                         type="button"
                         @click="authMode = 'password'; otpStep = false; otp = ''"
                         :class="[
-                          'flex-1 rounded-md px-3 py-2 text-xs font-medium transition',
-                          authMode === 'password' ? 'bg-brand-500 text-white' : 'text-gray-600 dark:text-gray-300 hover:bg-white/60 dark:hover:bg-gray-700'
+                          'rounded-lg px-3 py-2 text-sm font-medium transition',
+                          authMode === 'password' ? 'bg-white text-gray-900 shadow-theme-xs dark:bg-gray-700 dark:text-white' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
                         ]"
                       >
                         Mot de passe
+                      </button>
+                      <button
+                        type="button"
+                        @click="authMode = 'otp'"
+                        :class="[
+                          'rounded-lg px-3 py-2 text-sm font-medium transition',
+                          authMode === 'otp' ? 'bg-white text-gray-900 shadow-theme-xs dark:bg-gray-700 dark:text-white' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                        ]"
+                      >
+                        Code par e-mail
                       </button>
                     </div>
 
@@ -76,7 +72,8 @@
                         type="email"
                         id="email"
                         name="email"
-                        placeholder="info@gmail.com"
+                        placeholder="vous@etablissement.com"
+                        autocomplete="email"
                             class="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-400"
                       />
                     </div>
@@ -109,7 +106,7 @@
                           @click="sendOtp"
                           class="flex items-center justify-center w-full px-4 py-3 text-sm font-medium text-white transition rounded-lg bg-brand-500 shadow-theme-xs hover:bg-brand-600 disabled:opacity-50"
                         >
-                          <span v-if="!loading">Envoyer OTP</span>
+                          <span v-if="!loading">Recevoir un code</span>
                           <span v-else>Envoi...</span>
                         </button>
 
@@ -120,7 +117,7 @@
                             @click="verifyOtp"
                             class="flex items-center justify-center w-full px-4 py-3 text-sm font-medium text-white transition rounded-lg bg-brand-500 shadow-theme-xs hover:bg-brand-600 disabled:opacity-50"
                           >
-                            <span v-if="!loading">Vérifier OTP</span>
+                            <span v-if="!loading">Valider le code</span>
                             <span v-else>Vérification...</span>
                           </button>
                           <button
@@ -190,56 +187,9 @@
                         </span>
                       </div>
                     </div>
-                    <!-- Checkbox -->
-                    <div class="flex items-center justify-between">
-                      <div>
-                        <label
-                          for="keepLoggedIn"
-                          class="flex items-center text-sm font-normal text-gray-700 cursor-pointer select-none dark:text-gray-400"
-                        >
-                          <div class="relative">
-                            <input
-                              v-model="keepLoggedIn"
-                              type="checkbox"
-                              id="keepLoggedIn"
-                              class="sr-only"
-                            />
-                            <div
-                              :class="
-                                keepLoggedIn
-                                  ? 'border-brand-500 bg-brand-500'
-                                  : 'bg-transparent border-gray-300 dark:border-gray-700'
-                              "
-                              class="mr-3 flex h-5 w-5 items-center justify-center rounded-md border-[1.25px]"
-                            >
-                              <span :class="keepLoggedIn ? '' : 'opacity-0'">
-                                <svg
-                                  width="14"
-                                  height="14"
-                                  viewBox="0 0 14 14"
-                                  fill="none"
-                                  xmlns="http://www.w3.org/2000/svg"
-                                >
-                                  <path
-                                    d="M11.6666 3.5L5.24992 9.91667L2.33325 7"
-                                    stroke="white"
-                                    stroke-width="1.94437"
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                  />
-                                </svg>
-                              </span>
-                            </div>
-                          </div>
-                          Rester connecté
-                        </label>
-                      </div>
-                      <router-link
-                        to="/reset-password"
-                        class="text-sm text-brand-500 hover:text-brand-600 dark:text-brand-400"
-                        >Mot de passe oublié ?</router-link
-                      >
-                    </div>
+                    <p v-if="authMode === 'password'" class="text-xs text-gray-500 dark:text-gray-400">
+                      Mot de passe oublié ? Utilisez la connexion par code e-mail.
+                    </p>
                     <!-- Button -->
                     <div v-if="authMode === 'password'">
                       <button
@@ -253,22 +203,65 @@
                     </div>
                   </div>
                 </form>
-                <div class="mt-5"></div>
+                <div class="mt-8 space-y-2 border-t border-gray-100 pt-6 text-sm text-gray-500 dark:border-gray-800 dark:text-gray-400">
+                  <p>
+                    Nouvel établissement ?
+                    <router-link to="/signup" class="font-medium text-brand-600 hover:text-brand-700 dark:text-brand-300">Créer un compte</router-link>
+                  </p>
+                  <p>
+                    Vous êtes étudiant ?
+                    <router-link to="/student/login" class="font-medium text-brand-600 hover:text-brand-700 dark:text-brand-300">Accéder à votre espace</router-link>
+                  </p>
+                </div>
               </div>
             </div>
           </div>
         </div>
-        <div
-          class="relative items-center hidden w-full h-full lg:w-1/2 bg-brand-950 dark:bg-gray-950 lg:grid"
-        >
-          <div class="flex items-center justify-center z-1">
-            <common-grid-shape />
-            <div class="flex flex-col items-center max-w-xs">
-              <router-link to="/" class="block mb-4 text-center">
-                <span class="text-7xl font-extrabold tracking-tight text-white dark:text-white">SplitPay</span>
-                <p class="mt-3 text-sm text-white/80">Plateforme de gestion de scolairité multi-établissements</p>
-              </router-link>
+        <div class="relative hidden w-full h-full lg:w-1/2 lg:flex overflow-hidden bg-brand-900">
+          <common-grid-shape />
+          <div class="relative z-1 flex w-full flex-col justify-between p-14 text-white">
+            <p class="text-sm font-medium text-brand-200">SplitPay</p>
+
+            <div class="max-w-md">
+              <h2 class="text-4xl font-bold leading-tight">
+                Les frais de scolarité, encaissés et suivis au même endroit.
+              </h2>
+              <p class="mt-4 text-base text-brand-100/80">
+                Envoyez un lien, laissez les familles payer par Mobile Money, et voyez chaque paiement arriver dans votre tableau de bord.
+              </p>
+
+              <!-- Aperçu d'un paiement reçu -->
+              <div class="mt-10 rounded-2xl bg-white p-5 text-gray-900 shadow-theme-xl">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-3">
+                    <span class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-brand-50 text-sm font-semibold text-brand-700">AK</span>
+                    <div>
+                      <p class="text-sm font-semibold">Aïcha Koffi</p>
+                      <p class="text-xs text-gray-500">Licence 2 · Informatique</p>
+                    </div>
+                  </div>
+                  <span class="rounded-full bg-success-50 px-2.5 py-1 text-xs font-medium text-success-700">Payé</span>
+                </div>
+                <div class="mt-4 flex items-end justify-between border-t border-gray-100 pt-4">
+                  <div>
+                    <p class="text-xs text-gray-500">Tranche 2 · MTN Mobile Money</p>
+                    <p class="mt-1 text-2xl font-bold">150 000 FCFA</p>
+                  </div>
+                  <p class="text-xs text-gray-500">à l'instant</p>
+                </div>
+                <div class="mt-4">
+                  <div class="flex justify-between text-xs text-gray-500">
+                    <span>Scolarité réglée</span>
+                    <span class="font-medium text-gray-700">75 %</span>
+                  </div>
+                  <div class="mt-1.5 h-2 rounded-full bg-gray-100">
+                    <div class="h-2 w-3/4 rounded-full bg-brand-500"></div>
+                  </div>
+                </div>
+              </div>
             </div>
+
+            <p class="text-xs text-brand-200/70">Paiements MTN et Moov via PayPlus</p>
           </div>
         </div>
       </div>
@@ -287,10 +280,9 @@ import authService from '@/services/authService'
 const email = ref('')
 const password = ref('')
 const otp = ref('')
-const authMode = ref('otp')
+const authMode = ref('password')
 const otpStep = ref(false)
 const showPassword = ref(false)
-const keepLoggedIn = ref(false)
 
 const loading = ref(false)
 const error = ref(null)

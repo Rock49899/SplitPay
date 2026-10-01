@@ -366,7 +366,7 @@ function parseYear(e) {
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 const fmtAmount = (v) =>
-  new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XAF', maximumFractionDigits: 0 }).format(v)
+  new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF', maximumFractionDigits: 0 }).format(v)
 
 async function loadStudyLevels() {
   loading.value = true

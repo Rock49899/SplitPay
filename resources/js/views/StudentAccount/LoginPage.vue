@@ -1,17 +1,15 @@
 <template>
   <div class="login-page">
 
-    <!-- Blobs décoratifs -->
-    <div class="blob blob-1"></div>
-    <div class="blob blob-2"></div>
-    <div class="blob blob-3"></div>
-
     <div class="login-wrapper">
 
       <!-- Bandeau gauche / top -->
       <div class="login-brand">
-        <div class="brand-name">SplitPay</div>
-        <div class="brand-tagline">Manage your school fees simply and securely</div>
+        <div class="brand-mark">SP</div>
+        <div>
+          <div class="brand-name">Espace étudiant</div>
+          <div class="brand-tagline">Consultez votre scolarité, vos paiements et ce qu'il reste à régler.</div>
+        </div>
 
         <!-- Decorative dots grid -->
         <div class="dots-grid" aria-hidden="true">
@@ -25,8 +23,8 @@
         <!-- ÉTAPE 1 -->
         <template v-if="step === 1">
           <div class="card-header">
-            <h1>Sign In</h1>
-            <p>Enter your student ID to receive a 6-digit verification code by email.</p>
+            <h1>Connexion</h1>
+            <p>Saisissez votre matricule. Vous recevrez un code à 6 chiffres sur l'adresse e-mail enregistrée par votre établissement.</p>
           </div>
 
           <form @submit.prevent="sendOtp" class="card-form">
@@ -40,7 +38,7 @@
                 <input
                   v-model="matricule"
                   type="text"
-                  placeholder="e.g. STU-2024-0042"
+                  placeholder="Ex. : ETU-2025-0042"
                   autocomplete="username"
                 />
               </div>
@@ -59,7 +57,7 @@
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
               </svg>
-              <span>{{ sending ? 'Sending…' : 'Send Code' }}</span>
+              <span>{{ sending ? 'Envoi…' : 'Recevoir mon code' }}</span>
               <svg v-if="!sending" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="btn-arrow">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
               </svg>
@@ -77,7 +75,7 @@
           </button>
 
           <div class="card-header">
-            <h1>Verification</h1>
+            <h1>Vérification</h1>
             <p>
               Un code a été envoyé à l'adresse email associée à
               <strong class="text-gray-800">{{ matricule }}</strong>.
@@ -115,13 +113,13 @@
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
               </svg>
-              <span>{{ verifying ? 'Verifying…' : 'Verify Code' }}</span>
+              <span>{{ verifying ? 'Vérification…' : 'Se connecter' }}</span>
             </button>
 
             <p class="resend-line">
-              Didn't receive the code?
+              Code non reçu ?
               <button type="button" @click="resend" :disabled="resendCooldown > 0" class="resend-btn">
-                Resend{{ resendCooldown > 0 ? ` (${resendCooldown}s)` : '' }}
+                Renvoyer{{ resendCooldown > 0 ? ` (${resendCooldown} s)` : '' }}
               </button>
             </p>
           </form>
@@ -131,7 +129,8 @@
     </div>
 
     <p class="footer-note">
-      This portal is for registered students only · Contact your institution if you need help
+      Réservé aux étudiants inscrits · En cas de problème, contactez votre établissement.
+      <router-link to="/signin" class="footer-link">Accès personnel de l'établissement</router-link>
     </p>
   </div>
 </template>
@@ -198,7 +197,7 @@ const sendOtp = async () => {
     // Focus premier champ OTP
     setTimeout(() => otpRefs.value[0]?.focus(), 100);
   } catch (e) {
-    otpError.value = e.response?.data?.message || 'Student ID not found or network error.';
+    otpError.value = e.response?.data?.message || 'Matricule introuvable ou problème de connexion.';
   } finally {
     sending.value = false;
   }
@@ -220,7 +219,7 @@ const verifyOtp = async () => {
     studentAccountService.saveToken(res.data.token, res.data.expires_in_minutes || 60);
     router.push({ name: 'StudentProfile' });
   } catch (e) {
-    verifyError.value = e.response?.data?.message || 'Invalid or expired code.';
+    verifyError.value = e.response?.data?.message || 'Code invalide ou expiré.';
     otpDigits.value = ['', '', '', '', '', ''];
     setTimeout(() => otpRefs.value[0]?.focus(), 50);
   } finally {
@@ -230,53 +229,35 @@ const verifyOtp = async () => {
 </script>
 
 <style scoped>
+/* Couleurs alignées sur le thème SplitPay (voir resources/assets/main.css) */
 .login-page {
+  --brand: #0e7c66;
+  --brand-dark: #0b5849;
+  --brand-soft: #e7f5f1;
+  --ink: #131816;
+  --muted: #68736f;
+  --line: #e1e6e4;
+
   min-height: 100vh;
-  background: #0d0f1a;
+  background: #f6f8f7;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 2rem 1rem;
-  position: relative;
-  overflow: hidden;
-}
-
-.blob {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(80px);
-  opacity: 0.35;
-  pointer-events: none;
-}
-.blob-1 {
-  width: 420px; height: 420px;
-  background: #4f46e5;
-  top: -120px; left: -100px;
-}
-.blob-2 {
-  width: 320px; height: 320px;
-  background: #7c3aed;
-  bottom: -80px; right: -60px;
-}
-.blob-3 {
-  width: 200px; height: 200px;
-  background: #06b6d4;
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
+  font-family: 'SplitPay Espaces', 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
 }
 
 .login-wrapper {
-  position: relative;
-  z-index: 1;
   width: 100%;
-  max-width: 900px;
+  max-width: 880px;
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0;
+  grid-template-columns: 1fr 1.1fr;
   border-radius: 24px;
   overflow: hidden;
-  box-shadow: 0 40px 80px -20px rgba(0,0,0,.6);
+  background: #fff;
+  border: 1px solid var(--line);
+  box-shadow: 0 24px 48px -24px rgba(19, 24, 22, .18);
 }
 
 @media (max-width: 640px) {
@@ -285,32 +266,44 @@ const verifyOtp = async () => {
 }
 
 .login-brand {
-  background: linear-gradient(145deg, #3730a3 0%, #4f46e5 50%, #7c3aed 100%);
-  padding: 3rem 2.5rem;
+  background: var(--brand-dark);
+  padding: 2.75rem 2.5rem;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
+  justify-content: space-between;
+  gap: 3rem;
   position: relative;
   overflow: hidden;
+  color: #fff;
+}
+.brand-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .12);
+  font-size: .85rem;
+  font-weight: 700;
 }
 .brand-name {
-  font-size: 2.25rem;
-  font-weight: 800;
-  color: #fff;
-  letter-spacing: -1px;
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -.02em;
   margin-bottom: .5rem;
 }
 .brand-tagline {
   font-size: .9rem;
-  color: rgba(255,255,255,.65);
+  color: rgba(255, 255, 255, .72);
   line-height: 1.6;
-  max-width: 200px;
+  max-width: 260px;
 }
 
-/* dots decoratifs */
+/* points décoratifs */
 .dots-grid {
   position: absolute;
-  top: 1.5rem; right: 1.5rem;
+  top: 1.75rem; right: 1.75rem;
   display: grid;
   grid-template-columns: repeat(6, 1fr);
   gap: 10px;
@@ -318,30 +311,28 @@ const verifyOtp = async () => {
 .dot {
   width: 4px; height: 4px;
   border-radius: 50%;
-  background: rgba(255,255,255,.25);
+  background: rgba(255, 255, 255, .18);
   display: block;
 }
 
 .login-card {
-  background: #ffffff;
   padding: 3rem 2.5rem;
   display: flex;
   flex-direction: column;
   justify-content: center;
 }
 
-.card-header {
-  margin-bottom: 2rem;
-}
+.card-header { margin-bottom: 2rem; }
 .card-header h1 {
-  font-size: 1.5rem;
+  font-size: 1.6rem;
   font-weight: 700;
-  color: #111827;
+  color: var(--ink);
+  letter-spacing: -.015em;
   margin-bottom: .4rem;
 }
 .card-header p {
   font-size: .875rem;
-  color: #6b7280;
+  color: var(--muted);
   line-height: 1.6;
 }
 
@@ -351,32 +342,30 @@ const verifyOtp = async () => {
 .field-group label {
   font-size: .8125rem;
   font-weight: 600;
-  color: #374151;
-  letter-spacing: .02em;
+  color: #353d3a;
 }
 
 .input-wrap {
   display: flex;
   align-items: center;
   gap: .75rem;
-  border: 1.5px solid #e5e7eb;
+  border: 1.5px solid var(--line);
   border-radius: 12px;
   padding: 0 1rem;
-  background: #f9fafb;
+  background: #fff;
   transition: border-color .2s, box-shadow .2s;
 }
 .input-wrap:focus-within {
-  border-color: #4f46e5;
-  box-shadow: 0 0 0 3px rgba(79,70,229,.12);
-  background: #fff;
+  border-color: var(--brand);
+  box-shadow: 0 0 0 4px rgba(14, 124, 102, .12);
 }
 .input-wrap.error {
-  border-color: #ef4444;
-  box-shadow: 0 0 0 3px rgba(239,68,68,.1);
+  border-color: #f04438;
+  box-shadow: 0 0 0 4px rgba(240, 68, 56, .1);
 }
 .input-icon {
   width: 17px; height: 17px;
-  color: #9ca3af;
+  color: #98a39f;
   flex-shrink: 0;
 }
 .input-wrap input {
@@ -384,13 +373,13 @@ const verifyOtp = async () => {
   border: none;
   background: transparent;
   outline: none;
-  padding: .75rem 0;
+  padding: .8rem 0;
   font-size: .9rem;
-  color: #111827;
+  color: var(--ink);
 }
-.input-wrap input::placeholder { color: #d1d5db; }
+.input-wrap input::placeholder { color: #b5bdba; }
 
-/* ── Alert ──────────────────────────────────────────────── */
+/* ── Alerte ─────────────────────────────────────────────── */
 .alert {
   display: flex;
   align-items: flex-start;
@@ -401,38 +390,33 @@ const verifyOtp = async () => {
   line-height: 1.5;
 }
 .alert svg { width: 16px; height: 16px; flex-shrink: 0; margin-top: 1px; }
-.alert-error { background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; }
+.alert-error { background: #fef3f2; border: 1px solid #fecdca; color: #b42318; }
 
-/* ── Button ─────────────────────────────────────────────── */
+/* ── Bouton ─────────────────────────────────────────────── */
 .btn-primary {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: .5rem;
   width: 100%;
-  padding: .875rem 1.5rem;
+  padding: .85rem 1.5rem;
   border-radius: 12px;
   font-size: .9rem;
   font-weight: 600;
   color: #fff;
-  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  background: var(--brand);
   border: none;
   cursor: pointer;
-  transition: opacity .2s, transform .15s, box-shadow .2s;
-  box-shadow: 0 4px 14px rgba(79,70,229,.35);
+  transition: background .2s;
 }
-.btn-primary:hover:not(:disabled) {
-  opacity: .92;
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(79,70,229,.45);
-}
-.btn-primary:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+.btn-primary:hover:not(:disabled) { background: #0b6b58; }
+.btn-primary:disabled { opacity: .45; cursor: not-allowed; }
 .btn-arrow { width: 18px; height: 18px; }
 
-/* ── OTP grid ───────────────────────────────────────────── */
+/* ── Code OTP ───────────────────────────────────────────── */
 .otp-row {
   display: flex;
-  gap: .75rem;
+  gap: .6rem;
   justify-content: center;
 }
 .otp-box {
@@ -440,44 +424,44 @@ const verifyOtp = async () => {
   text-align: center;
   font-size: 1.5rem;
   font-weight: 700;
-  border: 2px solid #e5e7eb;
+  border: 1.5px solid var(--line);
   border-radius: 12px;
-  background: #f9fafb;
-  color: #111827;
+  background: #fff;
+  color: var(--ink);
   outline: none;
   transition: border-color .2s, box-shadow .2s, background .2s;
 }
 .otp-box:focus {
-  border-color: #4f46e5;
-  box-shadow: 0 0 0 3px rgba(79,70,229,.15);
-  background: #fff;
+  border-color: var(--brand);
+  box-shadow: 0 0 0 4px rgba(14, 124, 102, .12);
 }
 .otp-box.otp-filled {
-  border-color: #4f46e5;
-  background: #ede9fe;
-  color: #4338ca;
+  border-color: var(--brand);
+  background: var(--brand-soft);
+  color: var(--brand-dark);
 }
 .otp-box.otp-error {
-  border-color: #ef4444;
-  background: #fef2f2;
-  color: #dc2626;
+  border-color: #f04438;
+  background: #fef3f2;
+  color: #b42318;
 }
 
-/* ── Resend / Back ──────────────────────────────────────── */
+/* ── Renvoyer / Retour ──────────────────────────────────── */
 .resend-line {
   text-align: center;
   font-size: .8125rem;
-  color: #9ca3af;
+  color: var(--muted);
 }
-.resend-btn {
-  color: #4f46e5;
+.resend-btn,
+.back-btn {
+  color: var(--brand);
   font-weight: 600;
   background: none;
   border: none;
   cursor: pointer;
   transition: color .2s;
 }
-.resend-btn:hover:not(:disabled) { color: #3730a3; text-decoration: underline; }
+.resend-btn:hover:not(:disabled) { color: var(--brand-dark); text-decoration: underline; }
 .resend-btn:disabled { opacity: .45; cursor: not-allowed; }
 
 .back-btn {
@@ -485,32 +469,31 @@ const verifyOtp = async () => {
   align-items: center;
   gap: .4rem;
   font-size: .8125rem;
-  font-weight: 600;
-  color: #4f46e5;
-  background: none;
-  border: none;
-  cursor: pointer;
   padding: 0;
   margin-bottom: 1.5rem;
-  transition: color .2s;
 }
-.back-btn:hover { color: #3730a3; }
+.back-btn:hover { color: var(--brand-dark); }
 .back-btn svg { width: 15px; height: 15px; }
 
-/* ── Spin ───────────────────────────────────────────────── */
+/* ── Chargement ─────────────────────────────────────────── */
 .spin-icon {
   width: 16px; height: 16px;
   animation: spin .7s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ── Footer ─────────────────────────────────────────────── */
+/* ── Pied de page ───────────────────────────────────────── */
 .footer-note {
-  position: relative;
-  z-index: 1;
   margin-top: 1.5rem;
   font-size: .75rem;
-  color: rgba(255,255,255,.3);
+  color: var(--muted);
   text-align: center;
+  line-height: 1.8;
 }
+.footer-link {
+  display: block;
+  color: var(--brand);
+  font-weight: 600;
+}
+.footer-link:hover { text-decoration: underline; }
 </style>

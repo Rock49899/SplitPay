@@ -1,18 +1,18 @@
 <template>
-  <div class="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800 md:p-6">
+  <div class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900 md:p-6">
     <!-- Header -->
     <div class="flex flex-col gap-1 mb-5 sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <h3 class="text-base font-semibold text-gray-800 dark:text-white/90">Collectes mensuelles</h3>
-        <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Collecté vs. en attente — {{ schoolYear }}</p>
+        <h3 class="text-base font-semibold text-gray-900 dark:text-white">Encaissements par mois</h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">De septembre à août · {{ schoolYear }}</p>
       </div>
-      <div class="flex items-center gap-3">
-        <span class="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
-          <span class="inline-block h-2 w-2 rounded-full bg-brand-500"></span>
-          Collecté
+      <div class="flex items-center gap-4">
+        <span class="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-300">
+          <span class="inline-block h-2.5 w-2.5 rounded-full bg-brand-500"></span>
+          Encaissé
         </span>
-        <span class="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
-          <span class="inline-block h-2 w-2 rounded-full bg-blue-300"></span>
+        <span class="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-300">
+          <span class="inline-block h-2.5 w-2.5 rounded-full bg-warning-400"></span>
           En attente
         </span>
       </div>
@@ -31,7 +31,7 @@
       v-else
       :series="series"
       :categories="categories"
-      :colors="['#465FFF', '#9CB9FF']"
+      :colors="['#0e7c66', '#fdb022']"
       :height="280"
       :y-formatter="yFormatter"
     />
@@ -50,6 +50,6 @@ const props = defineProps({
 
 const yFormatter = (val) =>
   new Intl.NumberFormat('fr-FR', {
-    style: 'currency', currency: 'XAF', notation: 'compact', maximumFractionDigits: 0,
+    style: 'currency', currency: 'XOF', notation: 'compact', maximumFractionDigits: 0,
   }).format(val)
 </script>

@@ -16,7 +16,7 @@ const props = defineProps({
   // Override x-axis categories
   categories: { type: Array, default: null },
   // Color palette
-  colors: { type: Array, default: () => ['#465fff', '#9CB9FF', '#FF6B6B'] },
+  colors: { type: Array, default: () => ['#0e7c66', '#fdb022', '#f97066'] },
   // Chart height
   height: { type: Number, default: 220 },
   // Horizontal bars
@@ -54,10 +54,10 @@ const mergedOptions = computed(() => ({
   colors: props.colors,
   theme: { mode: isDark.value ? 'dark' : 'light' },
   chart: {
-    fontFamily: 'Outfit, sans-serif',
+    fontFamily: "'SplitPay Espaces', 'Plus Jakarta Sans', sans-serif",
     type: 'bar',
     toolbar: { show: false },
-    foreColor: isDark.value ? '#9CA3AF' : '#6B7280',
+    foreColor: isDark.value ? '#98A39F' : '#68736F',
   },
   plotOptions: {
     bar: {
@@ -75,9 +75,9 @@ const mergedOptions = computed(() => ({
     axisTicks: { show: false },
     labels: {
       style: {
-        fontFamily: 'Outfit, sans-serif',
+        fontFamily: "'SplitPay Espaces', 'Plus Jakarta Sans', sans-serif",
         fontSize: '12px',
-        colors: isDark.value ? '#9CA3AF' : '#6B7280',
+        colors: isDark.value ? '#98A39F' : '#68736F',
       },
     },
   },
@@ -85,9 +85,9 @@ const mergedOptions = computed(() => ({
     show: true,
     position: 'top',
     horizontalAlign: 'left',
-    fontFamily: 'Outfit',
+    fontFamily: "'SplitPay Espaces', 'Plus Jakarta Sans', sans-serif",
     markers: { radius: 99 },
-    labels: { colors: isDark.value ? '#9CA3AF' : '#6B7280' },
+    labels: { colors: isDark.value ? '#98A39F' : '#68736F' },
   },
   yaxis: {
     title: false,
@@ -96,7 +96,7 @@ const mergedOptions = computed(() => ({
     },
   },
   grid: {
-    borderColor: isDark.value ? '#1F2937' : '#E5E7EB',
+    borderColor: isDark.value ? '#1F2624' : '#E1E6E4',
     yaxis: { lines: { show: true } },
   },
   fill: { opacity: 1 },

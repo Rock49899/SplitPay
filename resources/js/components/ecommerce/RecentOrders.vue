@@ -59,10 +59,6 @@
             <option value="">Toutes</option>
             <option value="mtn">MTN Mobile Money</option>
             <option value="moov">Moov Money</option>
-            <option value="cash">Espèces</option>
-            <option value="bank_transfer">Virement bancaire</option>
-            <option value="card">Carte</option>
-            <option value="cheque">Chèque</option>
           </select>
         </div>
 
@@ -164,8 +160,15 @@
           >
             <!-- Élève -->
             <td class="py-3 pr-4 whitespace-nowrap">
-              <p class="font-medium text-slate-800 text-theme-sm dark:text-white">{{ getStudentName(p) }}</p>
-              <span class="text-slate-400 text-theme-xs dark:text-slate-300">{{ p.student?.email ?? '' }}</span>
+              <div class="flex items-center gap-3">
+                <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-50 text-xs font-semibold text-brand-700 dark:bg-brand-500/15 dark:text-brand-300">
+                  {{ initials(getStudentName(p)) }}
+                </span>
+                <div>
+                  <p class="font-medium text-slate-800 text-theme-sm dark:text-white">{{ getStudentName(p) }}</p>
+                  <span class="text-slate-400 text-theme-xs dark:text-slate-400">{{ p.student?.matricule ?? p.student?.email ?? '' }}</span>
+                </div>
+              </div>
             </td>
 
             <!-- Date -->
@@ -227,9 +230,9 @@ const filters = ref({
 
 // ─── Rôle
 const scopeLabel = computed(() => {
-  if (isSuperAdminInstitution.value) return 'All branches — institution-wide'
-  if (isSuperAdminAnnexe.value)      return 'Your branch(es)'
-  if (isComptable.value)             return 'Your branch'
+  if (isSuperAdminInstitution.value) return 'Toutes les annexes de l\'établissement'
+  if (isSuperAdminAnnexe.value)      return 'Vos annexes'
+  if (isComptable.value)             return 'Votre annexe'
   return null
 })
 
@@ -274,6 +277,12 @@ const getStudentName = (p) =>
   ?? p?.student_name
   ?? '—'
 
+const initials = (name) => {
+  const parts = String(name || '').trim().split(/\s+/).filter((w) => /\p{L}/u.test(w))
+  if (!parts.length) return '?'
+  return ((parts[0][0] || '') + (parts[1]?.[0] || '')).toUpperCase()
+}
+
 const formatDate = (d) => {
   if (!d) return '–'
   try {
@@ -288,34 +297,33 @@ const formatDate = (d) => {
 
 const formatAmount = (a) =>
   a != null
-    ? new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XAF', maximumFractionDigits: 0 }).format(a)
+    ? new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF', maximumFractionDigits: 0 }).format(a)
     : '–'
 
 const STATUS_MAP = {
-  success: { label: 'Paid',    cls: 'bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-500' },
-  pending: { label: 'Pending', cls: 'bg-warning-50 text-warning-600 dark:bg-warning-500/15 dark:text-orange-400' },
-  failed:  { label: 'Failed',  cls: 'bg-error-50 text-error-600 dark:bg-error-500/15 dark:text-error-500' },
+  success: { label: 'Payé',       cls: 'bg-success-50 text-success-700 dark:bg-success-500/15 dark:text-success-400' },
+  pending: { label: 'En attente', cls: 'bg-warning-50 text-warning-700 dark:bg-warning-500/15 dark:text-warning-400' },
+  failed:  { label: 'Échoué',     cls: 'bg-error-50 text-error-700 dark:bg-error-500/15 dark:text-error-400' },
 }
 const statusLabel = (s) => STATUS_MAP[s?.toLowerCase()]?.label ?? s ?? '–'
 const statusClass = (s) => [
-  'rounded-full px-2 py-0.5 text-theme-xs font-medium',
+  'rounded-full px-2.5 py-1 text-theme-xs font-medium',
   STATUS_MAP[s?.toLowerCase()]?.cls ?? 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400',
 ]
 
 const TYPE_MAP = {
-  tuition:      { label: 'Tuition',      cls: 'bg-blue-50 text-blue-600 dark:bg-blue-500/15 dark:text-blue-400' },
-  registration: { label: 'Registration', cls: 'bg-purple-50 text-purple-600 dark:bg-purple-500/15 dark:text-purple-400' },
-  other:        { label: 'Other',        cls: 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400' },
+  tuition:      { label: 'Scolarité',   cls: 'bg-brand-50 text-brand-700 dark:bg-brand-500/15 dark:text-brand-300' },
+  registration: { label: 'Inscription', cls: 'bg-blue-light-50 text-blue-light-700 dark:bg-blue-light-500/15 dark:text-blue-light-400' },
+  other:        { label: 'Autre',       cls: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300' },
 }
-const typeLabel = (t) => TYPE_MAP[t?.toLowerCase()]?.label ?? (t ?? 'Other')
+const typeLabel = (t) => TYPE_MAP[t?.toLowerCase()]?.label ?? (t ?? 'Autre')
 const typeClass = (t) => [
   'rounded-full px-2 py-0.5 text-theme-xs font-medium',
   TYPE_MAP[t?.toLowerCase()]?.cls ?? 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400',
 ]
 
 const METHOD_MAP = {
-  mtn: 'MTN Mobile Money', moov: 'Moov Money',
-  cash: 'Cash', bank_transfer: 'Bank Transfer', mobile_money: 'Mobile Money', card: 'Card', cheque: 'Cheque',
+  mtn: 'MTN Mobile Money', moov: 'Moov Money', payplus: 'PayPlus',
 }
 const methodLabel = (m) => METHOD_MAP[m?.toLowerCase()] ?? m ?? '–'
 
@@ -327,9 +335,4 @@ onMounted(() => { loadPayments(); loadAnnexes() })
 .slide-down-leave-active { transition: all 0.2s ease; }
 .slide-down-enter-from,
 .slide-down-leave-to { opacity: 0; transform: translateY(-8px); }
-
-select option {
-  color: #f8fafc;
-  background-color: #334155;
-}
 </style>

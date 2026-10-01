@@ -205,10 +205,6 @@ const submit = async () => {
 </script>
 
 <style scoped>
-select option {
-  color: #f8fafc;
-  background-color: #334155;
-}
 </style>
 
 

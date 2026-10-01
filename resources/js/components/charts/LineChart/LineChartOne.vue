@@ -50,29 +50,24 @@ onBeforeUnmount(() => {
 const mergedOptions = computed(() => ({
   colors: props.colors,
   theme: { mode: isDark.value ? 'dark' : 'light' },
-  legend: {
-    show: true,
-    position: 'top',
-    horizontalAlign: 'left',
-    fontFamily: 'Outfit',
-    markers: { radius: 99 },
-    labels: { colors: isDark.value ? '#9CA3AF' : '#6B7280' },
-  },
+  // La légende est affichée dans l'en-tête de la carte qui contient le graphique
+  legend: { show: false },
   chart: {
-    fontFamily: 'Outfit, sans-serif',
+    fontFamily: "'SplitPay Espaces', 'Plus Jakarta Sans', sans-serif",
     type: 'area',
     toolbar: { show: false },
-    foreColor: isDark.value ? '#9CA3AF' : '#6B7280',
+    foreColor: isDark.value ? '#98A39F' : '#68736F',
   },
   fill: {
     type: 'gradient',
-    gradient: { enabled: true, opacityFrom: 0.45, opacityTo: 0 },
+    gradient: { enabled: true, opacityFrom: 0.3, opacityTo: 0 },
   },
-  stroke: { curve: 'smooth', width: [2, 2] },
-  markers: { size: 0 },
+  stroke: { curve: 'smooth', width: [2.5, 2.5] },
+  markers: { size: 0, hover: { size: 5 } },
   dataLabels: { enabled: false },
   grid: {
-    borderColor: isDark.value ? '#1F2937' : '#E5E7EB',
+    borderColor: isDark.value ? '#1F2624' : '#E1E6E4',
+    strokeDashArray: 4,
     xaxis: { lines: { show: false } },
     yaxis: { lines: { show: true } },
   },
@@ -85,16 +80,15 @@ const mergedOptions = computed(() => ({
     tooltip: { enabled: false },
     labels: {
       style: {
-        fontFamily: 'Outfit, sans-serif',
         fontSize: '12px',
-        colors: isDark.value ? '#9CA3AF' : '#6B7280',
+        colors: isDark.value ? '#98A39F' : '#68736F',
       },
     },
   },
   yaxis: {
     labels: {
       formatter: props.yFormatter ?? ((val) => val.toString()),
-      style: { fontFamily: 'Outfit, sans-serif', colors: isDark.value ? '#9CA3AF' : '#6B7280' },
+      style: { colors: isDark.value ? '#98A39F' : '#68736F' },
     },
   },
 }))

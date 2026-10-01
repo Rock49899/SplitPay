@@ -554,13 +554,4 @@ onMounted(load);
 </script>
 
 <style scoped>
-/* force option styles for dark select dropdowns */
-select option {
-  color: #f8fafc !important;
-  background-color: #334155 !important;
-}
-select option[value=""] {
-  color: #f8fafc !important;
-  background-color: #334155 !important;
-}
 </style>

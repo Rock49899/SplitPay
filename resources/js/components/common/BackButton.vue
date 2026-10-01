@@ -26,7 +26,7 @@ const props = defineProps({
   },
   label: {
     type: String,
-    default: 'Back'  // English by default
+    default: 'Retour'
   },
   hideLabel: {
     type: Boolean,

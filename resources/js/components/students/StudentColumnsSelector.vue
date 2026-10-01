@@ -10,7 +10,7 @@
         </div>
       </div>
       <div class="mt-4 flex justify-end gap-2">
-        <button @click="$emit('close')" class="px-3 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-100 rounded hover:bg-slate-50 dark:hover:bg-slate-600">Cancel</button>
+        <button @click="$emit('close')" class="px-3 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-100 rounded hover:bg-slate-50 dark:hover:bg-slate-600">Annuler</button>
         <button @click="apply" class="px-4 py-2 bg-brand-500 text-white rounded">Apply</button>
       </div>
     </div>

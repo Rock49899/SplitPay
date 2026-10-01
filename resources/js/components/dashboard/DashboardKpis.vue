@@ -1,120 +1,108 @@
 <template>
-  <!-- Loading skeleton -->
-  <div v-if="loading" class="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-6 md:gap-6">
+  <!-- Chargement -->
+  <div v-if="loading" class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 md:gap-5">
+    <div class="animate-pulse rounded-2xl bg-brand-100/60 p-6 sm:col-span-2 xl:row-span-2 dark:bg-brand-500/10">
+      <div class="h-3 w-24 rounded bg-brand-200/70 dark:bg-brand-500/20"></div>
+      <div class="mt-4 h-9 w-48 rounded bg-brand-200/70 dark:bg-brand-500/20"></div>
+    </div>
     <div
-      v-for="n in 6" :key="n"
-      class="animate-pulse rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800"
+      v-for="n in 4" :key="n"
+      class="animate-pulse rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900"
     >
-      <div class="h-10 w-10 rounded-xl bg-gray-200 dark:bg-gray-700"></div>
-      <div class="mt-4 h-3 w-20 rounded bg-gray-200 dark:bg-gray-700"></div>
-      <div class="mt-2 h-6 w-28 rounded bg-gray-200 dark:bg-gray-700"></div>
+      <div class="h-3 w-20 rounded bg-gray-200 dark:bg-gray-700"></div>
+      <div class="mt-3 h-6 w-28 rounded bg-gray-200 dark:bg-gray-700"></div>
     </div>
   </div>
 
-  <!-- KPI cards grid -->
-  <div v-else class="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-6 md:gap-5">
+  <div v-else class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 md:gap-5">
+    <!-- Carte principale : encaissé + recouvrement -->
+    <div class="relative overflow-hidden rounded-2xl bg-brand-600 p-6 text-white sm:col-span-2 xl:row-span-2 dark:bg-brand-700">
+      <div class="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-white/5"></div>
+      <div class="pointer-events-none absolute -right-4 top-24 h-40 w-40 rounded-full bg-white/5"></div>
 
-    <!-- Total collected -->
-    <div class="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">
-      <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-success-50 dark:bg-success-500/10">
-        <svg class="h-5 w-5 text-success-600 dark:text-success-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      </div>
-      <div class="mt-4">
-        <p class="text-xs font-medium text-gray-500 dark:text-gray-400">Total collecté</p>
-        <p class="mt-1 text-lg font-bold text-gray-800 dark:text-white/90 leading-tight">{{ fmtMoney(kpis.total_collected) }}</p>
-        <p class="mt-0.5 text-xs text-gray-400 dark:text-gray-500">{{ schoolYear }}</p>
-      </div>
-    </div>
+      <div class="relative flex h-full flex-col justify-between gap-8">
+        <div>
+          <div class="flex items-center justify-between">
+            <p class="text-sm font-medium text-brand-100">Encaissé cette année</p>
+            <span class="rounded-full bg-white/10 px-2.5 py-1 text-xs font-medium text-brand-50">{{ schoolYear }}</span>
+          </div>
+          <p class="mt-3 text-4xl font-bold tracking-tight">{{ fmtMoney(kpis.total_collected) }}</p>
+          <p v-if="kpis.total_tuition" class="mt-1 text-sm text-brand-100/80">
+            sur {{ fmtMoney(kpis.total_tuition) }} de scolarité attendue
+          </p>
+        </div>
 
-    <!-- Total pending -->
-    <div class="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">
-      <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-warning-50 dark:bg-warning-500/10">
-        <svg class="h-5 w-5 text-warning-600 dark:text-warning-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      </div>
-      <div class="mt-4">
-        <p class="text-xs font-medium text-gray-500 dark:text-gray-400">En attente</p>
-        <p class="mt-1 text-lg font-bold text-gray-800 dark:text-white/90 leading-tight">{{ fmtMoney(kpis.total_pending) }}</p>
-        <p class="mt-0.5 text-xs text-gray-400 dark:text-gray-500">En cours</p>
-      </div>
-    </div>
-
-    <!-- Total unpaid -->
-    <div class="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">
-      <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-error-50 dark:bg-error-500/10">
-        <svg class="h-5 w-5 text-error-600 dark:text-error-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-        </svg>
-      </div>
-      <div class="mt-4">
-        <p class="text-xs font-medium text-gray-500 dark:text-gray-400">Impayé</p>
-        <p class="mt-1 text-lg font-bold text-gray-800 dark:text-white/90 leading-tight">{{ fmtMoney(kpis.total_unpaid) }}</p>
-        <p class="mt-0.5 text-xs text-gray-400 dark:text-gray-500">Pas encore payé</p>
-      </div>
-    </div>
-
-    <!-- Students count -->
-    <div class="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">
-      <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-500/10">
-        <svg class="h-5 w-5 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-        </svg>
-      </div>
-      <div class="mt-4">
-        <p class="text-xs font-medium text-gray-500 dark:text-gray-400">Étudiants</p>
-        <p class="mt-1 text-lg font-bold text-gray-800 dark:text-white/90 leading-tight">{{ fmtNum(kpis.students_count) }}</p>
-        <p class="mt-0.5 text-xs text-gray-400 dark:text-gray-500">Actifs</p>
-      </div>
-    </div>
-
-    <!-- Annexes count — only super_admin_institution -->
-    <div
-      v-if="showAnnexes"
-      class="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800"
-    >
-      <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-50 dark:bg-purple-500/10">
-        <svg class="h-5 w-5 text-purple-600 dark:text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-        </svg>
-      </div>
-      <div class="mt-4">
-        <p class="text-xs font-medium text-gray-500 dark:text-gray-400">Annexes</p>
-        <p class="mt-1 text-lg font-bold text-gray-800 dark:text-white/90 leading-tight">{{ kpis.annexes_count ?? '—' }}</p>
-        <p class="mt-0.5 text-xs text-gray-400 dark:text-gray-500">Actives</p>
-      </div>
-    </div>
-
-    <!-- Recovery rate -->
-    <div
-      :class="[
-        'rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800',
-        !showAnnexes ? 'sm:col-span-1' : '',
-      ]"
-    >
-      <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-50 dark:bg-teal-500/10">
-        <svg class="h-5 w-5 text-teal-600 dark:text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-        </svg>
-      </div>
-      <div class="mt-4">
-        <p class="text-xs font-medium text-gray-500 dark:text-gray-400">Taux de recouvrement</p>
-        <p class="mt-1 text-lg font-bold leading-tight" :class="rateColorClass">
-          {{ kpis.recovery_rate ?? 0 }}%
-        </p>
-        <!-- Mini progress bar -->
-        <div class="mt-2 h-1.5 w-full rounded-full bg-gray-100 dark:bg-gray-700">
-          <div
-            class="h-1.5 rounded-full transition-all duration-500"
-            :class="rateBarClass"
-            :style="{ width: clamp(kpis.recovery_rate ?? 0) + '%' }"
-          ></div>
+        <div>
+          <div class="flex items-baseline justify-between">
+            <p class="text-sm text-brand-100">Taux de recouvrement</p>
+            <p class="text-2xl font-bold">{{ fmtRate(kpis.recovery_rate) }}</p>
+          </div>
+          <div class="mt-3 h-2.5 w-full rounded-full bg-white/15">
+            <div
+              class="h-2.5 rounded-full bg-white transition-all duration-700"
+              :style="{ width: clamp(kpis.recovery_rate ?? 0) + '%' }"
+            ></div>
+          </div>
+          <p class="mt-2 text-xs text-brand-100/80">{{ rateHint }}</p>
         </div>
       </div>
     </div>
 
+    <!-- Reste à encaisser -->
+    <div class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
+      <div class="flex items-center justify-between">
+        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Reste à encaisser</p>
+        <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-error-50 text-error-600 dark:bg-error-500/10 dark:text-error-400">
+          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+          </svg>
+        </span>
+      </div>
+      <p class="mt-3 text-2xl font-bold text-gray-900 dark:text-white">{{ fmtMoney(kpis.total_unpaid) }}</p>
+      <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Scolarité non encore réglée</p>
+    </div>
+
+    <!-- En attente de confirmation -->
+    <div class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
+      <div class="flex items-center justify-between">
+        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">En attente</p>
+        <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-warning-50 text-warning-600 dark:bg-warning-500/10 dark:text-warning-400">
+          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+          </svg>
+        </span>
+      </div>
+      <p class="mt-3 text-2xl font-bold text-gray-900 dark:text-white">{{ fmtMoney(kpis.total_pending) }}</p>
+      <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Paiements lancés, non confirmés</p>
+    </div>
+
+    <!-- Étudiants -->
+    <div class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
+      <div class="flex items-center justify-between">
+        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Étudiants inscrits</p>
+        <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-300">
+          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
+          </svg>
+        </span>
+      </div>
+      <p class="mt-3 text-2xl font-bold text-gray-900 dark:text-white">{{ fmtNum(kpis.students_count) }}</p>
+      <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Pour l'année {{ schoolYear }}</p>
+    </div>
+
+    <!-- Annexes (super admin institution) -->
+    <div v-if="showAnnexes" class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
+      <div class="flex items-center justify-between">
+        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Annexes</p>
+        <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" />
+          </svg>
+        </span>
+      </div>
+      <p class="mt-3 text-2xl font-bold text-gray-900 dark:text-white">{{ kpis.annexes_count ?? '—' }}</p>
+      <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Sites de l'établissement</p>
+    </div>
   </div>
 </template>
 
@@ -131,7 +119,7 @@ const props = defineProps({
 const fmtMoney = (v) => {
   if (v == null) return '—'
   return new Intl.NumberFormat('fr-FR', {
-    style: 'currency', currency: 'XAF', maximumFractionDigits: 0,
+    style: 'currency', currency: 'XOF', maximumFractionDigits: 0,
   }).format(v)
 }
 
@@ -140,19 +128,15 @@ const fmtNum = (v) => {
   return new Intl.NumberFormat('fr-FR').format(v)
 }
 
+const fmtRate = (v) => `${new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 1 }).format(v ?? 0)} %`
+
 const clamp = (v) => Math.min(100, Math.max(0, v))
 
-const rateColorClass = computed(() => {
+const rateHint = computed(() => {
   const r = props.kpis.recovery_rate ?? 0
-  if (r >= 80) return 'text-success-600 dark:text-success-400'
-  if (r >= 50) return 'text-warning-600 dark:text-warning-400'
-  return 'text-error-600 dark:text-error-400'
-})
-
-const rateBarClass = computed(() => {
-  const r = props.kpis.recovery_rate ?? 0
-  if (r >= 80) return 'bg-success-500'
-  if (r >= 50) return 'bg-warning-500'
-  return 'bg-error-500'
+  if (r >= 80) return 'Très bon niveau de recouvrement.'
+  if (r >= 50) return 'Plus de la moitié de la scolarité est encaissée.'
+  if (r > 0)   return 'Une relance des familles peut être utile.'
+  return 'Aucun paiement enregistré pour le moment.'
 })
 </script>

@@ -1,34 +1,34 @@
 <template>
-  <div class="rounded-2xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800 overflow-hidden">
+  <div class="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900 overflow-hidden">
 
     <!-- Tabs header -->
-    <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-700 px-5 pt-5 pb-0">
+    <div class="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 px-5 pt-5 pb-0">
       <div>
-        <h3 class="text-base font-semibold text-gray-800 dark:text-white/90">Branches Overview</h3>
-        <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5 mb-3">{{ schoolYear }}</p>
+        <h3 class="text-base font-semibold text-gray-900 dark:text-white">Par annexe</h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5 mb-3">{{ schoolYear }}</p>
       </div>
-      <div class="flex gap-1 mb-3">
+      <div class="flex gap-1 mb-3 rounded-xl bg-gray-100 p-1 dark:bg-gray-800">
         <button
           @click="activeTab = 'amounts'"
           :class="[
             'rounded-lg px-3 py-1.5 text-xs font-medium transition',
             activeTab === 'amounts'
-              ? 'bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400'
-              : 'text-gray-500 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-white/[0.04]',
+              ? 'bg-white text-gray-900 shadow-theme-xs dark:bg-gray-700 dark:text-white'
+              : 'text-gray-500 hover:text-gray-700 dark:text-gray-400',
           ]"
         >
-          Amounts
+          Montants
         </button>
         <button
           @click="activeTab = 'rate'"
           :class="[
             'rounded-lg px-3 py-1.5 text-xs font-medium transition',
             activeTab === 'rate'
-              ? 'bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400'
-              : 'text-gray-500 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-white/[0.04]',
+              ? 'bg-white text-gray-900 shadow-theme-xs dark:bg-gray-700 dark:text-white'
+              : 'text-gray-500 hover:text-gray-700 dark:text-gray-400',
           ]"
         >
-          Recovery %
+          Recouvrement
         </button>
       </div>
     </div>
@@ -48,7 +48,7 @@
         <BarChartOne
           :series="amountSeries"
           :categories="labels"
-          :colors="['#465FFF', '#FF6B6B']"
+          :colors="['#0e7c66', '#f97066']"
           :y-formatter="yFormatterMoney"
           :height="260"
           column-width="55%"
@@ -60,7 +60,7 @@
         <BarChartOne
           :series="rateSeries"
           :categories="sortedLabels"
-          :colors="['#14b8a6']"
+          :colors="['#2f9f86']"
           :y-formatter="(v) => v + '%'"
           :height="260"
           :horizontal="true"
@@ -69,7 +69,7 @@
       </div>
 
       <!-- Stat table -->
-      <div class="mt-3 divide-y divide-slate-100 dark:divide-slate-700">
+      <div class="mt-3 divide-y divide-gray-100 dark:divide-gray-800">
         <div
           v-for="(label, i) in labels" :key="label"
           class="flex items-center justify-between py-2 text-xs"
@@ -107,8 +107,8 @@ const activeTab = ref('amounts')
 // ── Chart series ────────────────────────────────────────────────────────────────
 
 const amountSeries = computed(() => [
-  { name: 'Collected',    data: props.collected },
-  { name: 'Outstanding',  data: props.unpaid },
+  { name: 'Encaissé',       data: props.collected },
+  { name: 'Reste à payer',  data: props.unpaid },
 ])
 
 // Sort by recovery rate ascending (worst first) for the rate chart
@@ -120,19 +120,19 @@ const sortedIndices = computed(() =>
 )
 const sortedLabels = computed(() => sortedIndices.value.map((i) => props.labels[i]))
 const rateSeries   = computed(() => [
-  { name: 'Recovery Rate', data: sortedIndices.value.map((i) => props.recoveryRate[i] ?? 0) },
+  { name: 'Taux de recouvrement', data: sortedIndices.value.map((i) => props.recoveryRate[i] ?? 0) },
 ])
 
 // ── Formatters ──────────────────────────────────────────────────────────────────
 
 const yFormatterMoney = (val) =>
   new Intl.NumberFormat('fr-FR', {
-    style: 'currency', currency: 'XAF', notation: 'compact', maximumFractionDigits: 0,
+    style: 'currency', currency: 'XOF', notation: 'compact', maximumFractionDigits: 0,
   }).format(val)
 
 const fmtShort = (v) =>
   new Intl.NumberFormat('fr-FR', {
-    style: 'currency', currency: 'XAF', notation: 'compact', maximumFractionDigits: 0,
+    style: 'currency', currency: 'XOF', notation: 'compact', maximumFractionDigits: 0,
   }).format(v)
 
 const rateClass = (r) => {

@@ -114,14 +114,14 @@
 
         <!-- Financial summary card -->
         <!-- <div class="mt-6">
-          <ComponentCard title="Financial summary">
+          <ComponentCard title="Résumé financier">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
                 <div class="text-sm text-gray-500">Tuition</div>
                 <div class="font-semibold">{{ finance.tuition_amount ?? '-' }}</div>
               </div>
               <div>
-                <div class="text-sm text-gray-500">Paid</div>
+                <div class="text-sm text-gray-500">Payé</div>
                 <div class="font-semibold">{{ finance.amount_paid ?? 0 }}</div>
               </div>
               <div>
@@ -426,8 +426,4 @@ watch(() => activeYearStore.activeYear, () => {
 
 <style scoped>
 /* minimal styles */
-select option {
-  color: #f8fafc;
-  background-color: #334155;
-}
 </style>

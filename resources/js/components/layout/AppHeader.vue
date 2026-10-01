@@ -1,6 +1,6 @@
 <template>
   <header
-    class="sticky top-0 flex w-full bg-white border-gray-200 z-99999 dark:border-gray-800 dark:bg-gray-900 lg:border-b"
+    class="sticky top-0 flex w-full bg-white/85 backdrop-blur-md border-gray-200 z-99999 dark:border-gray-800 dark:bg-gray-900/85 lg:border-b"
   >
     <div class="flex flex-col items-center justify-between grow lg:flex-row lg:px-6">
       <div
@@ -76,26 +76,25 @@
       >
         <div class="flex items-center gap-2 2xsm:gap-3">
           <!-- Sélecteur d'année scolaire global -->
-          <div class="hidden sm:flex items-center gap-1.5">
-            <input
-              list="school-year-list"
+          <label
+            class="hidden sm:flex items-center gap-2 h-11 rounded-xl border border-gray-200 bg-white pl-3 pr-2 text-sm dark:border-gray-800 dark:bg-gray-900"
+            title="Année scolaire affichée"
+          >
+            <svg class="h-4 w-4 text-brand-500" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <path d="M6 2.5v2M14 2.5v2M3 8h14M4.5 4.5h11a1.5 1.5 0 0 1 1.5 1.5v9.5a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 3 15.5V6a1.5 1.5 0 0 1 1.5-1.5Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+            </svg>
+            <span class="text-gray-500 dark:text-gray-400">Année</span>
+            <select
               v-model="pendingYear"
-              @keydown.enter.prevent="applyYear"
-              placeholder="Ex: 2025-2026"
-              class="w-28 rounded-md border bg-white dark:bg-gray-800 px-2 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 focus:outline-none focus:border-brand-500"
-              :class="yearInputError ? 'border-red-300 dark:border-red-700' : 'border-gray-200 dark:border-gray-700'"
-            />
-            <datalist id="school-year-list">
-              <option v-for="y in activeYearStore.availableYears" :key="y" :value="y" />
-            </datalist>
-            <button
-              @click="applyYear"
-              class="px-2 py-1.5 rounded-md border border-gray-200 dark:border-gray-700 text-[11px] font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
-              title="Appliquer l'année"
+              @change="applyYear"
+              class="bg-transparent font-semibold text-gray-800 dark:text-white/90 focus:outline-none cursor-pointer"
             >
-              Appliquer
-            </button>
-          </div>
+              <option v-if="pendingYear && !activeYearStore.availableYears.includes(pendingYear)" :value="pendingYear">
+                {{ pendingYear }}
+              </option>
+              <option v-for="y in activeYearStore.availableYears" :key="y" :value="y">{{ y }}</option>
+            </select>
+          </label>
           <ThemeToggler />
           <NotificationMenu />
         </div>

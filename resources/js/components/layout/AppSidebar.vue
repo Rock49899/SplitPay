@@ -16,34 +16,25 @@
   >
     <div
       :class="[
-        'py-8 flex',
+        'py-7 flex',
         !isExpanded && !isHovered ? 'lg:justify-center' : 'justify-start',
       ]"
     >
-      <router-link to="/" class="flex items-center">
-        <!-- Logo de l'institution si disponible -->
-        <img
-          v-if="institutionLogo && (isExpanded || isHovered || isMobileOpen)"
-          :src="institutionLogo"
-          alt="Logo"
-          class="h-14 w-auto object-contain max-w-full"
-        />
-        <!-- Texte par défaut si pas de logo -->
+      <router-link to="/" class="flex items-center gap-3 min-w-0">
+        <!-- Marque : logo de l'institution, sinon monogramme -->
         <span
-          v-else-if="isExpanded || isHovered || isMobileOpen"
-          class="text-xl sm:text-2xl lg:text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white overflow-hidden truncate max-w-full"
-        >
-          {{ institutionName || 'SplitPay' }}
-        </span>
-        <!-- badge compact quand sidebar réduite -->
-        <span
-          v-else
-          class="inline-flex items-center justify-center h-8 w-8 rounded bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-bold overflow-hidden"
+          class="inline-flex items-center justify-center h-10 w-10 shrink-0 rounded-xl overflow-hidden"
+          :class="institutionLogo ? 'bg-white ring-1 ring-gray-200 dark:ring-gray-700' : 'bg-brand-500 text-white'"
           aria-hidden="true"
         >
-          <!-- Mini logo ou initiales -->
-          <img v-if="institutionLogo" :src="institutionLogo" alt="Logo" class="h-full w-full object-contain" />
-          <span v-else>{{ institutionName?.[0] || 'SP' }}</span>
+          <img v-if="institutionLogo" :src="institutionLogo" alt="" class="h-full w-full object-contain p-1" />
+          <span v-else class="text-sm font-bold tracking-tight">{{ brandInitials }}</span>
+        </span>
+        <span v-if="isExpanded || isHovered || isMobileOpen" class="flex flex-col min-w-0 leading-tight">
+          <span class="truncate text-base font-bold text-gray-900 dark:text-white">
+            {{ institutionName || 'SplitPay' }}
+          </span>
+          <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Gestion des paiements</span>
         </span>
       </router-link>
     </div>
@@ -265,6 +256,12 @@ const isSidebarContentVisible = computed(() =>
 // Variables pour le logo et le nom de l'institution
 const institutionLogo = ref(null)
 const institutionName = ref('')
+// Monogramme affiché quand l'institution n'a pas de logo (ex. "Institut Supérieur" → "IS")
+const brandInitials = computed(() => {
+  const words = (institutionName.value || 'SplitPay').trim().split(/\s+/).filter(Boolean)
+  const letters = words.length > 1 ? words[0][0] + words[1][0] : words[0].slice(0, 2)
+  return letters.toUpperCase()
+})
 
 // Charger les informations de l'institution
 const fetchInstitutionInfo = async () => {

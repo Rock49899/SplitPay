@@ -2,19 +2,23 @@
   <div class="min-h-screen bg-gray-50 flex items-start justify-center py-10 px-4">
     <div class="w-full max-w-lg">
 
-      <!-- En-tête -->
-      <div class="text-center mb-6">
-        <div class="mb-3 flex justify-center">
-          <img
-            v-if="paymentInstitutionLogo"
-            :src="paymentInstitutionLogo"
-            :alt="paymentInstitutionName"
-            class="h-20 w-auto max-w-[320px] object-contain"
-          />
-          <span v-else class="inline-block rounded-lg bg-white px-3 py-1 text-sm font-semibold text-gray-700 shadow-sm border border-gray-100">{{ paymentInstitutionDisplayName }}</span>
+      <!-- En-tête : établissement -->
+      <div class="mb-6 flex items-center gap-3">
+        <span class="inline-flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl"
+          :class="paymentInstitutionLogo ? 'bg-white ring-1 ring-gray-200' : 'bg-brand-500 text-white'">
+          <img v-if="paymentInstitutionLogo" :src="paymentInstitutionLogo" :alt="paymentInstitutionName" class="h-full w-full object-contain p-1.5" />
+          <span v-else class="text-sm font-bold">{{ institutionInitials }}</span>
+        </span>
+        <div class="min-w-0">
+          <p class="truncate text-base font-bold text-gray-900">{{ paymentInstitutionName }}</p>
+          <p class="flex items-center gap-1.5 text-xs text-gray-500">
+            <svg class="h-3.5 w-3.5 text-brand-500" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <path d="M10 2.5 4 5v4.5c0 3.7 2.6 6.6 6 7.5 3.4-.9 6-3.8 6-7.5V5l-6-2.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
+              <path d="m7.5 10 1.8 1.8 3.2-3.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            Paiement sécurisé des frais de scolarité
+          </p>
         </div>
-        <h1 class="text-2xl font-bold text-gray-800">Paiement de scolarité</h1>
-        <p class="text-sm text-gray-500 mt-1">{{ paymentInstitutionDisplayName }} — Paiement sécurisé</p>
       </div>
 
       <!-- Chargement -->
@@ -35,7 +39,7 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
           </svg>
         </div>
-        <h2 class="text-xl font-semibold text-green-700 mb-2">Paiement confirmé ✓</h2>
+        <h2 class="text-xl font-semibold text-green-700 mb-2">Paiement confirmé</h2>
         <p class="text-gray-600 text-sm mb-4">Votre paiement a bien été reçu et enregistré.</p>
         <div class="bg-gray-50 rounded-lg p-4 text-left text-sm text-gray-700 space-y-1">
           <div><span class="text-gray-500">Référence :</span> <span class="font-mono font-medium">{{ paymentReference }}</span></div>
@@ -77,70 +81,73 @@
       <!-- Formulaire de paiement -->
       <template v-else>
 
-        <!-- Carte infos étudiant -->
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-4">
-          <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Informations étudiant</p>
-          <div class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-            <div>
-              <span class="text-gray-400 block text-xs">Matricule</span>
-              <span class="font-medium text-gray-700">{{ link.student?.matricule ?? '—' }}</span>
+        <!-- Récapitulatif : étudiant + montant restant -->
+        <div class="mb-4 overflow-hidden rounded-2xl bg-brand-600 text-white shadow-theme-md">
+          <div class="p-5">
+            <div class="flex items-start justify-between gap-4">
+              <div class="min-w-0">
+                <p class="text-xs font-medium text-brand-100">Paiement pour</p>
+                <p class="mt-0.5 truncate text-lg font-semibold">{{ studentName }}</p>
+                <p class="text-xs text-brand-100/80">Matricule {{ link.student?.matricule ?? '—' }}</p>
+              </div>
+              <span class="shrink-0 rounded-full bg-white/10 px-2.5 py-1 text-xs font-medium">{{ linkTypeLabel }}</span>
             </div>
-            <div>
-              <span class="text-gray-400 block text-xs">Nom complet</span>
-              <span class="font-medium text-gray-700">{{ studentName }}</span>
+
+            <div class="mt-5">
+              <p class="text-xs font-medium text-brand-100">Reste à payer</p>
+              <p class="mt-0.5 text-3xl font-bold tracking-tight">{{ fmt(remaining, link.currency) }}</p>
             </div>
-            <div>
-              <span class="text-gray-400 block text-xs">Montant du lien</span>
-              <span class="font-medium text-gray-700">{{ fmt(link.amount, link.currency) }}</span>
-            </div>
-            <div>
-              <span class="text-gray-400 block text-xs">Montant payé (ce lien)</span>
-              <span class="font-medium text-green-600">{{ fmt(paidOnLink, link.currency) }}</span>
+
+            <div class="mt-4">
+              <div class="h-2 w-full rounded-full bg-white/15">
+                <div class="h-2 rounded-full bg-white transition-all duration-700" :style="{ width: paidPercent + '%' }"></div>
+              </div>
+              <div class="mt-2 flex justify-between text-xs text-brand-100/90">
+                <span>Déjà payé : {{ fmt(paidOnLink, link.currency) }}</span>
+                <span>Total : {{ fmt(link.amount, link.currency) }}</span>
+              </div>
             </div>
           </div>
-          <!-- Restant dû mis en avant -->
-          <div class="mt-4 bg-gray-50 rounded-lg px-4 py-3 flex items-center justify-between">
-            <span class="text-sm text-gray-500">Restant dû</span>
-            <span class="text-lg font-bold" :class="remaining > 0 ? 'text-red-600' : 'text-green-600'">
-              {{ fmt(remaining, link.currency) }}
-            </span>
-          </div>
-          <div v-if="link.description" class="mt-2 text-xs text-gray-400">
+          <p v-if="link.description" class="border-t border-white/10 bg-black/10 px-5 py-3 text-xs text-brand-50">
             {{ link.description }}
-          </div>
+          </p>
         </div>
 
         <!-- Formulaire -->
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-          <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Détails du paiement</p>
+        <div class="bg-white rounded-2xl shadow-theme-sm border border-gray-200 p-5">
+          <h2 class="text-base font-semibold text-gray-900 mb-4">Payer avec Mobile Money</h2>
 
           <!-- Choix réseau -->
-          <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-2">Réseau de paiement</label>
+          <div class="mb-5">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Opérateur</label>
             <div class="grid grid-cols-2 gap-3">
               <button
                 type="button"
                 @click="form.method = 'mtn'"
+                :aria-pressed="form.method === 'mtn'"
                 :class="[
-                  'flex items-center justify-center gap-2 border-2 rounded-xl py-3 text-sm font-semibold transition',
+                  'flex items-center gap-3 rounded-xl border-2 px-3 py-3 text-left text-sm font-semibold transition',
                   form.method === 'mtn'
-                    ? 'border-yellow-400 bg-yellow-50 text-yellow-800'
-                    : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                    ? 'border-[#ffcb05] bg-[#fffbe6] text-gray-900'
+                    : 'border-gray-200 text-gray-600 hover:border-gray-300'
                 ]"
               >
-                <span class="text-lg">🟡</span> MTN Mobile Money
+                <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#ffcb05] text-[11px] font-extrabold text-gray-900">MTN</span>
+                <span>MTN<br><span class="text-xs font-normal text-gray-500">Mobile Money</span></span>
               </button>
               <button
                 type="button"
                 @click="form.method = 'moov'"
+                :aria-pressed="form.method === 'moov'"
                 :class="[
-                  'flex items-center justify-center gap-2 border-2 rounded-xl py-3 text-sm font-semibold transition',
+                  'flex items-center gap-3 rounded-xl border-2 px-3 py-3 text-left text-sm font-semibold transition',
                   form.method === 'moov'
-                    ? 'border-blue-400 bg-blue-50 text-blue-800'
-                    : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                    ? 'border-[#0068b3] bg-[#eef5fb] text-gray-900'
+                    : 'border-gray-200 text-gray-600 hover:border-gray-300'
                 ]"
               >
-                <span class="text-lg">🔵</span> Moov Money
+                <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#0068b3] text-[10px] font-extrabold text-white">MOOV</span>
+                <span>Moov<br><span class="text-xs font-normal text-gray-500">Money</span></span>
               </button>
             </div>
           </div>
@@ -415,6 +422,22 @@ const paymentInstitutionLogo = computed(() => {
   const logo = paymentInstitution.value?.logo
   if (logo) return `/storage/${logo}`
   return brandLogoUrl.value || ''
+})
+
+const institutionInitials = computed(() => {
+  const words = (paymentInstitutionName.value || 'SplitPay').trim().split(/\s+/).filter(Boolean)
+  return (words.length > 1 ? words[0][0] + words[1][0] : words[0].slice(0, 2)).toUpperCase()
+})
+
+const linkTypeLabel = computed(() => ({
+  tuition: 'Scolarité',
+  registration: 'Inscription',
+}[link.value?.type] ?? 'Frais'))
+
+const paidPercent = computed(() => {
+  const total = Number(link.value?.amount ?? 0)
+  if (total <= 0) return 0
+  return Math.min(100, Math.round((paidOnLink.value / total) * 100))
 })
 
 // Validation 8 à 15 chiffres au total 

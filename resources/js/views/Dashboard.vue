@@ -3,38 +3,26 @@
     <div class="space-y-5 md:space-y-6">
 
       <!-- ── Header bar  -->
-      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <div class="mb-2 flex items-center gap-3">
-            <img
-              v-if="brandLogoUrl"
-              :src="brandLogoUrl"
-              :alt="brandName"
-              class="h-14 w-auto max-w-[260px] object-contain"
-            />
-            <span v-else class="inline-block rounded-lg bg-gray-100 px-3 py-1 text-sm font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-200">{{ displayName }}</span>
-          </div>
-          <h1 class="text-xl font-semibold text-gray-800 dark:text-white/90">Tableau de bord</h1>
-          <p class="mt-0.5 text-sm text-gray-400 dark:text-gray-500">
-            {{ isSuperAdminInstitution ? 'Vue d\'éensemble de l\'établissement' : scopeLabel }}
+          <p class="text-sm font-medium text-brand-600 dark:text-brand-300">{{ todayLabel }}</p>
+          <h1 class="mt-1 text-2xl font-bold text-gray-900 dark:text-white">
+            Bonjour{{ firstName ? `, ${firstName}` : '' }}
+          </h1>
+          <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            {{ isSuperAdminInstitution ? 'Voici où en sont les paiements de votre établissement.' : scopeLabel }}
           </p>
         </div>
-
-        <!-- Sélecteur d'année académique -->
-        <div class="flex items-center gap-2">
-          <label class="text-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Année académique</label>
-          <input
-            list="dashboard-year-list"
-            :value="selectedYear"
-            @change="onYearInput"
-            @keydown.enter="onYearInput"
-            placeholder="Ex : 2025-2026"
-            class="w-32 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 focus:outline-none focus:border-brand-500"
-          />
-          <datalist id="dashboard-year-list">
-            <option v-for="y in activeYearStore.availableYears" :key="y" :value="y" />
-          </datalist>
-        </div>
+        <router-link
+          v-if="hasPermission('link.create')"
+          to="/finances"
+          class="inline-flex items-center justify-center gap-2 self-start rounded-xl bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white shadow-theme-xs transition hover:bg-brand-600 sm:self-auto"
+        >
+          <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+          </svg>
+          Suivre les paiements
+        </router-link>
       </div>
       <DashboardKpis
         :kpis="kpis"
@@ -76,7 +64,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import AdminLayout     from '../components/layout/AdminLayout.vue'
 import RecentOrders    from '../components/ecommerce/RecentOrders.vue'
 import DashboardKpis           from '../components/dashboard/DashboardKpis.vue'
@@ -87,8 +75,14 @@ import { usePermissions }      from '@/composables/usePermissions'
 import { useActiveYearStore }  from '@/stores/useActiveYearStore'
 import { useInstitutionBrand } from '@/composables/useInstitutionBrand'
 
-const { isSuperAdminInstitution, isSuperAdminAnnexe, isComptable, isGestionnaire, currentUser } = usePermissions()
-const { brandName, brandLogoUrl, displayName, loadBrand } = useInstitutionBrand()
+const { isSuperAdminInstitution, isSuperAdminAnnexe, isComptable, isGestionnaire, currentUser, hasPermission } = usePermissions()
+const { loadBrand } = useInstitutionBrand()
+
+const firstName = computed(() => (currentUser.value?.name || '').trim().split(/\s+/)[0] || '')
+const todayLabel = computed(() => {
+  const label = new Intl.DateTimeFormat('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date())
+  return label.charAt(0).toUpperCase() + label.slice(1)
+})
 
 const activeYearStore = useActiveYearStore()
 
@@ -170,18 +164,9 @@ const loadAnnexeStats = async () => {
   }
 }
 
-// ── Load all on mount / year change ────────────────────────────────────────────
-function onYearInput(e) {
-  const val = e.target.value?.trim()
-  if (!val || !/^\d{4}-\d{4}$/.test(val)) return
-  const [a, b] = val.split('-').map(Number)
-  if (b !== a + 1) return
-  selectedYear.value = val
-  if (!activeYearStore.availableYears.includes(val)) {
-    activeYearStore.availableYears.unshift(val)
-  }
-  loadAll()
-}
+// ── Load all on mount / year change (année choisie dans l'en-tête) ─────────────
+watch(() => activeYearStore.activeYear, () => loadAll())
+
 const loadAll = () => {
   loadKpis()
   loadMonthly()

@@ -153,7 +153,7 @@ const maxAllowed = computed(() =>
 )
 
 const fmtAmount = (v) =>
-  new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XAF', maximumFractionDigits: 0 }).format(v)
+  new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF', maximumFractionDigits: 0 }).format(v)
 
 const close = () => emit('close')
 

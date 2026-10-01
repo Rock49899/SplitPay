@@ -1,39 +1,43 @@
 <template>
-  <ComponentCard title="Payment Links">
+  <ComponentCard title="Liens de paiement et échéances">
     <div class="overflow-x-auto">
       <table class="min-w-full text-sm">
-        <thead class="bg-slate-100 dark:bg-slate-700">
-          <tr class="text-left text-gray-900 dark:text-white">
-            <th class="px-3 py-2 font-semibold">Type</th>
-            <th class="px-3 py-2 font-semibold">Description</th>
-            <th class="px-3 py-2 font-semibold">Montant</th>
-            <th class="px-3 py-2 font-semibold">Payé</th>
-            <th class="px-3 py-2 font-semibold">Dû</th>
-            <th class="px-3 py-2 font-semibold">Dernier paiement</th>
-            <th class="px-3 py-2 font-semibold">Date dû</th>
-            <th class="px-3 py-2 font-semibold">Status</th>
-            <th class="px-3 py-2 font-semibold">Actions</th>
+        <thead>
+          <tr class="border-b border-gray-200 text-left text-xs font-medium uppercase tracking-wide text-gray-500 dark:border-gray-800 dark:text-gray-400">
+            <th class="px-3 py-3">Échéance</th>
+            <th class="px-3 py-3">Date limite</th>
+            <th class="px-3 py-3 text-right">Montant</th>
+            <th class="px-3 py-3 text-right">Payé</th>
+            <th class="px-3 py-3 text-right">Reste</th>
+            <th class="px-3 py-3">Dernier paiement</th>
+            <th class="px-3 py-3">Statut</th>
+            <th class="px-3 py-3 text-right">Actions</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="lnk in links" :key="lnk.id" class="border-t border-gray-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700/50">
-            <td class="px-3 py-2 text-gray-900 dark:text-white">{{ lnk.type ?? 'other' }}</td>
-            <td class="px-3 py-2 text-gray-900 dark:text-white">
-              <div class="max-w-[240px] truncate" :title="lnk.description">{{ lnk.description ?? '—' }}</div>
+          <tr v-for="lnk in links" :key="lnk.id" class="border-b border-gray-100 transition hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-white/[0.03]">
+            <td class="px-3 py-3">
+              <div class="max-w-[260px] truncate font-medium text-gray-900 dark:text-white" :title="lnk.description">{{ lnk.description || typeLabel(lnk.type) }}</div>
+              <div class="text-xs text-gray-500 dark:text-gray-400">{{ typeLabel(lnk.type) }}</div>
             </td>
-            <!-- afficher la devise du lien si présente -->
-            <td class="px-3 py-2 text-gray-900 dark:text-white">{{ formatCurrency(lnk.amount, lnk.currency ?? 'USD') }}</td>
-            <td class="px-3 py-2 text-gray-900 dark:text-white">{{ formatCurrency(paidFor(lnk), lnk.currency ?? 'USD') }}</td>
-            <td class="px-3 py-2 text-gray-900 dark:text-white">{{ formatCurrency((lnk.amount || 0) - paidFor(lnk), lnk.currency ?? 'USD') }}</td>
-            <td class="px-3 py-2 text-gray-900 dark:text-white">{{ formatDate(lastPaymentFor(lnk)) ?? '-' }}</td>
-            <td class="px-3 py-2 text-gray-900 dark:text-white">{{ formatDate(lnk.due_date) ?? '-' }}</td>
-            <td class="px-3 py-2 text-gray-900 dark:text-white">{{ lnk.status ?? '-' }}</td>
-            <td class="px-3 py-2">
-              <button @click="openActions(lnk)" class="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700">Actions</button>
+            <td class="px-3 py-3 whitespace-nowrap text-gray-700 dark:text-gray-300">{{ formatDate(lnk.due_date) ?? '—' }}</td>
+            <td class="px-3 py-3 whitespace-nowrap text-right text-gray-900 dark:text-white">{{ formatCurrency(lnk.amount, lnk.currency) }}</td>
+            <td class="px-3 py-3 whitespace-nowrap text-right text-gray-900 dark:text-white">{{ formatCurrency(paidFor(lnk), lnk.currency) }}</td>
+            <td class="px-3 py-3 whitespace-nowrap text-right font-semibold" :class="remainingFor(lnk) > 0 ? 'text-gray-900 dark:text-white' : 'text-gray-400'">
+              {{ formatCurrency(remainingFor(lnk), lnk.currency) }}
+            </td>
+            <td class="px-3 py-3 whitespace-nowrap text-gray-700 dark:text-gray-300">{{ formatDate(lastPaymentFor(lnk)) ?? '—' }}</td>
+            <td class="px-3 py-3 whitespace-nowrap">
+              <span :class="['rounded-full px-2.5 py-1 text-xs font-medium', statusOf(lnk).cls]">{{ statusOf(lnk).label }}</span>
+            </td>
+            <td class="px-3 py-3 text-right">
+              <button @click="openActions(lnk)" class="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-white/[0.05]">Gérer</button>
             </td>
           </tr>
           <tr v-if="!links.length">
-            <td class="px-3 py-6 text-center text-gray-500 dark:text-gray-400" colspan="9">No payment links</td>
+            <td class="px-3 py-8 text-center text-gray-500 dark:text-gray-400" colspan="8">
+              {{ loading ? 'Chargement…' : 'Aucun lien de paiement pour cette année.' }}
+            </td>
           </tr>
         </tbody>
       </table>
@@ -71,7 +75,13 @@ const fetchLinks = async () => {
       student_id: props.studentId,
       school_year: activeYearStore.activeYear || undefined,
     });
-    links.value = res.data?.data ?? res.data ?? [];
+    const list = res.data?.data ?? res.data ?? [];
+    // Ordre des échéances : par date limite (les liens sans date à la fin)
+    links.value = [...list].sort((a, b) => {
+      const da = a.due_date ? new Date(a.due_date).getTime() : Infinity;
+      const db = b.due_date ? new Date(b.due_date).getTime() : Infinity;
+      return da - db;
+    });
   } catch (e) {
     console.error('Failed to fetch payment links', e);
     links.value = [];
@@ -116,33 +126,44 @@ const lastPaymentFor = (lnk) => {
   return null;
 };
 
+const remainingFor = (lnk) => Math.max(0, Number(lnk.amount || 0) - paidFor(lnk));
+
 // formate la monnaie avec Intl ; si la devise n'est pas supportée, affiche montant + code
-const formatCurrency = (v, currency = 'USD') => {
+const formatCurrency = (v, currency) => {
+  const code = currency || 'XOF';
   try {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(Number(v ?? 0));
+    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: code, maximumFractionDigits: code === 'XOF' ? 0 : 2 }).format(Number(v ?? 0));
   } catch (e) {
     // si la devise n'est pas supportée, retour simple
-    return `${Number(v ?? 0).toFixed(2)} ${currency}`;
+    return `${Number(v ?? 0).toLocaleString('fr-FR')} ${code}`;
   }
 };
 
 const formatDate = (d) => {
   if (!d) return null;
-  try {
-    const s = String(d);
-    // si format ISO avec T, garder la partie date
-    if (s.includes('T')) return s.split('T')[0];
-    // si date et heure séparées par un espace
-    if (s.includes(' ')) return s.split(' ')[0];
-    // sinon essayer de parser et renvoyer YYYY-MM-DD
-    const dt = new Date(s);
-    if (!isNaN(dt)) {
-      return dt.toISOString().slice(0, 10);
-    }
-    return s;
-  } catch {
-    return String(d);
+  const dt = new Date(String(d).length === 10 ? `${d}T00:00:00` : d);
+  if (isNaN(dt)) return String(d);
+  return new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }).format(dt);
+};
+
+const TYPE_LABELS = { tuition: 'Scolarité', registration: 'Inscription', other: 'Autres frais' };
+const typeLabel = (t) => TYPE_LABELS[t] ?? 'Autres frais';
+
+// Statut lisible : un lien actif dont la date limite est passée est « En retard »
+const statusOf = (lnk) => {
+  if (lnk.status === 'used' || remainingFor(lnk) <= 0) {
+    return { label: 'Réglé', cls: 'bg-success-50 text-success-700 dark:bg-success-500/15 dark:text-success-400' };
   }
+  if (lnk.status === 'expired') {
+    return { label: 'Expiré', cls: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300' };
+  }
+  const overdue = lnk.due_date && new Date(`${String(lnk.due_date).slice(0, 10)}T23:59:59`) < new Date();
+  if (overdue) {
+    return { label: paidFor(lnk) > 0 ? 'Partiel, en retard' : 'En retard', cls: 'bg-error-50 text-error-700 dark:bg-error-500/15 dark:text-error-400' };
+  }
+  return paidFor(lnk) > 0
+    ? { label: 'Partiel', cls: 'bg-warning-50 text-warning-700 dark:bg-warning-500/15 dark:text-warning-400' }
+    : { label: 'À payer', cls: 'bg-brand-50 text-brand-700 dark:bg-brand-500/15 dark:text-brand-300' };
 };
 
 const openActions = (lnk) => {
