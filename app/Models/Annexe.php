@@ -8,7 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use App\Models\Payment;
 
 class Annexe extends Model
 {
@@ -191,63 +190,5 @@ class Annexe extends Model
         $this->update(['is_active' => true]);
     }
 
-    /**
-     * Calculer le montant total attendu (somme des scolarités)
-     */
-    public function totalExpectedAmount(): float
-    {
-        return $this->students()->sum('tuition_amount');
-    }
-
-    /**
-     * Calculer le montant total collecté
-     */
-    public function totalCollectedAmount(): float
-    {
-        return $this->students()->sum('amount_paid');
-    }
-
-    /**
-     * Calculer le taux de collecte en pourcentage
-     */
-    public function collectionRate(): float
-    {
-        $expected = $this->totalExpectedAmount();
-        if ($expected == 0) {
-            return 0;
-        }
-        
-        return ($this->totalCollectedAmount() / $expected) * 100;
-    }
-
-  
-    /**
-     * Désactiver l'annexe et bloquer l'accès de ses utilisateurs (
-     */
-    public function deactivateWithUsers(): void
-    {
-        $this->update(['is_active' => false]);
-        
-    }
-
-    /**
-     * Statistiques complètes pour dashboard multi-annexes
-     */
-    public function getStatistics(): array
-    {
-        return [
-            'annexe_id' => $this->id,
-            'annexe_name' => $this->name,
-            'total_students' => $this->students()->count(),
-            'active_students' => $this->activeStudents()->count(),
-            'expected_amount' => $this->totalExpectedAmount(),
-            'collected_amount' => $this->totalCollectedAmount(),
-            'collection_rate' => $this->collectionRate(),
-            'total_payments' => Payment::whereHas('installment.paymentLink.student', function ($q) {
-                $q->where('annexe_id', $this->id);
-            })->where('status', 'success')->count(),
-            'unread_notifications' => $this->unreadNotifications()->count(),
-        ];
-    }
 }
 

@@ -18,7 +18,6 @@ return Application::configure(basePath: dirname(__DIR__))
             'active.annexe'   => \App\Http\Middleware\SetActiveAnnexe::class,
             'active.school_year' => \App\Http\Middleware\SetActiveSchoolYear::class,
             'school_year.lock' => \App\Http\Middleware\EnforceSchoolYearAccess::class,
-            'annexe.active'   => \App\Http\Middleware\CheckAnnexeActive::class,
             'student.auth'    => \App\Http\Middleware\StudentAuthMiddleware::class,
         ]);
     })
