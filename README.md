@@ -18,6 +18,10 @@ Dans beaucoup d'établissements, le suivi des paiements se fait encore à la mai
 
 ![Vue consolidée de la plateforme](docs/captures/03-plateforme.png)
 
+**Paramétrage de l'établissement** : informations de l'institution et des annexes, utilisateurs et rôles, niveaux d'étude et barèmes, rappels automatiques.
+
+![Paramétrage de l'établissement](docs/captures/04-parametrage.png)
+
 ## Ce que fait l'application
 
 **Pour l'administration de l'école**
